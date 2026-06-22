@@ -1,0 +1,6 @@
+{
+  "name": "Optical POS System",
+  "description": "A simple, fast, and user-friendly Point of Sale system for small optical stores.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
