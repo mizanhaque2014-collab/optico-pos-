@@ -1,6 +1,17 @@
 'use client';
 
 import { Customer, Invoice, InventoryItem, StockItem, StockAdjustment, BranchTransfer, OrderItem } from './types';
+import { customerService } from './services/customerService';
+import { prescriptionService } from './services/prescriptionService';
+import { eyeTestService } from './services/eyeTestService';
+import { invoiceService } from './services/invoiceService';
+import { invoiceItemService } from './services/invoiceItemService';
+import { salesOrderService } from './services/salesOrderService';
+import { deliveryCollectionService } from './services/deliveryCollectionService';
+import { inventoryService } from './services/inventoryService';
+import { paymentService } from './services/paymentService';
+import { userService } from './services/userService';
+import { branchService } from './services/branchService';
 
 // Helper to handle localStorage safely
 const getLocalData = <T>(key: string, defaultValue: T): T => {
@@ -149,9 +160,15 @@ const defaultStockItems: StockItem[] = [
 ];
 
 export const useStore = () => {
-  const getCustomers = () => getLocalData<Customer[]>('opt_customers', []);
+  const getCustomers = () => {
+    // Background sync to ensure offline-first hydration
+    customerService.getCustomers().catch(() => {});
+    return getLocalData<Customer[]>('opt_customers', []);
+  };
+
   const saveCustomer = (customer: Customer) => {
-    const customers = getCustomers();
+    // 1. Immediate saving in local cache
+    const customers = getLocalData<Customer[]>('opt_customers', []);
     const existingIndex = customers.findIndex(c => c.id === customer.id);
     if (existingIndex >= 0) {
       customers[existingIndex] = customer;
@@ -159,12 +176,21 @@ export const useStore = () => {
       customers.push(customer);
     }
     setLocalData('opt_customers', customers);
+
+    // 2. Propagate saving to Sheets API with precise audit logging tracing
+    customerService.saveCustomer(customer).catch((err) => {
+      console.error("Failed to propagate save to Google Sheets:", err);
+    });
   };
 
-  const getInvoices = () => getLocalData<Invoice[]>('opt_invoices', []);
+  const getInvoices = () => {
+    invoiceService.getInvoices().catch(() => {});
+    return getLocalData<Invoice[]>('opt_invoices', []);
+  };
   
   // Custom inventory managers
   const getStockInventory = () => {
+    inventoryService.getInventory().catch(() => {});
     const data = getLocalData<StockItem[]>('opt_stock_inventory', []);
     if (data.length === 0) {
       setLocalData('opt_stock_inventory', defaultStockItems);
@@ -182,6 +208,7 @@ export const useStore = () => {
       stock.push(item);
     }
     setLocalData('opt_stock_inventory', stock);
+    inventoryService.saveInventoryItem(item).catch(() => {});
   };
 
   const saveStockItemsBulk = (items: StockItem[]) => {
@@ -193,6 +220,7 @@ export const useStore = () => {
       } else {
         stock.push(item);
       }
+      inventoryService.saveInventoryItem(item).catch(() => {});
     });
     setLocalData('opt_stock_inventory', stock);
   };
@@ -332,9 +360,16 @@ export const useStore = () => {
     if (invoice.status === 'Delivered') {
       reduceStockForInvoice(invoice);
     }
+
+    // Sync to Sheets
+    invoiceService.saveInvoice(invoice).catch(() => {});
   };
 
-  const getInventory = () => getLocalData<InventoryItem[]>('opt_inventory', []);
+  const getInventory = () => {
+    inventoryService.getInventory().catch(() => {});
+    return getLocalData<InventoryItem[]>('opt_inventory', []);
+  };
+
   const saveInventoryItem = (item: InventoryItem) => {
     const inv = getInventory();
     const existingIndex = inv.findIndex(i => i.id === item.id);
@@ -344,6 +379,24 @@ export const useStore = () => {
       inv.push(item);
     }
     setLocalData('opt_inventory', inv);
+
+    // Sync to Sheets
+    const stockItem: StockItem = {
+      id: item.id,
+      category: item.itemType === 'frame' ? 'Frames' : 'Optical Lenses',
+      brand: item.brand,
+      modelNumber: item.modelNumber,
+      barcode: item.id, // fallback or id
+      purchasePrice: item.price * 0.6, // estimate cost margin as 60% of sale
+      sellingPrice: item.price,
+      quantity: item.stock,
+      supplierName: 'System Inventory Supplier',
+      purchaseDate: new Date().toISOString().slice(0, 10),
+      remarks: 'Sync main inventory item',
+      branch: 'Main Branch',
+      createdAt: Date.now()
+    };
+    inventoryService.saveInventoryItem(stockItem).catch(() => {});
   };
 
   const generateInvoiceNumber = () => {

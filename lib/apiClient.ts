@@ -1,11 +1,22 @@
 import { API_URL } from './config';
 
-export async function apiCall<T>(action: string, payload?: any): Promise<T> {
+export async function apiCall<T>(action: string, argPayload?: any): Promise<T> {
   const url = new URL(API_URL);
   url.searchParams.set('action', action);
   
+  const payload = {
+    action,
+    ...(argPayload || {}),
+  };
+
+  console.log("API URL", url.toString());
+  console.log("REQUEST BODY", payload);
+
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 12000); // 12 seconds timeout
+  const timeoutId = setTimeout(() => {
+    console.warn(`Request to [${action}] timed out after 60 seconds.`);
+    controller.abort();
+  }, 60000); // Extended 60 seconds timeout specifically for cold-starting Apps Script web apps
 
   try {
     const response = await fetch(url.toString(), {
@@ -13,14 +24,13 @@ export async function apiCall<T>(action: string, payload?: any): Promise<T> {
       headers: {
         'Content-Type': 'text/plain;charset=utf-8', 
       },
-      body: JSON.stringify({
-        action,
-        ...(payload || {}),
-      }),
+      body: JSON.stringify(payload),
       signal: controller.signal,
     });
     
     clearTimeout(timeoutId);
+    
+    console.log("API RESPONSE", response);
     
     if (!response.ok) {
       throw new Error(`API error: ${response.status} ${response.statusText}`);
@@ -38,7 +48,7 @@ export async function apiCall<T>(action: string, payload?: any): Promise<T> {
     }
   } catch (error) {
     clearTimeout(timeoutId);
-    console.error(`apiCall [${action}] failed:`, error);
+    console.error("API ERROR", error);
     throw error;
   }
 }

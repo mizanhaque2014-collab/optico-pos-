@@ -5,6 +5,8 @@ const STORAGE_KEY = 'opt_customers';
 
 export const customerService = {
   async saveCustomer(customer: Customer): Promise<void> {
+    const customerData = customer;
+    console.log("CUSTOMER SAVE START", customerData);
     try {
       await apiCall('saveCustomer', { customer });
     } catch (e) {
