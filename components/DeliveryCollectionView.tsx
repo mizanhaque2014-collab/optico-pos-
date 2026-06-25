@@ -375,7 +375,7 @@ export function DeliveryCollectionView({ onBack }: Props) {
                     <input
                       type="number"
                       className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white font-bold focus:outline-none focus:border-purple-500"
-                      value={cashAmount || ''}
+                      value={cashAmount === 0 ? '' : cashAmount}
                       onChange={(e) => setCashAmount(Number(e.target.value))}
                     />
                   </div>
@@ -402,7 +402,7 @@ export function DeliveryCollectionView({ onBack }: Props) {
                       <input
                         type="number"
                         className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white font-bold focus:outline-none focus:border-purple-500"
-                        value={cardAmount || ''}
+                        value={cardAmount === 0 ? '' : cardAmount}
                         onChange={(e) => setCardAmount(Number(e.target.value))}
                       />
                     </div>
@@ -461,7 +461,7 @@ export function DeliveryCollectionView({ onBack }: Props) {
                       <input
                         type="number"
                         className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white font-bold focus:outline-none focus:border-purple-500"
-                        value={upiAmount || ''}
+                        value={upiAmount === 0 ? '' : upiAmount}
                         onChange={(e) => setUpiAmount(Number(e.target.value))}
                       />
                     </div>
@@ -519,7 +519,7 @@ export function DeliveryCollectionView({ onBack }: Props) {
                       <input
                         type="number"
                         className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white font-bold focus:outline-none focus:border-purple-500"
-                        value={cashAmount || ''}
+                        value={cashAmount === 0 ? '' : cashAmount}
                         onChange={(e) => setCashAmount(Number(e.target.value))}
                       />
                     </div>
@@ -528,7 +528,7 @@ export function DeliveryCollectionView({ onBack }: Props) {
                       <input
                         type="number"
                         className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white font-bold focus:outline-none focus:border-purple-500"
-                        value={cardAmount || ''}
+                        value={cardAmount === 0 ? '' : cardAmount}
                         onChange={(e) => setCardAmount(Number(e.target.value))}
                       />
                     </div>
@@ -537,7 +537,7 @@ export function DeliveryCollectionView({ onBack }: Props) {
                       <input
                         type="number"
                         className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white font-bold focus:outline-none focus:border-purple-500"
-                        value={upiAmount || ''}
+                        value={upiAmount === 0 ? '' : upiAmount}
                         onChange={(e) => setUpiAmount(Number(e.target.value))}
                       />
                     </div>

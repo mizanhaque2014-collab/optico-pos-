@@ -12,7 +12,7 @@ export function ManualItemSection({ onAdd }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [itemName, setItemName] = useState('');
   const [description, setDescription] = useState('');
-  const [qty, setQty] = useState(1);
+  const [qty, setQty] = useState(0);
   const [price, setPrice] = useState(0);
   const [discount, setDiscount] = useState(0);
 
@@ -64,15 +64,15 @@ export function ManualItemSection({ onAdd }: Props) {
         </div>
         <div className="col-span-1">
           <label className="text-[10px] text-white/40 block mb-1 uppercase font-bold tracking-wider">Quantity</label>
-          <input type="number" min="1" className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white font-bold focus:border-amber-500 focus:outline-none" value={qty} onChange={e => setQty(Number(e.target.value))} />
+          <input type="number" min="1" className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white font-bold focus:border-amber-500 focus:outline-none" value={qty === 0 ? '' : qty} onChange={e => setQty(Number(e.target.value))} />
         </div>
         <div className="col-span-1">
           <label className="text-[10px] text-white/40 block mb-1 uppercase font-bold tracking-wider">Price (₹)</label>
-          <input type="number" min="0" className="w-full bg-cyan-900/40 border border-cyan-500/30 rounded-lg px-3 py-2 font-black text-cyan-400 focus:outline-none focus:border-cyan-400" value={price} onChange={e => setPrice(Number(e.target.value))} />
+          <input type="number" min="0" className="w-full bg-cyan-900/40 border border-cyan-500/30 rounded-lg px-3 py-2 font-black text-cyan-400 focus:outline-none focus:border-cyan-400" value={price === 0 ? '' : price} onChange={e => setPrice(Number(e.target.value))} />
         </div>
         <div className="col-span-1">
           <label className="text-[10px] text-white/40 block mb-1 uppercase font-bold tracking-wider">Discount (₹)</label>
-          <input type="number" min="0" className="w-full bg-rose-900/20 border border-rose-500/30 rounded-lg px-3 py-2 font-black text-rose-400 focus:outline-none focus:border-rose-400" value={discount} onChange={e => setDiscount(Number(e.target.value))} />
+          <input type="number" min="0" className="w-full bg-rose-900/20 border border-rose-500/30 rounded-lg px-3 py-2 font-black text-rose-400 focus:outline-none focus:border-rose-400" value={discount === 0 ? '' : discount} onChange={e => setDiscount(Number(e.target.value))} />
         </div>
       </div>
 

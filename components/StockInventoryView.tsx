@@ -956,8 +956,8 @@ export function StockInventoryView({ onBack }: Props) {
                     <input
                       type="number"
                       min={1}
-                      value={adjQuantity}
-                      onChange={(e) => setAdjQuantity(Math.max(1, Number(e.target.value)))}
+                      value={adjQuantity === 0 ? '' : adjQuantity}
+                      onChange={(e) => setAdjQuantity(e.target.value === '' ? 0 : Number(e.target.value))}
                       className="w-full bg-slate-900 text-white font-mono text-center text-sm px-3 py-2 rounded-lg border border-white/10 font-bold focus:outline-none focus:border-cyan-500"
                       required
                     />
@@ -1129,8 +1129,8 @@ export function StockInventoryView({ onBack }: Props) {
                     <input
                       type="number"
                       min={1}
-                      value={transferQty}
-                      onChange={(e) => setTransferQty(Math.max(1, Number(e.target.value)))}
+                      value={transferQty === 0 ? '' : transferQty}
+                      onChange={(e) => setTransferQty(e.target.value === '' ? 0 : Number(e.target.value))}
                       className="w-full bg-slate-900 text-white font-mono text-center text-sm px-3 py-2 rounded-lg border border-white/10 font-bold focus:outline-none focus:border-cyan-500"
                       required
                     />
@@ -1353,9 +1353,9 @@ export function StockInventoryView({ onBack }: Props) {
                       type="number"
                       min={1}
                       placeholder="1"
-                      value={newProduct.quantity}
+                      value={newProduct.quantity === 0 ? '' : newProduct.quantity}
                       disabled={barcodeScanMode}
-                      onChange={(e) => setNewProduct({ ...newProduct, quantity: Math.max(1, Number(e.target.value)) })}
+                      onChange={(e) => setNewProduct({ ...newProduct, quantity: e.target.value === '' ? 0 : Number(e.target.value) })}
                       className="w-full bg-slate-900 text-white text-xs px-3 py-2 rounded-lg border border-white/10 font-bold focus:outline-none focus:border-cyan-500 disabled:opacity-50"
                     />
                   </div>

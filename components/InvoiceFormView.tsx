@@ -476,7 +476,7 @@ export function InvoiceFormView({ type, onBack, initialCustomer }: Props) {
                       max={grandTotal}
                       disabled={paymentMode === 'Mixed'} 
                       className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-lg font-black text-emerald-400 text-center focus:outline-none focus:border-emerald-500 disabled:opacity-50"
-                      value={advanceAmount}
+                      value={advanceAmount === 0 ? '' : advanceAmount}
                       onChange={e => {
                         const val = Number(e.target.value);
                         setAdvanceAmount(val);
@@ -611,7 +611,7 @@ export function InvoiceFormView({ type, onBack, initialCustomer }: Props) {
                         <input 
                           type="number" 
                           className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1 text-right font-black text-cyan-400 focus:outline-none focus:border-cyan-500" 
-                          value={paymentDetail.cash} 
+                          value={paymentDetail.cash === 0 ? '' : paymentDetail.cash} 
                           onChange={e => {
                             const val = Number(e.target.value);
                             setPaymentDetail({...paymentDetail, cash: val});
@@ -623,7 +623,7 @@ export function InvoiceFormView({ type, onBack, initialCustomer }: Props) {
                         <input 
                           type="number" 
                           className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1 text-right font-black text-cyan-400 focus:outline-none focus:border-cyan-500" 
-                          value={paymentDetail.upi} 
+                          value={paymentDetail.upi === 0 ? '' : paymentDetail.upi} 
                           onChange={e => {
                             const val = Number(e.target.value);
                             setPaymentDetail({...paymentDetail, upi: val});
@@ -635,7 +635,7 @@ export function InvoiceFormView({ type, onBack, initialCustomer }: Props) {
                         <input 
                           type="number" 
                           className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1 text-right font-black text-cyan-400 focus:outline-none focus:border-cyan-500" 
-                          value={paymentDetail.card} 
+                          value={paymentDetail.card === 0 ? '' : paymentDetail.card} 
                           onChange={e => {
                             const val = Number(e.target.value);
                             setPaymentDetail({...paymentDetail, card: val});
