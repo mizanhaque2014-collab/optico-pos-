@@ -3,6 +3,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Customer, Invoice, OrderItem, Prescription, PaymentMode, PaymentDetail } from '@/lib/types';
 import { useStore } from '@/lib/store';
+import { shopConfig } from '@/lib/shopConfig';
 import { Receipt, Phone, MapPin, Award, FileText, Send, Printer, Download, CreditCard, CheckCircle } from 'lucide-react';
 
 interface OpticalInvoiceA5Props {
@@ -129,10 +130,10 @@ export function OpticalInvoiceA5({
   };
 
   const handleShareWhatsApp = () => {
-    let text = `*INVOICE: ${invoiceNum}*\n*Shop:* VISION CRAFT OPTICALS\n*Customer:* ${clientCustomer.name}\n*Total Bill:* ₹${finalGrandTotal}\n*Paid:* ₹${finalAdvance}\n*Balance:* ₹${finalBalance}\nThank you for your business!`;
+    let text = `*INVOICE: ${invoiceNum}*\n*Shop:* ${shopConfig.shopName}\n*Customer:* ${clientCustomer.name}\n*Total Bill:* ₹${finalGrandTotal}\n*Paid:* ₹${finalAdvance}\n*Balance:* ₹${finalBalance}\nThank you for your business!`;
     if (invoice?.status === 'Delivered' && invoice?.type === 'Sales Order') {
       const collected = invoice.finalCollectionPaymentDetail?.total || (finalGrandTotal - finalAdvance);
-      text = `*DELIVERY INVOICE: ${invoiceNum}*\n*Shop:* VISION CRAFT OPTICALS\n*Customer:* ${clientCustomer.name}\n*Total Bill:* ₹${finalGrandTotal}\n*Advance Paid:* ₹${finalAdvance}\n*Balance Collected:* ₹${collected}\n*Remaining Balance:* ₹0 (PAID)\n*Delivery Date:* ${invoice.deliveryDate ? new Date(invoice.deliveryDate).toLocaleString('en-IN') : 'N/A'}\n*Prescription:* ${clientPrescription ? `OD: SPH ${clientPrescription.rightEye?.sph || '-'} CYL ${clientPrescription.rightEye?.cyl || '-'}, OS: SPH ${clientPrescription.leftEye?.sph || '-'} CYL ${clientPrescription.leftEye?.cyl || '-'}` : 'N/A'}\nThank you for your business!`;
+      text = `*DELIVERY INVOICE: ${invoiceNum}*\n*Shop:* ${shopConfig.shopName}\n*Customer:* ${clientCustomer.name}\n*Total Bill:* ₹${finalGrandTotal}\n*Advance Paid:* ₹${finalAdvance}\n*Balance Collected:* ₹${collected}\n*Remaining Balance:* ₹0 (PAID)\n*Delivery Date:* ${invoice.deliveryDate ? new Date(invoice.deliveryDate).toLocaleString('en-IN') : 'N/A'}\n*Prescription:* ${clientPrescription ? `OD: SPH ${clientPrescription.rightEye?.sph || '-'} CYL ${clientPrescription.rightEye?.cyl || '-'}, OS: SPH ${clientPrescription.leftEye?.sph || '-'} CYL ${clientPrescription.leftEye?.cyl || '-'}` : 'N/A'}\nThank you for your business!`;
     }
     const encoded = encodeURIComponent(text);
     window.open(`https://api.whatsapp.com/send?phone=${clientCustomer.mobile}&text=${encoded}`, '_blank');
@@ -244,12 +245,12 @@ export function OpticalInvoiceA5({
                   </svg>
                 </div>
                 <div>
-                  <h1 className="text-sm font-black uppercase text-slate-900 tracking-wider">VISION CRAFT OPTICALS</h1>
+                  <h1 className="text-sm font-black uppercase text-slate-900 tracking-wider">{shopConfig.shopName}</h1>
                   <p className="text-[8px] text-slate-500 font-medium flex items-center gap-1">
-                    <MapPin size={10} className="text-slate-400" /> Shop No 4, Royal Plaza, Market Rd, New Delhi
+                    <MapPin size={10} className="text-slate-400" /> {shopConfig.addressLine1}, {shopConfig.addressLine2}
                   </p>
                   <p className="text-[8px] text-slate-500 font-medium flex items-center gap-1">
-                    <Phone size={10} className="text-slate-400" /> +91 98765 43210 | GSTIN: 07AAAAA1111A1Z1
+                    <Phone size={10} className="text-slate-400" /> +91 {shopConfig.mobile} {shopConfig.whatsapp ? `| WA: +91 ${shopConfig.whatsapp}` : ''} {shopConfig.gstin ? `| GSTIN: ${shopConfig.gstin}` : ''}
                   </p>
                 </div>
               </div>
@@ -549,7 +550,7 @@ export function OpticalInvoiceA5({
               {/* Signature Line */}
               <div className="w-24 border-t border-slate-350 pt-2 text-center">
                 <p className="font-extrabold uppercase text-slate-900 tracking-wider text-[6.5px]">Authorized Signature</p>
-                <p className="text-[5px] text-slate-400">Vision Craft Opticals</p>
+                <p className="text-[5px] text-slate-400">{shopConfig.shopName}</p>
               </div>
             </div>
           </div>

@@ -10,6 +10,7 @@ import {
   Plus, BookOpen, Mail, Clipboard, ArrowUpRight, HelpCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { shopConfig } from '@/lib/shopConfig';
 
 interface Props {
   onBack: () => void;
@@ -94,12 +95,12 @@ export function WhatsAppMarketingView({ onBack }: Props) {
 
   // Predefined marketing campaigns metadata dictionaries matching STEP 1 EXACTLY
   const CAMPAIGN_TEMPLATES: Record<string, string> = {
-    '👁 Eye Test Reminder': 'Dear {CustomerName},\n\nIt has been some time since your last eye examination.\n\nPlease visit us for a comprehensive eye test.\n\nRegards,\nVision Spring Optical',
-    '📦 Contact Lens Refill': 'Dear {CustomerName},\n\nYour contact lens replacement date may be approaching.\n\nPlease visit us for your next refill pack of soft daily/monthly lenses.\n\nRegards,\nVision Spring Optical',
-    '🎉 Festival Offer': '🎉 Special Festive Greetings from {StoreName}!\n\nDear {CustomerName},\n\nCelebrate this festive season with an exclusive 25% DISCOUNT on all Branded Frames and Sunglasses! Treat yourself and your loved ones to clearer vision. Show this message at any of our branches to redeem your offer.\n\nRegards,\nVision Spring Optical',
-    '🎁 Discount Offer': '🎁 Exclusive VIP Privilege discount from {StoreName}!\n\nDear {CustomerName},\n\nEnjoy a flat ₹1,000 Off on your next purchase of Premium Anti-Glare Lenses. Show this message during billing. Last purchase: {LastPurchaseDate}. Visit today!\n\nRegards,\nVision Spring Optical',
-    '⭐ NPS Feedback': '⭐ Your feedback means the world to us!\n\nDear {CustomerName},\n\nThank you for choosing {StoreName}.\n\nPlease rate your optical purchase & customer experience from 0 to 10 by clicking our smart response panel.\n\nRegards,\nVision Spring Optical',
-    '📢 Custom Campaign': '📢 Greetings from {StoreName}!\n\nDear {CustomerName},\n\nWe hope you are having an exceptional day! We have amazing customized eyeglasses and customized prescription solutions waiting for you today. Drop by for a cup of tea!\n\nRegards,\nVision Spring Optical'
+    '👁 Eye Test Reminder': 'Dear {CustomerName},\n\nIt has been some time since your last eye examination.\n\nPlease visit us for a comprehensive eye test.\n\nRegards,\n{StoreName}',
+    '📦 Contact Lens Refill': 'Dear {CustomerName},\n\nYour contact lens replacement date may be approaching.\n\nPlease visit us for your next refill pack of soft daily/monthly lenses.\n\nRegards,\n{StoreName}',
+    '🎉 Festival Offer': '🎉 Special Festive Greetings from {StoreName}!\n\nDear {CustomerName},\n\nCelebrate this festive season with an exclusive 25% DISCOUNT on all Branded Frames and Sunglasses! Treat yourself and your loved ones to clearer vision. Show this message at any of our branches to redeem your offer.\n\nRegards,\n{StoreName}',
+    '🎁 Discount Offer': '🎁 Exclusive VIP Privilege discount from {StoreName}!\n\nDear {CustomerName},\n\nEnjoy a flat ₹1,000 Off on your next purchase of Premium Anti-Glare Lenses. Show this message during billing. Last purchase: {LastPurchaseDate}. Visit today!\n\nRegards,\n{StoreName}',
+    '⭐ NPS Feedback': '⭐ Your feedback means the world to us!\n\nDear {CustomerName},\n\nThank you for choosing {StoreName}.\n\nPlease rate your optical purchase & customer experience from 0 to 10 by clicking our smart response panel.\n\nRegards,\n{StoreName}',
+    '📢 Custom Campaign': '📢 Greetings from {StoreName}!\n\nDear {CustomerName},\n\nWe hope you are having an exceptional day! We have amazing customized eyeglasses and customized prescription solutions waiting for you today. Drop by for a cup of tea!\n\nRegards,\n{StoreName}'
   };
 
   // Pre-seed mock data lists to populate logs securely if storage is empty
@@ -365,7 +366,7 @@ export function WhatsAppMarketingView({ onBack }: Props) {
     const validInvs = [...custInvs].sort((a,b) => b.createdAt - a.createdAt);
     const lastInvoice = validInvs[0];
 
-    const storeName = "Vision Care Optical India";
+    const storeName = shopConfig.shopName;
     const offerName = selectedCampaignType;
     const clientName = cust.name;
     const clientPhone = cust.mobile;
@@ -618,7 +619,7 @@ export function WhatsAppMarketingView({ onBack }: Props) {
         <div class="logo-header">
           <div>
             <h1>Customer NPS Survey & Loyalty Ledger</h1>
-            <span style="font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: bold;">Vision Care Optical Group</span>
+            <span style="font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: bold;">{shopConfig.shopName}</span>
           </div>
           <div style="text-align: right; font-size: 11px; font-weight: bold; color: #475569;">
             Date Compiled: ${new Date().toLocaleDateString('en-IN')}
@@ -658,7 +659,7 @@ export function WhatsAppMarketingView({ onBack }: Props) {
         </table>
 
         <div class="footer">
-          Vision Care Business Intelligence Module • Confidantial Management Report • System Ref: VC-NPS-AUDIT
+          Business Intelligence Module • Confidantial Management Report • System Ref: NPS-AUDIT
         </div>
         <script>window.onload = function() { window.print(); }</script>
       </body>
@@ -1683,7 +1684,7 @@ export function WhatsAppMarketingView({ onBack }: Props) {
             >
               <div className="p-4 bg-black/45 rounded-xl border border-white/5 space-y-3 text-white/70 leading-relaxed">
                 <p className="font-black text-cyan-400 uppercase text-xs">🚀 Campaign Triggers Best Practices</p>
-                <p>Vision Care POS automatically processes customer purchase intervals to guide optical showroom operators:</p>
+                <p>The POS automatically processes customer purchase intervals to guide optical showroom operators:</p>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-3 bg-white/5 rounded-lg border border-white/5">

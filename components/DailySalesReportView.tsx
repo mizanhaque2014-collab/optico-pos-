@@ -9,6 +9,7 @@ import {
   ChevronRight, ShoppingBag, DollarSign, Wallet, Clock, User, Phone, CheckCircle, AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { shopConfig } from '@/lib/shopConfig';
 
 interface Props {
   onBack: () => void;
@@ -706,7 +707,7 @@ Total Business:
     const subject = `Daily Business Performance Report - ${new Date().toLocaleDateString('en-IN')}`;
     const body = `Hi Team,
 
-Below is the structured business report for Optical Store (${selectedBranch === 'all' ? 'All Combined Branches' : selectedBranch}).
+Below is the structured business report for ${shopConfig.shopName} (${selectedBranch === 'all' ? 'All Combined Branches' : selectedBranch}).
 
 --- SALES SUMMARY ---
 Direct Sale Amount: ₹${reportStats.directSalesAmount.toLocaleString('en-IN')}
@@ -725,7 +726,7 @@ Pending Orders: ${reportStats.pendingOrdersCount} units (Value: ₹${reportStats
 Pending Uncollected Bills: ${reportStats.pendingPaymentsCount} (Value: ₹${reportStats.pendingPaymentsValue.toLocaleString('en-IN')})
 
 Best Regards,
-Store Audit Officer`;
+${shopConfig.shopName} Audit Officer`;
     
     window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
   };
@@ -776,7 +777,7 @@ Store Audit Officer`;
     const printHtml = `
       <html>
       <head>
-        <title>Professional Optical Store performance Audit</title>
+        <title>Professional ${shopConfig.shopName} performance Audit</title>
         <style>
           body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #1e293b; padding: 40px; }
           .header { display: flex; justify-content: space-between; border-b: 4px solid #06b6d4; padding-bottom: 20px; margin-bottom: 30px; }
