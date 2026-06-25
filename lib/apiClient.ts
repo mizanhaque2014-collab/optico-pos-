@@ -48,6 +48,13 @@ export async function apiCall<T>(action: string, argPayload?: any): Promise<T> {
     }
   } catch (error) {
     clearTimeout(timeoutId);
+    
+    // Check if it's a "Failed to fetch" error (usually CORS or network issue)
+    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+      console.warn("API WARNING: Could not connect to Google Apps Script. Working in offline mode. Ensure Apps Script is deployed with 'Who has access: Anyone'.");
+      throw new Error("Network error: Could not connect to the API. Working in offline mode.");
+    }
+    
     console.error("API ERROR", error);
     throw error;
   }
