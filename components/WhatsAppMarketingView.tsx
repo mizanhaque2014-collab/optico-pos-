@@ -221,7 +221,7 @@ export function WhatsAppMarketingView({ onBack }: Props) {
       if (searchTerm.trim()) {
         const q = searchTerm.toLowerCase();
         const matchesName = item.customer.name.toLowerCase().includes(q);
-        const matchesMobile = item.customer.mobile.includes(q);
+        const matchesMobile = item.customer.mobile ? String(item.customer.mobile).includes(q) : false;
         const matchesID = item.customer.id.toLowerCase().includes(q);
         if (!matchesName && !matchesMobile && !matchesID) return false;
       }

@@ -23,7 +23,7 @@ export function CustomersView({ onBack, onNavigateTo }: Props) {
     const q = search.toLowerCase();
     return customers.filter(c => 
       c.name.toLowerCase().includes(q) || 
-      c.mobile.includes(q)
+      (c.mobile && String(c.mobile).includes(q))
     );
   }, [search, customers]);
 

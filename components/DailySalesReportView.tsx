@@ -458,8 +458,8 @@ export function DailySalesReportView({ onBack }: Props) {
     const q = customerSearchQuery.toLowerCase();
     return customers.filter(c => 
       c.name.toLowerCase().includes(q) || 
-      c.mobile.includes(q) || 
-      c.id.toLowerCase().includes(q)
+      (c.mobile && String(c.mobile).includes(q)) || 
+      (c.id && c.id.toLowerCase().includes(q))
     );
   }, [customerSearchQuery, customers]);
 

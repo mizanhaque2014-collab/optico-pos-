@@ -54,7 +54,7 @@ export function DeliveryCollectionView({ onBack }: Props) {
     return pendingOrders.filter(i => {
       const isInvoiceMatch = i.invoiceNumber.toLowerCase().includes(q);
       const cust = customers.find(c => c.id === i.customerId);
-      const isMobileMatch = cust ? cust.mobile.includes(q) : false;
+      const isMobileMatch = cust && cust.mobile ? String(cust.mobile).includes(q) : false;
       const isNameMatch = cust ? cust.name.toLowerCase().includes(q) : false;
       return isInvoiceMatch || isMobileMatch || isNameMatch;
     });
