@@ -310,6 +310,42 @@ function doPost(e) {
           result = createCustomer(customer);
         }
         break;
+      case 'createUser':
+        result = createUser(payload.user || payload);
+        break;
+      case 'updateUser':
+        result = updateUser(payload.user || payload);
+        break;
+      case 'deleteUser':
+        result = deleteUser(payload.userId || payload.id || e.parameter.userId || e.parameter.id);
+        break;
+      case 'getUserById':
+        result = getUserById(payload.userId || payload.id || e.parameter.userId || e.parameter.id);
+        break;
+      case 'searchUser':
+        result = searchUser(payload.query || e.parameter.query);
+        break;
+      case 'getUsers':
+        result = getUsers();
+        break;
+      case 'createCompany':
+        result = createCompany(payload.company || payload);
+        break;
+      case 'updateCompany':
+        result = updateCompany(payload.company || payload);
+        break;
+      case 'deleteCompany':
+        result = deleteCompany(payload.companyId || payload.id || e.parameter.companyId || e.parameter.id);
+        break;
+      case 'getCompanyById':
+        result = getCompanyById(payload.companyId || payload.id || e.parameter.companyId || e.parameter.id);
+        break;
+      case 'searchCompany':
+        result = searchCompany(payload.query || e.parameter.query);
+        break;
+      case 'getCompanies':
+        result = getCompanies();
+        break;
       default:
         throw new Error("Unsupported action: " + action);
     }
@@ -348,6 +384,24 @@ function doGet(e) {
       case 'getCustomers':
         result = getCustomers();
         break;
+      case 'getUserById':
+        result = getUserById(e.parameter.userId || e.parameter.id);
+        break;
+      case 'searchUser':
+        result = searchUser(e.parameter.query);
+        break;
+      case 'getUsers':
+        result = getUsers();
+        break;
+      case 'getCompanyById':
+        result = getCompanyById(e.parameter.companyId || e.parameter.id);
+        break;
+      case 'searchCompany':
+        result = searchCompany(e.parameter.query);
+        break;
+      case 'getCompanies':
+        result = getCompanies();
+        break;
       default:
         throw new Error("Unsupported GET action: " + action);
     }
@@ -364,3 +418,530 @@ function doGet(e) {
     })).setMimeType(ContentService.MimeType.JSON);
   }
 }
+
+// Helper to get or create the Users sheet with standard columns
+function getUsersSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("Users");
+  if (!sheet) {
+    sheet = ss.insertSheet("Users");
+    // Write default header columns
+    sheet.appendRow(["UserID", "CompanyID", "BranchID", "FullName", "Username", "Password", "Role", "Mobile", "Email", "Status", "CreatedDate", "UpdatedDate"]);
+  }
+  return sheet;
+}
+
+// Map User sheet header names to exact JavaScript property names
+function mapUserHeaderToKey(header) {
+  var clean = header.toString().trim().toLowerCase();
+  if (clean === 'userid' || clean === 'id') return 'id';
+  if (clean === 'companyid') return 'companyId';
+  if (clean === 'branchid') return 'branchId';
+  if (clean === 'fullname') return 'fullName';
+  if (clean === 'username') return 'username';
+  if (clean === 'password') return 'password';
+  if (clean === 'role') return 'role';
+  if (clean === 'mobile') return 'mobile';
+  if (clean === 'email') return 'email';
+  if (clean === 'status') return 'status';
+  if (clean === 'createddate' || clean === 'created_date') return 'createdDate';
+  if (clean === 'updateddate' || clean === 'updated_date') return 'updatedDate';
+  return clean;
+}
+
+// Serialize user object fields into spreadsheet row indices
+function userToRow(user, headers) {
+  var row = [];
+  for (var i = 0; i < headers.length; i++) {
+    var key = mapUserHeaderToKey(headers[i]);
+    var val = user[key];
+    if (val === undefined) val = "";
+    row.push(val);
+  }
+  return row;
+}
+
+/**
+ * Endpoint action: getUsers (Read All Users)
+ */
+function getUsers() {
+  var sheet = getUsersSheet();
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return [];
+  
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
+  var users = [];
+  
+  for (var i = 0; i < values.length; i++) {
+    var row = values[i];
+    var user = {};
+    for (var j = 0; j < headers.length; j++) {
+      var header = headers[j];
+      var key = mapUserHeaderToKey(header);
+      user[key] = row[j];
+    }
+    users.push(user);
+  }
+  return users;
+}
+
+/**
+ * Endpoint action: createUser
+ */
+function createUser(user) {
+  if (!user) {
+    throw new Error("No user data provided");
+  }
+  if (!user.fullName) {
+    throw new Error("Full name is required");
+  }
+  if (!user.username) {
+    throw new Error("Username is required");
+  }
+  
+  var sheet = getUsersSheet();
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  
+  var usernameToCreate = user.username.toString().trim().toLowerCase();
+  
+  // Validation: Check for duplicate username in the spreadsheet
+  var allUsers = getUsers();
+  var duplicate = allUsers.find(function(u) {
+    return u.username && u.username.toString().trim().toLowerCase() === usernameToCreate;
+  });
+  
+  if (duplicate) {
+    throw new Error("A user with username '" + user.username + "' already exists in the system.");
+  }
+  
+  // Automatically generate UserID if empty
+  if (!user.id) {
+    user.id = "USER-" + Date.now() + Math.floor(Math.random() * 1000);
+  }
+  
+  // Set CreatedDate and UpdatedDate if missing
+  if (!user.createdDate) {
+    user.createdDate = Date.now();
+  }
+  if (!user.updatedDate) {
+    user.updatedDate = Date.now();
+  }
+  
+  if (!user.status) {
+    user.status = "Active";
+  }
+  
+  var rowData = userToRow(user, headers);
+  sheet.appendRow(rowData);
+  
+  return user;
+}
+
+/**
+ * Endpoint action: updateUser
+ */
+function updateUser(user) {
+  if (!user || !user.id) {
+    throw new Error("User ID is required for updating details.");
+  }
+  
+  var sheet = getUsersSheet();
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) {
+    throw new Error("User with ID " + user.id + " not found (sheet is empty).");
+  }
+  
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
+  
+  var targetRowIndex = -1;
+  for (var i = 0; i < values.length; i++) {
+    var row = values[i];
+    var idColIdx = -1;
+    for (var j = 0; j < headers.length; j++) {
+      if (mapUserHeaderToKey(headers[j]) === 'id') {
+        idColIdx = j;
+        break;
+      }
+    }
+    
+    if (idColIdx !== -1 && row[idColIdx].toString() === user.id.toString()) {
+      targetRowIndex = i + 2; // +2 for 1-based index and skipping header row
+      break;
+    }
+  }
+  
+  if (targetRowIndex === -1) {
+    throw new Error("User with ID '" + user.id + "' not found.");
+  }
+  
+  // Check duplicate username if username is being changed
+  if (user.username) {
+    var usernameToUpdate = user.username.toString().trim().toLowerCase();
+    var allUsers = getUsers();
+    var duplicate = allUsers.find(function(u) {
+      return u.id !== user.id && u.username && u.username.toString().trim().toLowerCase() === usernameToUpdate;
+    });
+    if (duplicate) {
+      throw new Error("Another user with username '" + user.username + "' already exists.");
+    }
+  }
+  
+  // Merge with existing user to preserve non-submitted fields
+  var existingUser = getUserById(user.id);
+  var mergedUser = {};
+  for (var key in existingUser) {
+    mergedUser[key] = existingUser[key];
+  }
+  for (var key in user) {
+    if (user[key] !== undefined) {
+      mergedUser[key] = user[key];
+    }
+  }
+  
+  mergedUser.updatedDate = Date.now();
+  
+  var rowData = userToRow(mergedUser, headers);
+  sheet.getRange(targetRowIndex, 1, 1, headers.length).setValues([rowData]);
+  
+  return mergedUser;
+}
+
+/**
+ * Endpoint action: deleteUser
+ */
+function deleteUser(id) {
+  if (!id) {
+    throw new Error("User ID is required for deletion.");
+  }
+  
+  var sheet = getUsersSheet();
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) {
+    throw new Error("User with ID " + id + " not found.");
+  }
+  
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
+  
+  var targetRowIndex = -1;
+  for (var i = 0; i < values.length; i++) {
+    var row = values[i];
+    var idColIdx = -1;
+    for (var j = 0; j < headers.length; j++) {
+      if (mapUserHeaderToKey(headers[j]) === 'id') {
+        idColIdx = j;
+        break;
+      }
+    }
+    
+    if (idColIdx !== -1 && row[idColIdx].toString() === id.toString()) {
+      targetRowIndex = i + 2;
+      break;
+    }
+  }
+  
+  if (targetRowIndex === -1) {
+    throw new Error("User with ID '" + id + "' not found.");
+  }
+  
+  sheet.deleteRow(targetRowIndex);
+  return { id: id, deleted: true };
+}
+
+/**
+ * Endpoint action: getUserById
+ */
+function getUserById(id) {
+  if (!id) {
+    throw new Error("User ID is required.");
+  }
+  var all = getUsers();
+  var user = all.find(function(u) {
+    return u.id && u.id.toString() === id.toString();
+  });
+  if (!user) {
+    throw new Error("User not found with ID: " + id);
+  }
+  return user;
+}
+
+/**
+ * Endpoint action: searchUser
+ */
+function searchUser(query) {
+  if (!query) return [];
+  var searchStr = query.toString().toLowerCase().trim();
+  var all = getUsers();
+  return all.filter(function(u) {
+    return (u.fullName && u.fullName.toString().toLowerCase().includes(searchStr)) ||
+           (u.username && u.username.toString().toLowerCase().includes(searchStr)) ||
+           (u.email && u.email.toString().toLowerCase().includes(searchStr)) ||
+           (u.mobile && u.mobile.toString().includes(searchStr)) ||
+           (u.id && u.id.toString().toLowerCase().includes(searchStr));
+  });
+}
+
+// Helper to get or create the Companies sheet with standard columns
+function getCompaniesSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("Companies");
+  if (!sheet) {
+    sheet = ss.insertSheet("Companies");
+    // Write default header columns
+    sheet.appendRow(["CompanyID", "CompanyName", "OwnerName", "Mobile", "Email", "Address", "GSTNumber", "SubscriptionPlan", "SubscriptionStartDate", "SubscriptionEndDate", "Status", "CreatedDate", "UpdatedDate"]);
+  }
+  return sheet;
+}
+
+// Map column header names to exact JavaScript camelCase property names
+function mapCompanyHeaderToKey(header) {
+  var clean = header.toString().trim().toLowerCase();
+  if (clean === 'companyid' || clean === 'id') return 'id';
+  if (clean === 'companyname') return 'companyName';
+  if (clean === 'ownername') return 'ownerName';
+  if (clean === 'mobile') return 'mobile';
+  if (clean === 'email') return 'email';
+  if (clean === 'address') return 'address';
+  if (clean === 'gstnumber') return 'gstNumber';
+  if (clean === 'subscriptionplan') return 'subscriptionPlan';
+  if (clean === 'subscriptionstartdate') return 'subscriptionStartDate';
+  if (clean === 'subscriptionenddate') return 'subscriptionEndDate';
+  if (clean === 'status') return 'status';
+  if (clean === 'createddate' || clean === 'created_date') return 'createdDate';
+  if (clean === 'updateddate' || clean === 'updated_date') return 'updatedDate';
+  return clean;
+}
+
+// Serialize company object fields into spreadsheet row indices
+function companyToRow(company, headers) {
+  var row = [];
+  for (var i = 0; i < headers.length; i++) {
+    var key = mapCompanyHeaderToKey(headers[i]);
+    var val = company[key];
+    if (val === undefined) val = "";
+    row.push(val);
+  }
+  return row;
+}
+
+/**
+ * Endpoint action: getCompanies (Read All Companies)
+ */
+function getCompanies() {
+  var sheet = getCompaniesSheet();
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return [];
+  
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
+  var companies = [];
+  
+  for (var i = 0; i < values.length; i++) {
+    var row = values[i];
+    var company = {};
+    for (var j = 0; j < headers.length; j++) {
+      var header = headers[j];
+      var key = mapCompanyHeaderToKey(header);
+      company[key] = row[j];
+    }
+    companies.push(company);
+  }
+  return companies;
+}
+
+/**
+ * Endpoint action: createCompany
+ */
+function createCompany(company) {
+  if (!company) {
+    throw new Error("No company data provided");
+  }
+  if (!company.companyName) {
+    throw new Error("Company Name is required");
+  }
+  
+  var sheet = getCompaniesSheet();
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  
+  var nameToCreate = company.companyName.toString().trim().toLowerCase();
+  
+  // Validation: Check for duplicate company name in the spreadsheet
+  var allCompanies = getCompanies();
+  var duplicate = allCompanies.find(function(c) {
+    return c.companyName && c.companyName.toString().trim().toLowerCase() === nameToCreate;
+  });
+  
+  if (duplicate) {
+    throw new Error("A company with name '" + company.companyName + "' already exists in the system.");
+  }
+  
+  // Automatically generate CompanyID if empty
+  if (!company.id) {
+    company.id = "COMP-" + Date.now() + Math.floor(Math.random() * 1000);
+  }
+  
+  // Set CreatedDate and UpdatedDate if missing
+  if (!company.createdDate) {
+    company.createdDate = Date.now();
+  }
+  if (!company.updatedDate) {
+    company.updatedDate = Date.now();
+  }
+  
+  if (!company.status) {
+    company.status = "Active";
+  }
+  
+  var rowData = companyToRow(company, headers);
+  sheet.appendRow(rowData);
+  
+  return company;
+}
+
+/**
+ * Endpoint action: updateCompany
+ */
+function updateCompany(company) {
+  if (!company || !company.id) {
+    throw new Error("Company ID is required for updating details.");
+  }
+  
+  var sheet = getCompaniesSheet();
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) {
+    throw new Error("Company with ID " + company.id + " not found (sheet is empty).");
+  }
+  
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
+  
+  var targetRowIndex = -1;
+  for (var i = 0; i < values.length; i++) {
+    var row = values[i];
+    var idColIdx = -1;
+    for (var j = 0; j < headers.length; j++) {
+      if (mapCompanyHeaderToKey(headers[j]) === 'id') {
+        idColIdx = j;
+        break;
+      }
+    }
+    
+    if (idColIdx !== -1 && row[idColIdx].toString() === company.id.toString()) {
+      targetRowIndex = i + 2; // +2 for 1-based index and skipping header row
+      break;
+    }
+  }
+  
+  if (targetRowIndex === -1) {
+    throw new Error("Company with ID '" + company.id + "' not found.");
+  }
+  
+  // Check duplicate companyName if companyName is being changed
+  if (company.companyName) {
+    var nameToUpdate = company.companyName.toString().trim().toLowerCase();
+    var allCompanies = getCompanies();
+    var duplicate = allCompanies.find(function(c) {
+      return c.id !== company.id && c.companyName && c.companyName.toString().trim().toLowerCase() === nameToUpdate;
+    });
+    if (duplicate) {
+      throw new Error("Another company with name '" + company.companyName + "' already exists.");
+    }
+  }
+  
+  // Merge with existing company to preserve non-submitted fields
+  var existingCompany = getCompanyById(company.id);
+  var mergedCompany = {};
+  for (var key in existingCompany) {
+    mergedCompany[key] = existingCompany[key];
+  }
+  for (var key in company) {
+    if (company[key] !== undefined) {
+      mergedCompany[key] = company[key];
+    }
+  }
+  
+  mergedCompany.updatedDate = Date.now();
+  
+  var rowData = companyToRow(mergedCompany, headers);
+  sheet.getRange(targetRowIndex, 1, 1, headers.length).setValues([rowData]);
+  
+  return mergedCompany;
+}
+
+/**
+ * Endpoint action: deleteCompany
+ */
+function deleteCompany(id) {
+  if (!id) {
+    throw new Error("Company ID is required for deletion.");
+  }
+  
+  var sheet = getCompaniesSheet();
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) {
+    throw new Error("Company with ID " + id + " not found.");
+  }
+  
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
+  
+  var targetRowIndex = -1;
+  for (var i = 0; i < values.length; i++) {
+    var row = values[i];
+    var idColIdx = -1;
+    for (var j = 0; j < headers.length; j++) {
+      if (mapCompanyHeaderToKey(headers[j]) === 'id') {
+        idColIdx = j;
+        break;
+      }
+    }
+    
+    if (idColIdx !== -1 && row[idColIdx].toString() === id.toString()) {
+      targetRowIndex = i + 2;
+      break;
+    }
+  }
+  
+  if (targetRowIndex === -1) {
+    throw new Error("Company with ID '" + id + "' not found.");
+  }
+  
+  sheet.deleteRow(targetRowIndex);
+  return { id: id, deleted: true };
+}
+
+/**
+ * Endpoint action: getCompanyById
+ */
+function getCompanyById(id) {
+  if (!id) {
+    throw new Error("Company ID is required.");
+  }
+  var all = getCompanies();
+  var company = all.find(function(c) {
+    return c.id && c.id.toString() === id.toString();
+  });
+  if (!company) {
+    throw new Error("Company not found with ID: " + id);
+  }
+  return company;
+}
+
+/**
+ * Endpoint action: searchCompany
+ */
+function searchCompany(query) {
+  if (!query) return [];
+  var searchStr = query.toString().toLowerCase().trim();
+  var all = getCompanies();
+  return all.filter(function(c) {
+    return (c.companyName && c.companyName.toString().toLowerCase().includes(searchStr)) ||
+           (c.ownerName && c.ownerName.toString().toLowerCase().includes(searchStr)) ||
+           (c.email && c.email.toString().toLowerCase().includes(searchStr)) ||
+           (c.mobile && c.mobile.toString().includes(searchStr)) ||
+           (c.id && c.id.toString().toLowerCase().includes(searchStr));
+  });
+}
+

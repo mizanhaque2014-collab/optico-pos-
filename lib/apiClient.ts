@@ -57,7 +57,7 @@ export async function apiCall<T>(action: string, argPayload?: any): Promise<T> {
     
     // 1. Check if it's a CORS or network connectivity issue (Failed to fetch)
     if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-      console.error(`%c[API CORS / NETWORK ERROR] Action: ${action}
+      console.warn(`%c[API CORS / NETWORK WARNING] Action: ${action}
 Possible Causes:
 - CORS issue: Apps Script Web App was NOT deployed with "Who has access: Anyone".
 - Network offline: No active internet connection.
@@ -70,7 +70,7 @@ To fix CORS, please redeploy the Google Apps Script in Extensions -> Apps Script
     
     // 2. Check if it's a 404 Endpoint / Deployment mismatch error
     if (error.message && error.message.includes('404')) {
-      console.error(`%c[API 404 NOT FOUND / DEPLOYMENT ERROR] Action: ${action}
+      console.warn(`%c[API 404 NOT FOUND / DEPLOYMENT WARNING] Action: ${action}
 Possible Causes:
 - Endpoint mismatch: The URL inside 'lib/config.ts' is incorrect, has typos, or is expired.
 - Not Deployed: The Google Apps Script has not been deployed as a "Web app".
@@ -79,7 +79,7 @@ Possible Causes:
     }
     
     // 3. Other errors (e.g. Request/Response format errors, syntax issues)
-    console.error(`%c[API RESPONSE ERROR] Action: ${action}`, 'color: #ef4444; font-weight: bold;', error);
+    console.warn(`%c[API RESPONSE ERROR] Action: ${action}`, 'color: #ef4444; font-weight: bold;', error);
     throw error;
   }
 }
