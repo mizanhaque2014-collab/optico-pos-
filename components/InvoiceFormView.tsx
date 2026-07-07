@@ -40,7 +40,7 @@ export function InvoiceFormView({ type, onBack, initialCustomer }: Props) {
     if (!getStockInventory) return [];
     try {
       const allStock = getStockInventory();
-      if (!stockQuery.trim()) return [];
+      if (!String(stockQuery ?? "").trim()) return [];
       const q = stockQuery.toLowerCase();
       return allStock.filter(item => {
         const matchesQuery = item.brand.toLowerCase().includes(q) || 
@@ -324,7 +324,7 @@ export function InvoiceFormView({ type, onBack, initialCustomer }: Props) {
               </div>
 
               {/* results */}
-              {stockQuery.trim() && (
+              {String(stockQuery ?? "").trim() && (
                 <div className="space-y-2 max-h-[180px] overflow-y-auto">
                   {stockLookupResults.length === 0 ? (
                     <p className="text-center text-white/40 text-xs py-3 italic">

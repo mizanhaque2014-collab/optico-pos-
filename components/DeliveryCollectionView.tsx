@@ -40,15 +40,15 @@ export function DeliveryCollectionView({ onBack }: Props) {
   const [showConfirmPopup, setShowConfirmPopup] = useState(false);
 
   // Resolved lists
-  const invoices = useMemo(() => getInvoices(), [completedInvoice]);
-  const customers = useMemo(() => getCustomers(), []);
+  const invoices = getInvoices();
+  const customers = getCustomers();
   
   const pendingOrders = useMemo(() => {
     return invoices.filter(i => i.type === 'Sales Order' && i.status !== 'Delivered' && i.status !== 'Cancelled');
   }, [invoices]);
 
   const filteredOrders = useMemo(() => {
-    if (!search.trim()) return pendingOrders;
+    if (!String(search ?? "").trim()) return pendingOrders;
     const q = search.toLowerCase();
     // Search by invoice number or mobile number if we can cross check with customer
     return pendingOrders.filter(i => {

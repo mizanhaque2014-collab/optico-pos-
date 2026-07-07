@@ -218,7 +218,7 @@ export function WhatsAppMarketingView({ onBack }: Props) {
   const filteredCustomers = useMemo(() => {
     return processedCustomers.filter(item => {
       // 1. Search term match
-      if (searchTerm.trim()) {
+      if (String(searchTerm ?? "").trim()) {
         const q = searchTerm.toLowerCase();
         const matchesName = item.customer.name.toLowerCase().includes(q);
         const matchesMobile = item.customer.mobile ? String(item.customer.mobile).includes(q) : false;

@@ -285,7 +285,7 @@ export function StockInventoryView({ onBack }: Props) {
 
   // 3. Excel TSV Bulk Import
   const handleExcelImport = () => {
-    if (!bulkExcelText.trim()) {
+    if (!String(bulkExcelText ?? "").trim()) {
       alert('Please paste some rows from your Excel sheet.');
       return;
     }

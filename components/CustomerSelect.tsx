@@ -21,10 +21,10 @@ export function CustomerSelect({ selectedCustomer, onSelect }: Props) {
   const [dob, setDob] = useState('');
   const [address, setAddress] = useState('');
 
-  const customers = useMemo(() => getCustomers(), []);
+  const customers = getCustomers();
   
   const filteredCustomers = useMemo(() => {
-    if (!search.trim()) return [];
+    if (!String(search ?? "").trim()) return [];
     const query = search.toLowerCase();
     return customers.filter(c => 
       c.name.toLowerCase().includes(query) || 

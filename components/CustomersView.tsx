@@ -16,10 +16,10 @@ export function CustomersView({ onBack, onNavigateTo }: Props) {
   const [search, setSearch] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   
-  const customers = useMemo(() => getCustomers(), []);
+  const customers = getCustomers();
 
   const filtered = useMemo(() => {
-    if(!search.trim()) return customers;
+    if(!String(search ?? "").trim()) return customers;
     const q = search.toLowerCase();
     return customers.filter(c => 
       c.name.toLowerCase().includes(q) || 

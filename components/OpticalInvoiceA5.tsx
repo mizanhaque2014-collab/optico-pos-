@@ -24,7 +24,7 @@ export function OpticalInvoiceA5({
   isPrintPreviewOnly = false,
 }: OpticalInvoiceA5Props) {
   const store = useStore();
-  const customers = useMemo(() => store.getCustomers(), [store]);
+  const customers = store.getCustomers();
 
   // Resolve Customer
   const resolvedCustomer = useMemo(() => {

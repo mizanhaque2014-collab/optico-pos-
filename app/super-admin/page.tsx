@@ -180,7 +180,7 @@ export default function SuperAdminPortal() {
     setLoginError('');
 
     setTimeout(() => {
-      if (emailInput.trim() === SUPER_ADMIN_EMAIL && passwordInput === SUPER_ADMIN_PASSWORD) {
+      if (String(emailInput ?? "").trim() === SUPER_ADMIN_EMAIL && passwordInput === SUPER_ADMIN_PASSWORD) {
         setIsAuthenticated(true);
         if (typeof window !== 'undefined') {
           sessionStorage.setItem('optico_super_admin_session', 'true');
@@ -1690,7 +1690,7 @@ export default function SuperAdminPortal() {
                     {branches
                       .filter(b => b.companyId === userForm.companyId)
                       .map(b => (
-                        <option key={b.id} value={b.branchName}>
+                        <option key={b.id} value={b.id}>
                           {b.branchName}
                         </option>
                       ))}

@@ -454,7 +454,7 @@ export function DailySalesReportView({ onBack }: Props) {
 
   // Customer Autocomplete query scanner
   const customerSearchResults = useMemo(() => {
-    if (!customerSearchQuery.trim()) return [];
+    if (!String(customerSearchQuery ?? "").trim()) return [];
     const q = customerSearchQuery.toLowerCase();
     return customers.filter(c => 
       c.name.toLowerCase().includes(q) || 

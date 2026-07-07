@@ -41,13 +41,16 @@ export async function apiCall<T>(action: string, argPayload?: any): Promise<T> {
     
     try {
       const result = JSON.parse(text);
-      if (result && result.success === false) {
-        throw new Error(result.error || 'Apps Script returned failure');
+      if (result && typeof result.success === 'boolean') {
+        if (!result.success) {
+          throw new Error(result.error || 'Unknown error');
+        }
+        console.log(`%c[API RESPONSE SUCCESS] Action: ${action}`, 'color: #10b981; font-weight: bold;', result.data);
+        return result.data;
       }
       
-      const data = result.data !== undefined ? result.data : result;
-      console.log(`%c[API RESPONSE SUCCESS] Action: ${action}`, 'color: #10b981; font-weight: bold;', data);
-      return data;
+      console.log(`%c[API RESPONSE UNEXPECTED FORMAT] Action: ${action}`, 'color: #f59e0b; font-weight: bold;', result);
+      return result;
     } catch (parseError) {
       console.log(`%c[API RESPONSE TEXT] Action: ${action}`, 'color: #10b981; font-weight: bold;', text);
       return text as any;

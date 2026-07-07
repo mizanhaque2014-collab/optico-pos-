@@ -87,10 +87,15 @@ export const branchService = {
   async getBranchesV2(): Promise<Branch[]> {
     this.logRequest('getBranches', null);
     try {
-      const data = await apiCall<Branch[]>('getBranches');
+      const data = await apiCall<any[]>('getBranches');
       if (Array.isArray(data)) {
         this.logResponse('getBranches', data);
-        return data;
+        return data.map(b => ({
+          ...b,
+          id: b.branchId || b.id,
+          whatsAppNumber: b.whatsApp || b.whatsAppNumber,
+          createdDate: new Date(b.createdDate).getTime()
+        }));
       }
       throw new Error("Response is not an array");
     } catch (e: any) {
@@ -105,10 +110,15 @@ export const branchService = {
       throw new Error("Branch ID is required.");
     }
     try {
-      const res = await apiCall<Branch>('getBranchById', { branchId: id });
-      if (res && res.id) {
+      const res = await apiCall<any>('getBranchById', { branchId: id });
+      if (res && (res.branchId || res.id)) {
         this.logResponse('getBranchById', res);
-        return res;
+        return {
+          ...res,
+          id: res.branchId || res.id,
+          whatsAppNumber: res.whatsApp || res.whatsAppNumber,
+          createdDate: new Date(res.createdDate).getTime()
+        };
       }
       throw new Error("Invalid response format for getBranchById");
     } catch (e: any) {
@@ -119,26 +129,28 @@ export const branchService = {
 
   async createBranch(branch: Omit<Branch, 'id' | 'createdDate'>): Promise<Branch> {
     this.logRequest('createBranch', branch);
-    if (!branch.branchName || !branch.branchName.trim()) {
+    if (!branch.branchName || !String(branch.branchName ?? "").trim()) {
       throw new Error("Branch Name is required.");
     }
-    if (!branch.companyId || !branch.companyId.trim()) {
+    if (!branch.companyId || !String(branch.companyId ?? "").trim()) {
       throw new Error("Company ID is required.");
     }
 
-    const newBranch: Branch = {
+    const payload = {
       ...branch,
-      id: `BR-${Date.now()}`,
-      createdDate: Date.now()
+      whatsApp: branch.whatsAppNumber // map back to apps script format
     };
 
     try {
-      const res = await apiCall<Branch>('createBranch', { branch: newBranch });
-      if (res && res.id) {
+      const res = await apiCall<any>('createBranch', { branch: payload });
+      if (res && (res.branchId || res.id)) {
         this.logResponse('createBranch', res);
-        // Refresh the entire list directly from Google Sheets
-        await this.getBranchesV2();
-        return res;
+        return {
+          ...res,
+          id: res.branchId || res.id,
+          whatsAppNumber: res.whatsApp || res.whatsAppNumber,
+          createdDate: new Date(res.createdDate).getTime()
+        };
       }
       throw new Error("Invalid response format for createBranch");
     } catch (e: any) {
@@ -152,17 +164,26 @@ export const branchService = {
     if (!branch.id) {
       throw new Error("Branch ID is required for update.");
     }
-    if (!branch.branchName || !branch.branchName.trim()) {
+    if (!branch.branchName || !String(branch.branchName ?? "").trim()) {
       throw new Error("Branch Name is required.");
     }
 
+    const payload = {
+      ...branch,
+      branchId: branch.id, // specify branchId explicitly
+      whatsApp: branch.whatsAppNumber // map back to apps script format
+    };
+
     try {
-      const res = await apiCall<Branch>('updateBranch', { branch });
-      if (res && res.id) {
+      const res = await apiCall<any>('updateBranch', { branch: payload });
+      if (res && (res.branchId || res.id)) {
         this.logResponse('updateBranch', res);
-        // Refresh the entire list directly from Google Sheets
-        await this.getBranchesV2();
-        return res;
+        return {
+          ...res,
+          id: res.branchId || res.id,
+          whatsAppNumber: res.whatsApp || res.whatsAppNumber,
+          createdDate: new Date(res.createdDate).getTime()
+        };
       }
       throw new Error("Invalid response format for updateBranch");
     } catch (e: any) {
