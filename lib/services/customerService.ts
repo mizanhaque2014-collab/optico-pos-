@@ -68,7 +68,7 @@ export const customerService = {
     }
     
     const all = await this.getCustomers();
-    const q = name.toLowerCase().trim();
+    const q = String(name ?? "").trim().toLowerCase();
     return all.filter(c => c.name && c.name.toLowerCase().includes(q));
   },
 
@@ -133,7 +133,7 @@ export const customerService = {
   // Existing searchCustomers method
   async searchCustomers(query: string): Promise<Customer[]> {
     const all = await this.getCustomers();
-    const q = query.toLowerCase().trim();
+    const q = String(query ?? "").trim().toLowerCase();
     if (!q) return all;
     return all.filter(c => 
       c.name.toLowerCase().includes(q) || 

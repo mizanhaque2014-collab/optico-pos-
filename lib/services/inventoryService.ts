@@ -50,7 +50,7 @@ export const inventoryService = {
 
   async searchInventory(query: string): Promise<StockItem[]> {
     const list = await this.getInventory();
-    const q = query.toLowerCase().trim();
+    const q = String(query ?? "").trim().toLowerCase();
     if (!q) return list;
     return list.filter(item => 
       item.brand.toLowerCase().includes(q) || 

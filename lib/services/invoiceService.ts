@@ -60,7 +60,7 @@ export const invoiceService = {
 
   async searchInvoice(query: string): Promise<Invoice[]> {
     const list = await this.getInvoices();
-    const q = query.toLowerCase().trim();
+    const q = String(query ?? "").trim().toLowerCase();
     if (!q) return list;
     return list.filter(inv => 
       inv.invoiceNumber.toLowerCase().includes(q) || 

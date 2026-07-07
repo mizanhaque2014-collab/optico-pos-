@@ -299,15 +299,15 @@ export function StockInventoryView({ onBack }: Props) {
       if (idx === 0) return; // skip header
       const cols = row.split('\t');
       if (cols.length >= 4) {
-        const category = (cols[0] || 'Frames').trim() as StockCategory;
-        const brand = (cols[1] || 'Unknown').trim();
-        const modelNumber = (cols[2] || 'Generic').trim();
-        const barcode = (cols[3] || `BC-EX-${Date.now()}-${idx}`).trim();
+        const category = String(cols[0] || 'Frames').trim() as StockCategory;
+        const brand = String(cols[1] || 'Unknown').trim();
+        const modelNumber = String(cols[2] || 'Generic').trim();
+        const barcode = String(cols[3] || `BC-EX-${Date.now()}-${idx}`).trim();
         const purchasePrice = Number(cols[4]) || 400;
         const sellingPrice = Number(cols[5]) || 900;
         const quantity = Number(cols[6]) || 5;
-        const supplierName = (cols[7] || 'Excel Import').trim();
-        const remarks = (cols[8] || 'Bulk excel upload').trim();
+        const supplierName = String(cols[7] || 'Excel Import').trim();
+        const remarks = String(cols[8] || 'Bulk excel upload').trim();
 
         importedItems.push({
           id: `s-ex-${idx}-${Date.now()}`,

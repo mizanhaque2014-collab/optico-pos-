@@ -16,6 +16,12 @@
  * 11. Paste this URL in your Next.js project's config under /lib/config.ts as API_URL.
  */
 
+// Robust trim helper to safely handle strings, numbers, nulls, and undefined values
+function safeTrim(val) {
+  if (val === undefined || val === null) return "";
+  return val.toString().trim();
+}
+
 // Helper to get or create the Customers sheet with standard columns
 function getCustomersSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -30,7 +36,7 @@ function getCustomersSheet() {
 
 // Map column header names to exact JavaScript camelCase property names
 function mapHeaderToKey(header) {
-  var clean = header.toString().trim().toLowerCase().replace(/[\s_-]/g, '');
+  var clean = safeTrim(header).toLowerCase().replace(/[\s_-]/g, '');
   if (clean === 'customerid' || clean === 'id') return 'id';
   if (clean === 'customername' || clean === 'name') return 'name';
   if (clean === 'mobilenumber' || clean === 'mobile' || clean === 'mobilenumber') return 'mobile';
@@ -125,12 +131,12 @@ function createCustomer(customer) {
   var headers = getHeaders(sheet);
   
   // Clean mobile number for duplicate validation check
-  var mobileToCreate = customer.mobile.toString().trim();
+  var mobileToCreate = safeTrim(customer.mobile);
   
   // Validation: Check for duplicates in the spreadsheet
   var allCustomers = getCustomers();
   var duplicate = allCustomers.find(function(c) {
-    return c.mobile && c.mobile.toString().trim() === mobileToCreate;
+    return c.mobile && safeTrim(c.mobile) === mobileToCreate;
   });
   
   if (duplicate) {
@@ -194,10 +200,10 @@ function updateCustomer(customer) {
   
   // Check duplicate mobile if mobile is being changed
   if (customer.mobile) {
-    var mobileToUpdate = customer.mobile.toString().trim();
+    var mobileToUpdate = safeTrim(customer.mobile);
     var allCustomers = getCustomers();
     var duplicate = allCustomers.find(function(c) {
-      return c.id !== customer.id && c.mobile && c.mobile.toString().trim() === mobileToUpdate;
+      return c.id !== customer.id && c.mobile && safeTrim(c.mobile) === mobileToUpdate;
     });
     if (duplicate) {
       throw new Error("Another customer with mobile number '" + mobileToUpdate + "' already exists.");
@@ -228,10 +234,10 @@ function updateCustomer(customer) {
  */
 function searchCustomerByMobile(mobile) {
   if (!mobile) return [];
-  var searchStr = mobile.toString().trim();
+  var searchStr = safeTrim(mobile);
   var all = getCustomers();
   return all.filter(function(c) {
-    return c.mobile && c.mobile.toString().includes(searchStr);
+    return c.mobile && safeTrim(c.mobile).includes(searchStr);
   });
 }
 
@@ -241,10 +247,10 @@ function searchCustomerByMobile(mobile) {
  */
 function searchCustomerByName(name) {
   if (!name) return [];
-  var searchStr = name.toString().toLowerCase().trim();
+  var searchStr = safeTrim(name).toLowerCase();
   var all = getCustomers();
   return all.filter(function(c) {
-    return c.name && c.name.toString().toLowerCase().includes(searchStr);
+    return c.name && safeTrim(c.name).toLowerCase().includes(searchStr);
   });
 }
 
@@ -361,6 +367,48 @@ function doPost(e) {
       case 'getBranches':
         result = getBranches();
         break;
+      case 'saveInventory':
+        result = saveInventory(payload.inventoryItem || payload);
+        break;
+      case 'getInventory':
+        result = getInventory();
+        break;
+      case 'saveInvoice':
+        result = saveInvoice(payload.invoice || payload);
+        break;
+      case 'getInvoices':
+        result = getInvoices();
+        break;
+      case 'savePayment':
+        result = savePayment(payload.payment || payload);
+        break;
+      case 'getPayments':
+        result = getPayments(payload.customerId || e.parameter.customerId);
+        break;
+      case 'savePrescription':
+        result = payload.prescription || {};
+        break;
+      case 'loadPrescriptions':
+        result = [];
+        break;
+      case 'saveEyeTest':
+        result = payload.eyeTestDetails || {};
+        break;
+      case 'loadEyeTests':
+        result = [];
+        break;
+      case 'saveInvoiceItem':
+        result = payload.items || [];
+        break;
+      case 'loadInvoiceItems':
+        result = [];
+        break;
+      case 'saveSalesOrder':
+        result = payload.salesOrder || {};
+        break;
+      case 'saveDeliveryCollection':
+        result = payload.invoice || {};
+        break;
       default:
         throw new Error("Unsupported action: " + action);
     }
@@ -467,7 +515,7 @@ function getUserHeaders(sheet) {
 
 // Map User sheet header names to exact JavaScript property names
 function mapUserHeaderToKey(header) {
-  var clean = header.toString().trim().toLowerCase().replace(/[\s_-]/g, '');
+  var clean = safeTrim(header).toLowerCase().replace(/[\s_-]/g, '');
   if (clean === 'userid' || clean === 'id') return 'id';
   if (clean === 'companyid') return 'companyId';
   if (clean === 'branchid') return 'branchId';
@@ -537,12 +585,12 @@ function createUser(user) {
   var sheet = getUsersSheet();
   var headers = getUserHeaders(sheet);
   
-  var usernameToCreate = user.username.toString().trim().toLowerCase();
+  var usernameToCreate = safeTrim(user.username).toLowerCase();
   
   // Validation: Check for duplicate username in the spreadsheet
   var allUsers = getUsers();
   var duplicate = allUsers.find(function(u) {
-    return u.username && u.username.toString().trim().toLowerCase() === usernameToCreate;
+    return u.username && safeTrim(u.username).toLowerCase() === usernameToCreate;
   });
   
   if (duplicate) {
@@ -612,10 +660,10 @@ function updateUser(user) {
   
   // Check duplicate username if username is being changed
   if (user.username) {
-    var usernameToUpdate = user.username.toString().trim().toLowerCase();
+    var usernameToUpdate = safeTrim(user.username).toLowerCase();
     var allUsers = getUsers();
     var duplicate = allUsers.find(function(u) {
-      return u.id !== user.id && u.username && u.username.toString().trim().toLowerCase() === usernameToUpdate;
+      return u.id !== user.id && u.username && safeTrim(u.username).toLowerCase() === usernameToUpdate;
     });
     if (duplicate) {
       throw new Error("Another user with username '" + user.username + "' already exists.");
@@ -706,14 +754,14 @@ function getUserById(id) {
  */
 function searchUser(query) {
   if (!query) return [];
-  var searchStr = query.toString().toLowerCase().trim();
+  var searchStr = safeTrim(query).toLowerCase();
   var all = getUsers();
   return all.filter(function(u) {
-    return (u.fullName && u.fullName.toString().toLowerCase().includes(searchStr)) ||
-           (u.username && u.username.toString().toLowerCase().includes(searchStr)) ||
-           (u.email && u.email.toString().toLowerCase().includes(searchStr)) ||
-           (u.mobile && u.mobile.toString().includes(searchStr)) ||
-           (u.id && u.id.toString().toLowerCase().includes(searchStr));
+    return (u.fullName && safeTrim(u.fullName).toLowerCase().includes(searchStr)) ||
+           (u.username && safeTrim(u.username).toLowerCase().includes(searchStr)) ||
+           (u.email && safeTrim(u.email).toLowerCase().includes(searchStr)) ||
+           (u.mobile && safeTrim(u.mobile).includes(searchStr)) ||
+           (u.id && safeTrim(u.id).toLowerCase().includes(searchStr));
   });
 }
 
@@ -744,7 +792,7 @@ function getCompanyHeaders(sheet) {
 
 // Map column header names to exact JavaScript camelCase property names
 function mapCompanyHeaderToKey(header) {
-  var clean = header.toString().trim().toLowerCase().replace(/[\s_-]/g, '');
+  var clean = safeTrim(header).toLowerCase().replace(/[\s_-]/g, '');
   if (clean === 'companyid' || clean === 'id') return 'id';
   if (clean === 'companyname') return 'companyName';
   if (clean === 'ownername') return 'ownerName';
@@ -812,12 +860,12 @@ function createCompany(company) {
   var sheet = getCompaniesSheet();
   var headers = getCompanyHeaders(sheet);
   
-  var nameToCreate = company.companyName.toString().trim().toLowerCase();
+  var nameToCreate = safeTrim(company.companyName).toLowerCase();
   
   // Validation: Check for duplicate company name in the spreadsheet
   var allCompanies = getCompanies();
   var duplicate = allCompanies.find(function(c) {
-    return c.companyName && c.companyName.toString().trim().toLowerCase() === nameToCreate;
+    return c.companyName && safeTrim(c.companyName).toLowerCase() === nameToCreate;
   });
   
   if (duplicate) {
@@ -826,10 +874,10 @@ function createCompany(company) {
 
   // Validation: Check for duplicate mobile number in the spreadsheet
   if (company.mobile) {
-    var mobileToCreate = company.mobile.toString().trim();
+    var mobileToCreate = safeTrim(company.mobile);
     if (mobileToCreate) {
       var duplicateMobile = allCompanies.find(function(c) {
-        return c.mobile && c.mobile.toString().trim() === mobileToCreate;
+        return c.mobile && safeTrim(c.mobile) === mobileToCreate;
       });
       if (duplicateMobile) {
         throw new Error("A company with mobile number '" + company.mobile + "' already exists in the system.");
@@ -900,10 +948,10 @@ function updateCompany(company) {
   
   // Check duplicate companyName if companyName is being changed
   if (company.companyName) {
-    var nameToUpdate = company.companyName.toString().trim().toLowerCase();
+    var nameToUpdate = safeTrim(company.companyName).toLowerCase();
     var allCompanies = getCompanies();
     var duplicate = allCompanies.find(function(c) {
-      return c.id !== company.id && c.companyName && c.companyName.toString().trim().toLowerCase() === nameToUpdate;
+      return c.id !== company.id && c.companyName && safeTrim(c.companyName).toLowerCase() === nameToUpdate;
     });
     if (duplicate) {
       throw new Error("Another company with name '" + company.companyName + "' already exists.");
@@ -912,11 +960,11 @@ function updateCompany(company) {
 
   // Check duplicate mobile if mobile is being changed
   if (company.mobile) {
-    var mobileToUpdate = company.mobile.toString().trim();
+    var mobileToUpdate = safeTrim(company.mobile);
     if (mobileToUpdate) {
       var allCompanies = getCompanies();
       var duplicateMobile = allCompanies.find(function(c) {
-        return c.id !== company.id && c.mobile && c.mobile.toString().trim() === mobileToUpdate;
+        return c.id !== company.id && c.mobile && safeTrim(c.mobile) === mobileToUpdate;
       });
       if (duplicateMobile) {
         throw new Error("Another company with mobile number '" + company.mobile + "' already exists.");
@@ -1008,14 +1056,14 @@ function getCompanyById(id) {
  */
 function searchCompany(query) {
   if (!query) return [];
-  var searchStr = query.toString().toLowerCase().trim();
+  var searchStr = safeTrim(query).toLowerCase();
   var all = getCompanies();
   return all.filter(function(c) {
-    return (c.companyName && c.companyName.toString().toLowerCase().includes(searchStr)) ||
-           (c.ownerName && c.ownerName.toString().toLowerCase().includes(searchStr)) ||
-           (c.email && c.email.toString().toLowerCase().includes(searchStr)) ||
-           (c.mobile && c.mobile.toString().includes(searchStr)) ||
-           (c.id && c.id.toString().toLowerCase().includes(searchStr));
+    return (c.companyName && safeTrim(c.companyName).toLowerCase().includes(searchStr)) ||
+           (c.ownerName && safeTrim(c.ownerName).toLowerCase().includes(searchStr)) ||
+           (c.email && safeTrim(c.email).toLowerCase().includes(searchStr)) ||
+           (c.mobile && safeTrim(c.mobile).includes(searchStr)) ||
+           (c.id && safeTrim(c.id).toLowerCase().includes(searchStr));
   });
 }
 
@@ -1047,7 +1095,7 @@ function getBranchHeaders(sheet) {
 }
 
 function mapBranchHeaderToKey(header) {
-  var clean = header.toString().trim().toLowerCase().replace(/[\s_-]/g, '');
+  var clean = safeTrim(header).toLowerCase().replace(/[\s_-]/g, '');
   if (clean === 'branchid' || clean === 'id') return 'id';
   if (clean === 'companyid') return 'companyId';
   if (clean === 'branchname') return 'branchName';
@@ -1238,5 +1286,257 @@ function getBranchById(id) {
     throw new Error("Branch not found with ID: " + id);
   }
   return branch;
+}
+
+// Helper to get or create Inventory sheet
+function getInventorySheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("Inventory");
+  if (!sheet) {
+    sheet = ss.insertSheet("Inventory");
+  }
+  if (sheet.getLastColumn() === 0) {
+    sheet.appendRow(["id", "category", "brand", "modelNumber", "barcode", "purchasePrice", "sellingPrice", "quantity", "supplierName", "purchaseDate", "remarks", "branch", "lensType", "createdAt"]);
+  }
+  return sheet;
+}
+
+// Get inventory items
+function getInventory() {
+  var sheet = getInventorySheet();
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return [];
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
+  var items = [];
+  for (var i = 0; i < values.length; i++) {
+    var row = values[i];
+    var item = {};
+    for (var j = 0; j < headers.length; j++) {
+      var key = headers[j];
+      var val = row[j];
+      if (key === 'purchasePrice' || key === 'sellingPrice' || key === 'quantity' || key === 'createdAt') {
+        val = Number(val) || 0;
+      }
+      item[key] = val;
+    }
+    items.push(item);
+  }
+  return items;
+}
+
+// Save or update inventory item
+function saveInventory(item) {
+  if (!item) throw new Error("No inventory item provided");
+  var sheet = getInventorySheet();
+  var lastRow = sheet.getLastRow();
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  
+  if (!item.id) {
+    item.id = "s-item-" + Date.now();
+  }
+  if (!item.createdAt) {
+    item.createdAt = Date.now();
+  }
+  
+  var targetRowIndex = -1;
+  if (lastRow > 1) {
+    var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
+    for (var i = 0; i < values.length; i++) {
+      if (values[i][0].toString() === item.id.toString()) {
+        targetRowIndex = i + 2;
+        break;
+      }
+    }
+  }
+  
+  var rowData = [];
+  for (var k = 0; k < headers.length; k++) {
+    var key = headers[k];
+    var val = item[key];
+    if (val === undefined || val === null) val = "";
+    rowData.push(val);
+  }
+  
+  if (targetRowIndex !== -1) {
+    sheet.getRange(targetRowIndex, 1, 1, headers.length).setValues([rowData]);
+  } else {
+    sheet.appendRow(rowData);
+  }
+  return item;
+}
+
+// Helper to get or create Invoices sheet
+function getInvoicesSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("Invoices");
+  if (!sheet) {
+    sheet = ss.insertSheet("Invoices");
+  }
+  if (sheet.getLastColumn() === 0) {
+    sheet.appendRow(["id", "invoiceNumber", "type", "customerId", "prescriptionId", "items", "subTotal", "totalDiscount", "grandTotal", "paymentMode", "paymentDetail", "advanceAmount", "balanceAmount", "status", "createdAt", "updatedAt", "deliveryDate", "finalCollectionPaymentMode", "finalCollectionPaymentDetail"]);
+  }
+  return sheet;
+}
+
+// Get Invoices
+function getInvoices() {
+  var sheet = getInvoicesSheet();
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return [];
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
+  var invoices = [];
+  for (var i = 0; i < values.length; i++) {
+    var row = values[i];
+    var inv = {};
+    for (var j = 0; j < headers.length; j++) {
+      var key = headers[j];
+      var val = row[j];
+      if (key === 'items') {
+        try {
+          val = val ? JSON.parse(val) : [];
+        } catch (e) {
+          val = [];
+        }
+      } else if (key === 'paymentDetail' || key === 'finalCollectionPaymentDetail') {
+        try {
+          val = val ? JSON.parse(val) : {};
+        } catch (e) {
+          val = {};
+        }
+      } else if (key === 'subTotal' || key === 'totalDiscount' || key === 'grandTotal' || key === 'advanceAmount' || key === 'balanceAmount' || key === 'createdAt' || key === 'updatedAt' || key === 'deliveryDate') {
+        val = Number(val) || 0;
+      }
+      inv[key] = val;
+    }
+    invoices.push(inv);
+  }
+  return invoices;
+}
+
+// Save or update Invoice
+function saveInvoice(inv) {
+  if (!inv) throw new Error("No invoice provided");
+  var sheet = getInvoicesSheet();
+  var lastRow = sheet.getLastRow();
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  
+  if (!inv.id) {
+    inv.id = "inv-" + Date.now();
+  }
+  if (!inv.createdAt) {
+    inv.createdAt = Date.now();
+  }
+  inv.updatedAt = Date.now();
+  
+  var targetRowIndex = -1;
+  if (lastRow > 1) {
+    var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
+    for (var i = 0; i < values.length; i++) {
+      if (values[i][0].toString() === inv.id.toString()) {
+        targetRowIndex = i + 2;
+        break;
+      }
+    }
+  }
+  
+  var rowData = [];
+  for (var k = 0; k < headers.length; k++) {
+    var key = headers[k];
+    var val = inv[key];
+    if (key === 'items' || key === 'paymentDetail' || key === 'finalCollectionPaymentDetail') {
+      val = val ? JSON.stringify(val) : "";
+    }
+    if (val === undefined || val === null) val = "";
+    rowData.push(val);
+  }
+  
+  if (targetRowIndex !== -1) {
+    sheet.getRange(targetRowIndex, 1, 1, headers.length).setValues([rowData]);
+  } else {
+    sheet.appendRow(rowData);
+  }
+  return inv;
+}
+
+// Helper to get or create Payments sheet
+function getPaymentsSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("Payments");
+  if (!sheet) {
+    sheet = ss.insertSheet("Payments");
+  }
+  if (sheet.getLastColumn() === 0) {
+    sheet.appendRow(["id", "invoiceId", "invoiceNumber", "customerId", "amount", "date", "mode", "remarks"]);
+  }
+  return sheet;
+}
+
+// Get Payments
+function getPayments(customerId) {
+  var sheet = getPaymentsSheet();
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return [];
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
+  var payments = [];
+  for (var i = 0; i < values.length; i++) {
+    var row = values[i];
+    var pay = {};
+    for (var j = 0; j < headers.length; j++) {
+      var key = headers[j];
+      var val = row[j];
+      if (key === 'amount' || key === 'date') {
+        val = Number(val) || 0;
+      }
+      pay[key] = val;
+    }
+    if (!customerId || pay.customerId.toString() === customerId.toString()) {
+      payments.push(pay);
+    }
+  }
+  return payments;
+}
+
+// Save payment record
+function savePayment(pay) {
+  if (!pay) throw new Error("No payment provided");
+  var sheet = getPaymentsSheet();
+  var lastRow = sheet.getLastRow();
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  
+  if (!pay.id) {
+    pay.id = "pay-" + Date.now();
+  }
+  if (!pay.date) {
+    pay.date = Date.now();
+  }
+  
+  var targetRowIndex = -1;
+  if (lastRow > 1) {
+    var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
+    for (var i = 0; i < values.length; i++) {
+      if (values[i][0].toString() === pay.id.toString()) {
+        targetRowIndex = i + 2;
+        break;
+      }
+    }
+  }
+  
+  var rowData = [];
+  for (var k = 0; k < headers.length; k++) {
+    var key = headers[k];
+    var val = pay[key];
+    if (val === undefined || val === null) val = "";
+    rowData.push(val);
+  }
+  
+  if (targetRowIndex !== -1) {
+    sheet.getRange(targetRowIndex, 1, 1, headers.length).setValues([rowData]);
+  } else {
+    sheet.appendRow(rowData);
+  }
+  return pay;
 }
 

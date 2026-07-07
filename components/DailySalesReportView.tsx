@@ -775,7 +775,7 @@ ${shopConfig.shopName} Audit Officer`;
     }).join('');
 
     const printHtml = `
-      <html>
+      <html-tag>
       <head>
         <title>Professional ${shopConfig.shopName} performance Audit</title>
         <style>
