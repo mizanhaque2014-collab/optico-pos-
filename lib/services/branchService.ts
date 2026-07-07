@@ -90,12 +90,16 @@ export const branchService = {
       const data = await apiCall<any[]>('getBranches');
       if (Array.isArray(data)) {
         this.logResponse('getBranches', data);
-        return data.map(b => ({
-          ...b,
-          id: b.branchId || b.id,
-          whatsAppNumber: b.whatsApp || b.whatsAppNumber,
-          createdDate: new Date(b.createdDate).getTime()
-        }));
+        return data.map(b => {
+          const idVal = b.branchId || b.id;
+          const dateVal = b.createdDate ? new Date(b.createdDate).getTime() : Date.now();
+          return {
+            ...b,
+            id: idVal,
+            whatsAppNumber: b.whatsApp || b.whatsAppNumber || '',
+            createdDate: isNaN(dateVal) ? Date.now() : dateVal
+          };
+        });
       }
       throw new Error("Response is not an array");
     } catch (e: any) {
@@ -111,13 +115,15 @@ export const branchService = {
     }
     try {
       const res = await apiCall<any>('getBranchById', { branchId: id });
-      if (res && (res.branchId || res.id)) {
+      if (res) {
         this.logResponse('getBranchById', res);
+        const idVal = res.branchId || res.id || id;
+        const dateVal = res.createdDate ? new Date(res.createdDate).getTime() : Date.now();
         return {
           ...res,
-          id: res.branchId || res.id,
-          whatsAppNumber: res.whatsApp || res.whatsAppNumber,
-          createdDate: new Date(res.createdDate).getTime()
+          id: idVal,
+          whatsAppNumber: res.whatsApp || res.whatsAppNumber || '',
+          createdDate: isNaN(dateVal) ? Date.now() : dateVal
         };
       }
       throw new Error("Invalid response format for getBranchById");
@@ -143,13 +149,15 @@ export const branchService = {
 
     try {
       const res = await apiCall<any>('createBranch', { branch: payload });
-      if (res && (res.branchId || res.id)) {
+      if (res) {
         this.logResponse('createBranch', res);
+        const idVal = res.branchId || res.id || `BR-${Date.now()}`;
+        const dateVal = res.createdDate ? new Date(res.createdDate).getTime() : Date.now();
         return {
           ...res,
-          id: res.branchId || res.id,
-          whatsAppNumber: res.whatsApp || res.whatsAppNumber,
-          createdDate: new Date(res.createdDate).getTime()
+          id: idVal,
+          whatsAppNumber: res.whatsApp || res.whatsAppNumber || branch.whatsAppNumber || '',
+          createdDate: isNaN(dateVal) ? Date.now() : dateVal
         };
       }
       throw new Error("Invalid response format for createBranch");
@@ -176,13 +184,15 @@ export const branchService = {
 
     try {
       const res = await apiCall<any>('updateBranch', { branch: payload });
-      if (res && (res.branchId || res.id)) {
+      if (res) {
         this.logResponse('updateBranch', res);
+        const idVal = res.branchId || res.id || branch.id;
+        const dateVal = res.createdDate ? new Date(res.createdDate).getTime() : Date.now();
         return {
           ...res,
-          id: res.branchId || res.id,
-          whatsAppNumber: res.whatsApp || res.whatsAppNumber,
-          createdDate: new Date(res.createdDate).getTime()
+          id: idVal,
+          whatsAppNumber: res.whatsApp || res.whatsAppNumber || branch.whatsAppNumber || '',
+          createdDate: isNaN(dateVal) ? Date.now() : dateVal
         };
       }
       throw new Error("Invalid response format for updateBranch");

@@ -85,13 +85,16 @@ export const userService = {
     this.logRequest('getUserById', { id });
     if (!id) throw new Error("User ID is required.");
     const res = await apiCall<any>('getUserById', { userId: id });
-    if (res && (res.id || res.userId)) {
+    if (res) {
       this.logResponse('getUserById', res);
+      const idVal = res.userId || res.id || id;
+      const createdVal = res.createdDate ? new Date(res.createdDate).getTime() : Date.now();
+      const updatedVal = res.updatedDate ? new Date(res.updatedDate).getTime() : createdVal;
       return {
         ...res,
-        id: res.userId || res.id,
-        createdDate: new Date(res.createdDate).getTime(),
-        updatedDate: res.updatedDate ? new Date(res.updatedDate).getTime() : new Date(res.createdDate).getTime()
+        id: idVal,
+        createdDate: isNaN(createdVal) ? Date.now() : createdVal,
+        updatedDate: isNaN(updatedVal) ? Date.now() : updatedVal
       };
     }
     throw new Error("Invalid response format for getUserById");
@@ -107,13 +110,16 @@ export const userService = {
     };
 
     const res = await apiCall<any>('createUser', { user: newUser });
-    if (res && (res.id || res.userId)) {
+    if (res) {
       this.logResponse('createUser', res);
+      const idVal = res.userId || res.id || `USR-${Date.now()}`;
+      const createdVal = res.createdDate ? new Date(res.createdDate).getTime() : Date.now();
+      const updatedVal = res.updatedDate ? new Date(res.updatedDate).getTime() : createdVal;
       return {
         ...res,
-        id: res.userId || res.id,
-        createdDate: new Date(res.createdDate || Date.now()).getTime(),
-        updatedDate: res.updatedDate ? new Date(res.updatedDate).getTime() : Date.now()
+        id: idVal,
+        createdDate: isNaN(createdVal) ? Date.now() : createdVal,
+        updatedDate: isNaN(updatedVal) ? Date.now() : updatedVal
       };
     }
     throw new Error("Invalid response format for createUser");
@@ -126,13 +132,16 @@ export const userService = {
     this.validateUser(user);
 
     const res = await apiCall<any>('updateUser', { user });
-    if (res && (res.id || res.userId)) {
+    if (res) {
       this.logResponse('updateUser', res);
+      const idVal = res.userId || res.id || user.id;
+      const createdVal = res.createdDate ? new Date(res.createdDate).getTime() : Date.now();
+      const updatedVal = res.updatedDate ? new Date(res.updatedDate).getTime() : createdVal;
       return {
         ...res,
-        id: res.userId || res.id,
-        createdDate: new Date(res.createdDate || Date.now()).getTime(),
-        updatedDate: res.updatedDate ? new Date(res.updatedDate).getTime() : Date.now()
+        id: idVal,
+        createdDate: isNaN(createdVal) ? Date.now() : createdVal,
+        updatedDate: isNaN(updatedVal) ? Date.now() : updatedVal
       };
     }
     throw new Error("Invalid response format for updateUser");
