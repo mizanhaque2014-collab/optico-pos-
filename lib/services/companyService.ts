@@ -1,4 +1,5 @@
 import { apiCall } from '../apiClient';
+import { API_URL } from '../config';
 
 export interface Company {
   id: string;
@@ -144,8 +145,19 @@ export const companyService = {
       throw new Error(errMsg);
     }
 
+    // Check duplicate mobile numbers locally/remotely
+    if (company.mobile && company.mobile.trim()) {
+      const mobileClean = company.mobile.trim();
+      const duplicateMobile = allLocal.find(c => c.mobile && c.mobile.trim() === mobileClean);
+      if (duplicateMobile) {
+        const errMsg = `Company mobile "${company.mobile}" is already registered. Please choose another.`;
+        this.logError('createCompany', errMsg);
+        throw new Error(errMsg);
+      }
+    }
+
     const newCompany: Company = {
-      id: company.id || `COMP-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      id: company.id || `COMP-${Date.now()}`,
       companyName: company.companyName,
       ownerName: company.ownerName,
       mobile: company.mobile || '',
@@ -160,20 +172,26 @@ export const companyService = {
       updatedDate: company.updatedDate || Date.now()
     };
 
+    console.log(`%c[COMPANIES API] Target API URL: ${API_URL}`, 'color: #3b82f6; font-weight: bold;');
+    console.log(`%c[COMPANIES API] Sending Payload:`, 'color: #3b82f6;', { action: 'createCompany', company: newCompany });
+
     try {
       const res = await apiCall<Company>('createCompany', { company: newCompany });
       if (res && res.id) {
         this.logResponse('createCompany', res);
-        this.updateLocalCache(res);
+        // Immediately refresh the entire list from the Google Sheets backend
+        await this.getCompanies();
         return res;
       }
+      throw new Error("Apps Script response does not contain a valid company ID");
     } catch (e: any) {
       this.logError('createCompany', e);
-      console.warn('%c[OFFLINE MODE] createCompany API failed, saving to local cache:', 'color: #f59e0b; font-weight: bold;', e);
+      console.error(`%c[COMPANIES API ERROR] createCompany failed! API URL: ${API_URL}`, 'color: #ef4444; font-weight: bold;', {
+        error: e.message || e,
+        payload: newCompany
+      });
+      throw e;
     }
-
-    this.updateLocalCache(newCompany);
-    return newCompany;
   },
 
   // Update Company
@@ -195,25 +213,42 @@ export const companyService = {
       throw new Error(errMsg);
     }
 
+    // Check duplicate mobile numbers
+    if (company.mobile && company.mobile.trim()) {
+      const mobileClean = company.mobile.trim();
+      const duplicateMobile = allLocal.find(c => c.id !== company.id && c.mobile && c.mobile.trim() === mobileClean);
+      if (duplicateMobile) {
+        const errMsg = `Company mobile "${company.mobile}" is already registered by another company.`;
+        this.logError('updateCompany', errMsg);
+        throw new Error(errMsg);
+      }
+    }
+
     const updatedCompany: Company = {
       ...company,
       updatedDate: Date.now()
     };
 
+    console.log(`%c[COMPANIES API] Target API URL: ${API_URL}`, 'color: #3b82f6; font-weight: bold;');
+    console.log(`%c[COMPANIES API] Sending Payload:`, 'color: #3b82f6;', { action: 'updateCompany', company: updatedCompany });
+
     try {
       const res = await apiCall<Company>('updateCompany', { company: updatedCompany });
       if (res && res.id) {
         this.logResponse('updateCompany', res);
-        this.updateLocalCache(res);
+        // Immediately refresh the entire list from the Google Sheets backend
+        await this.getCompanies();
         return res;
       }
+      throw new Error("Apps Script response does not contain a valid updated company ID");
     } catch (e: any) {
       this.logError('updateCompany', e);
-      console.warn('%c[OFFLINE MODE] updateCompany API failed, updating in local cache:', 'color: #f59e0b; font-weight: bold;', e);
+      console.error(`%c[COMPANIES API ERROR] updateCompany failed! API URL: ${API_URL}`, 'color: #ef4444; font-weight: bold;', {
+        error: e.message || e,
+        payload: updatedCompany
+      });
+      throw e;
     }
-
-    this.updateLocalCache(updatedCompany);
-    return updatedCompany;
   },
 
   // Delete Company
@@ -223,20 +258,26 @@ export const companyService = {
       throw new Error("Company ID is required for deletion.");
     }
 
+    console.log(`%c[COMPANIES API] Target API URL: ${API_URL}`, 'color: #3b82f6; font-weight: bold;');
+    console.log(`%c[COMPANIES API] Sending Payload:`, 'color: #3b82f6;', { action: 'deleteCompany', companyId: id });
+
     try {
       const res = await apiCall<{ id: string; deleted: boolean }>('deleteCompany', { companyId: id });
       if (res && res.deleted) {
         this.logResponse('deleteCompany', res);
-        this.deleteLocalCache(id);
+        // Immediately refresh the entire list from the Google Sheets backend
+        await this.getCompanies();
         return res;
       }
+      throw new Error("Apps Script response indicates company was not deleted");
     } catch (e: any) {
       this.logError('deleteCompany', e);
-      console.warn('%c[OFFLINE MODE] deleteCompany API failed, removing from local cache:', 'color: #f59e0b; font-weight: bold;', e);
+      console.error(`%c[COMPANIES API ERROR] deleteCompany failed! API URL: ${API_URL}`, 'color: #ef4444; font-weight: bold;', {
+        error: e.message || e,
+        companyId: id
+      });
+      throw e;
     }
-
-    this.deleteLocalCache(id);
-    return { id, deleted: true };
   },
 
   // Search Company
@@ -268,18 +309,12 @@ export const companyService = {
   // Save company helper to route upserts appropriately
   async saveCompany(company: Company): Promise<void> {
     this.logRequest('saveCompany', company);
-    try {
-      const companies = await this.getCompanies();
-      const exists = companies.some(c => c.id === company.id);
-      if (exists) {
-        await this.updateCompany(company);
-      } else {
-        await this.createCompany(company);
-      }
-    } catch (e: any) {
-      this.logError('saveCompany', e);
-      console.warn('companyService.saveCompany API failed, saving locally:', e);
-      this.updateLocalCache(company);
+    const companies = await this.getCompanies();
+    const exists = companies.some(c => c.id === company.id);
+    if (exists) {
+      await this.updateCompany(company);
+    } else {
+      await this.createCompany(company);
     }
   },
 

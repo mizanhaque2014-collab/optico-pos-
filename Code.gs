@@ -30,15 +30,15 @@ function getCustomersSheet() {
 
 // Map column header names to exact JavaScript camelCase property names
 function mapHeaderToKey(header) {
-  var clean = header.toString().trim().toLowerCase();
+  var clean = header.toString().trim().toLowerCase().replace(/[\s_-]/g, '');
   if (clean === 'customerid' || clean === 'id') return 'id';
   if (clean === 'customername' || clean === 'name') return 'name';
-  if (clean === 'mobilenumber' || clean === 'mobile' || clean === 'mobile_number') return 'mobile';
+  if (clean === 'mobilenumber' || clean === 'mobile' || clean === 'mobilenumber') return 'mobile';
   if (clean === 'dateofbirth' || clean === 'dob') return 'dob';
   if (clean === 'address') return 'address';
   if (clean === 'status') return 'status';
   if (clean === 'prescriptions') return 'prescriptions';
-  if (clean === 'createdat' || clean === 'created_at') return 'createdAt';
+  if (clean === 'createdat') return 'createdAt';
   return clean;
 }
 
@@ -346,6 +346,21 @@ function doPost(e) {
       case 'getCompanies':
         result = getCompanies();
         break;
+      case 'createBranch':
+        result = createBranch(payload.branch || payload);
+        break;
+      case 'updateBranch':
+        result = updateBranch(payload.branch || payload);
+        break;
+      case 'deleteBranch':
+        result = deleteBranch(payload.branchId || payload.id || e.parameter.branchId || e.parameter.id);
+        break;
+      case 'getBranchById':
+        result = getBranchById(payload.branchId || payload.id || e.parameter.branchId || e.parameter.id);
+        break;
+      case 'getBranches':
+        result = getBranches();
+        break;
       default:
         throw new Error("Unsupported action: " + action);
     }
@@ -402,6 +417,12 @@ function doGet(e) {
       case 'getCompanies':
         result = getCompanies();
         break;
+      case 'getBranchById':
+        result = getBranchById(e.parameter.branchId || e.parameter.id);
+        break;
+      case 'getBranches':
+        result = getBranches();
+        break;
       default:
         throw new Error("Unsupported GET action: " + action);
     }
@@ -425,15 +446,28 @@ function getUsersSheet() {
   var sheet = ss.getSheetByName("Users");
   if (!sheet) {
     sheet = ss.insertSheet("Users");
+  }
+  if (sheet.getLastColumn() === 0) {
     // Write default header columns
     sheet.appendRow(["UserID", "CompanyID", "BranchID", "FullName", "Username", "Password", "Role", "Mobile", "Email", "Status", "CreatedDate", "UpdatedDate"]);
   }
   return sheet;
 }
 
+// Retrieve headers of the Users sheet safely
+function getUserHeaders(sheet) {
+  var lastColumn = sheet.getLastColumn();
+  if (lastColumn === 0) {
+    var headers = ["UserID", "CompanyID", "BranchID", "FullName", "Username", "Password", "Role", "Mobile", "Email", "Status", "CreatedDate", "UpdatedDate"];
+    sheet.appendRow(headers);
+    return headers;
+  }
+  return sheet.getRange(1, 1, 1, lastColumn).getValues()[0];
+}
+
 // Map User sheet header names to exact JavaScript property names
 function mapUserHeaderToKey(header) {
-  var clean = header.toString().trim().toLowerCase();
+  var clean = header.toString().trim().toLowerCase().replace(/[\s_-]/g, '');
   if (clean === 'userid' || clean === 'id') return 'id';
   if (clean === 'companyid') return 'companyId';
   if (clean === 'branchid') return 'branchId';
@@ -444,8 +478,8 @@ function mapUserHeaderToKey(header) {
   if (clean === 'mobile') return 'mobile';
   if (clean === 'email') return 'email';
   if (clean === 'status') return 'status';
-  if (clean === 'createddate' || clean === 'created_date') return 'createdDate';
-  if (clean === 'updateddate' || clean === 'updated_date') return 'updatedDate';
+  if (clean === 'createddate') return 'createdDate';
+  if (clean === 'updateddate') return 'updatedDate';
   return clean;
 }
 
@@ -469,7 +503,7 @@ function getUsers() {
   var lastRow = sheet.getLastRow();
   if (lastRow <= 1) return [];
   
-  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var headers = getUserHeaders(sheet);
   var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
   var users = [];
   
@@ -501,7 +535,7 @@ function createUser(user) {
   }
   
   var sheet = getUsersSheet();
-  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var headers = getUserHeaders(sheet);
   
   var usernameToCreate = user.username.toString().trim().toLowerCase();
   
@@ -552,7 +586,7 @@ function updateUser(user) {
     throw new Error("User with ID " + user.id + " not found (sheet is empty).");
   }
   
-  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var headers = getUserHeaders(sheet);
   var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
   
   var targetRowIndex = -1;
@@ -622,7 +656,7 @@ function deleteUser(id) {
     throw new Error("User with ID " + id + " not found.");
   }
   
-  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var headers = getUserHeaders(sheet);
   var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
   
   var targetRowIndex = -1;
@@ -689,15 +723,28 @@ function getCompaniesSheet() {
   var sheet = ss.getSheetByName("Companies");
   if (!sheet) {
     sheet = ss.insertSheet("Companies");
+  }
+  if (sheet.getLastColumn() === 0) {
     // Write default header columns
-    sheet.appendRow(["CompanyID", "CompanyName", "OwnerName", "Mobile", "Email", "Address", "GSTNumber", "SubscriptionPlan", "SubscriptionStartDate", "SubscriptionEndDate", "Status", "CreatedDate", "UpdatedDate"]);
+    sheet.appendRow(["CompanyID", "Company Name", "Owner Name", "Mobile", "Email", "Status", "Created date"]);
   }
   return sheet;
 }
 
+// Retrieve headers of the Companies sheet safely
+function getCompanyHeaders(sheet) {
+  var lastColumn = sheet.getLastColumn();
+  if (lastColumn === 0) {
+    var headers = ["CompanyID", "Company Name", "Owner Name", "Mobile", "Email", "Status", "Created date"];
+    sheet.appendRow(headers);
+    return headers;
+  }
+  return sheet.getRange(1, 1, 1, lastColumn).getValues()[0];
+}
+
 // Map column header names to exact JavaScript camelCase property names
 function mapCompanyHeaderToKey(header) {
-  var clean = header.toString().trim().toLowerCase();
+  var clean = header.toString().trim().toLowerCase().replace(/[\s_-]/g, '');
   if (clean === 'companyid' || clean === 'id') return 'id';
   if (clean === 'companyname') return 'companyName';
   if (clean === 'ownername') return 'ownerName';
@@ -709,8 +756,8 @@ function mapCompanyHeaderToKey(header) {
   if (clean === 'subscriptionstartdate') return 'subscriptionStartDate';
   if (clean === 'subscriptionenddate') return 'subscriptionEndDate';
   if (clean === 'status') return 'status';
-  if (clean === 'createddate' || clean === 'created_date') return 'createdDate';
-  if (clean === 'updateddate' || clean === 'updated_date') return 'updatedDate';
+  if (clean === 'createddate') return 'createdDate';
+  if (clean === 'updateddate') return 'updatedDate';
   return clean;
 }
 
@@ -734,7 +781,7 @@ function getCompanies() {
   var lastRow = sheet.getLastRow();
   if (lastRow <= 1) return [];
   
-  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var headers = getCompanyHeaders(sheet);
   var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
   var companies = [];
   
@@ -763,7 +810,7 @@ function createCompany(company) {
   }
   
   var sheet = getCompaniesSheet();
-  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var headers = getCompanyHeaders(sheet);
   
   var nameToCreate = company.companyName.toString().trim().toLowerCase();
   
@@ -776,10 +823,23 @@ function createCompany(company) {
   if (duplicate) {
     throw new Error("A company with name '" + company.companyName + "' already exists in the system.");
   }
+
+  // Validation: Check for duplicate mobile number in the spreadsheet
+  if (company.mobile) {
+    var mobileToCreate = company.mobile.toString().trim();
+    if (mobileToCreate) {
+      var duplicateMobile = allCompanies.find(function(c) {
+        return c.mobile && c.mobile.toString().trim() === mobileToCreate;
+      });
+      if (duplicateMobile) {
+        throw new Error("A company with mobile number '" + company.mobile + "' already exists in the system.");
+      }
+    }
+  }
   
   // Automatically generate CompanyID if empty
   if (!company.id) {
-    company.id = "COMP-" + Date.now() + Math.floor(Math.random() * 1000);
+    company.id = "COMP-" + Date.now();
   }
   
   // Set CreatedDate and UpdatedDate if missing
@@ -814,7 +874,7 @@ function updateCompany(company) {
     throw new Error("Company with ID " + company.id + " not found (sheet is empty).");
   }
   
-  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var headers = getCompanyHeaders(sheet);
   var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
   
   var targetRowIndex = -1;
@@ -847,6 +907,20 @@ function updateCompany(company) {
     });
     if (duplicate) {
       throw new Error("Another company with name '" + company.companyName + "' already exists.");
+    }
+  }
+
+  // Check duplicate mobile if mobile is being changed
+  if (company.mobile) {
+    var mobileToUpdate = company.mobile.toString().trim();
+    if (mobileToUpdate) {
+      var allCompanies = getCompanies();
+      var duplicateMobile = allCompanies.find(function(c) {
+        return c.id !== company.id && c.mobile && c.mobile.toString().trim() === mobileToUpdate;
+      });
+      if (duplicateMobile) {
+        throw new Error("Another company with mobile number '" + company.mobile + "' already exists.");
+      }
     }
   }
   
@@ -884,7 +958,7 @@ function deleteCompany(id) {
     throw new Error("Company with ID " + id + " not found.");
   }
   
-  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var headers = getCompanyHeaders(sheet);
   var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
   
   var targetRowIndex = -1;
@@ -943,5 +1017,226 @@ function searchCompany(query) {
            (c.mobile && c.mobile.toString().includes(searchStr)) ||
            (c.id && c.id.toString().toLowerCase().includes(searchStr));
   });
+}
+
+/**
+ * Branch management sheet helpers and endpoint actions
+ */
+
+function getBranchesSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("Branches");
+  if (!sheet) {
+    sheet = ss.insertSheet("Branches");
+  }
+  if (sheet.getLastColumn() === 0) {
+    // Write default header columns
+    sheet.appendRow(["BranchID", "CompanyID", "Branch Name", "Address", "Mobile", "WhatsApp", "Status", "Created date"]);
+  }
+  return sheet;
+}
+
+function getBranchHeaders(sheet) {
+  var lastColumn = sheet.getLastColumn();
+  if (lastColumn === 0) {
+    var headers = ["BranchID", "CompanyID", "Branch Name", "Address", "Mobile", "WhatsApp", "Status", "Created date"];
+    sheet.appendRow(headers);
+    return headers;
+  }
+  return sheet.getRange(1, 1, 1, lastColumn).getValues()[0];
+}
+
+function mapBranchHeaderToKey(header) {
+  var clean = header.toString().trim().toLowerCase().replace(/[\s_-]/g, '');
+  if (clean === 'branchid' || clean === 'id') return 'id';
+  if (clean === 'companyid') return 'companyId';
+  if (clean === 'branchname') return 'branchName';
+  if (clean === 'address') return 'address';
+  if (clean === 'mobile') return 'mobile';
+  if (clean === 'whatsapp' || clean === 'whatsappnumber') return 'whatsAppNumber';
+  if (clean === 'status') return 'status';
+  if (clean === 'createddate') return 'createdDate';
+  return clean;
+}
+
+function branchToRow(branch, headers) {
+  var row = [];
+  for (var i = 0; i < headers.length; i++) {
+    var key = mapBranchHeaderToKey(headers[i]);
+    var val = branch[key];
+    if (val === undefined) {
+      if (key === 'id') val = branch.id || branch.branchId;
+      else if (key === 'whatsAppNumber') val = branch.whatsAppNumber || branch.whatsApp || branch.whatsapp;
+      else val = "";
+    }
+    if (val === undefined || val === null) val = "";
+    row.push(val);
+  }
+  return row;
+}
+
+/**
+ * Endpoint action: getBranches (Read All Branches)
+ */
+function getBranches() {
+  var sheet = getBranchesSheet();
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return [];
+  
+  var headers = getBranchHeaders(sheet);
+  var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
+  var branches = [];
+  
+  for (var i = 0; i < values.length; i++) {
+    var row = values[i];
+    var branch = {};
+    for (var j = 0; j < headers.length; j++) {
+      var header = headers[j];
+      var key = mapBranchHeaderToKey(header);
+      branch[key] = row[j];
+    }
+    branches.push(branch);
+  }
+  return branches;
+}
+
+/**
+ * Endpoint action: createBranch
+ */
+function createBranch(branch) {
+  if (!branch) {
+    throw new Error("No branch data provided");
+  }
+  if (!branch.branchName) {
+    throw new Error("Branch Name is required");
+  }
+  
+  var sheet = getBranchesSheet();
+  var headers = getBranchHeaders(sheet);
+  
+  if (!branch.id) {
+    branch.id = "BR-" + Date.now();
+  }
+  
+  if (!branch.createdDate) {
+    branch.createdDate = Date.now();
+  }
+  
+  if (!branch.status) {
+    branch.status = "Active";
+  }
+  
+  var rowData = branchToRow(branch, headers);
+  sheet.appendRow(rowData);
+  
+  return branch;
+}
+
+/**
+ * Endpoint action: updateBranch
+ */
+function updateBranch(branch) {
+  if (!branch || !branch.id) {
+    throw new Error("Branch ID is required for update.");
+  }
+  
+  var sheet = getBranchesSheet();
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) {
+    throw new Error("Branch with ID " + branch.id + " not found (sheet is empty).");
+  }
+  
+  var headers = getBranchHeaders(sheet);
+  var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
+  
+  var targetRowIndex = -1;
+  for (var i = 0; i < values.length; i++) {
+    var row = values[i];
+    var idColIdx = -1;
+    for (var j = 0; j < headers.length; j++) {
+      if (mapBranchHeaderToKey(headers[j]) === 'id') {
+        idColIdx = j;
+        break;
+      }
+    }
+    
+    if (idColIdx !== -1 && row[idColIdx].toString() === branch.id.toString()) {
+      targetRowIndex = i + 2;
+      break;
+    }
+  }
+  
+  if (targetRowIndex === -1) {
+    throw new Error("Branch with ID " + branch.id + " not found.");
+  }
+  
+  var existingBranch = getBranchById(branch.id);
+  for (var key in branch) {
+    existingBranch[key] = branch[key];
+  }
+  
+  var rowData = branchToRow(existingBranch, headers);
+  sheet.getRange(targetRowIndex, 1, 1, headers.length).setValues([rowData]);
+  
+  return existingBranch;
+}
+
+/**
+ * Endpoint action: deleteBranch
+ */
+function deleteBranch(id) {
+  if (!id) {
+    throw new Error("Branch ID is required for deletion.");
+  }
+  
+  var sheet = getBranchesSheet();
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) {
+    throw new Error("Branch with ID " + id + " not found.");
+  }
+  
+  var headers = getBranchHeaders(sheet);
+  var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
+  
+  var targetRowIndex = -1;
+  for (var i = 0; i < values.length; i++) {
+    var row = values[i];
+    var idColIdx = -1;
+    for (var j = 0; j < headers.length; j++) {
+      if (mapBranchHeaderToKey(headers[j]) === 'id') {
+        idColIdx = j;
+        break;
+      }
+    }
+    
+    if (idColIdx !== -1 && row[idColIdx].toString() === id.toString()) {
+      targetRowIndex = i + 2;
+      break;
+    }
+  }
+  
+  if (targetRowIndex === -1) {
+    throw new Error("Branch with ID '" + id + "' not found.");
+  }
+  
+  sheet.deleteRow(targetRowIndex);
+  return { id: id, deleted: true };
+}
+
+/**
+ * Endpoint action: getBranchById
+ */
+function getBranchById(id) {
+  if (!id) {
+    throw new Error("Branch ID is required.");
+  }
+  var all = getBranches();
+  var branch = all.find(function(b) {
+    return b.id && b.id.toString() === id.toString();
+  });
+  if (!branch) {
+    throw new Error("Branch not found with ID: " + id);
+  }
+  return branch;
 }
 

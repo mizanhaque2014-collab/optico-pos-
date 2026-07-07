@@ -1220,7 +1220,7 @@ export default function SuperAdminPortal() {
                           <span className="font-bold text-white block">Branches Sheet</span>
                           <span className="text-[10px] text-white/40 font-mono">Row Index Count: {branches.length}</span>
                         </div>
-                        <span className="px-2 py-0.5 bg-cyan-500/10 text-cyan-400 font-bold rounded">Local Cache Enabled</span>
+                        <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 font-bold rounded">Connected</span>
                       </div>
                     </div>
                   </div>

@@ -1,4 +1,5 @@
 import { apiCall } from '../apiClient';
+import { API_URL } from '../config';
 
 export interface BranchInfo {
   name: string;
@@ -18,134 +19,176 @@ export interface Branch {
   createdDate: number;
 }
 
-const DEFAULT_BRANCHES: BranchInfo[] = [
-  { name: 'Main Branch', address: '12 Optical Avenue, Sector 5', phone: '+91 98765 43210', code: 'MB-01' },
-  { name: 'City Center Branch', address: 'Shop 45, City Center Mall', phone: '+91 98765 43211', code: 'CC-02' },
-  { name: 'Metro Mall Branch', address: 'Ground Floor, Metro Galleria', phone: '+91 98765 43212', code: 'MM-03' }
-];
-
-const STORAGE_KEY_V2 = 'opt_branches_v2';
-
-const DEFAULT_BRANCHES_V2: Branch[] = [
-  {
-    id: 'BR-1',
-    companyId: 'COMP-1',
-    branchName: 'Main Branch',
-    address: '12 Optical Avenue, Sector 5',
-    mobile: '9876543210',
-    whatsAppNumber: '9876543210',
-    status: 'Active',
-    createdDate: 1719942400000
-  },
-  {
-    id: 'BR-2',
-    companyId: 'COMP-1',
-    branchName: 'City Center Branch',
-    address: 'Shop 45, City Center Mall',
-    mobile: '9876543211',
-    whatsAppNumber: '9876543211',
-    status: 'Active',
-    createdDate: 1719942400000
-  }
-];
-
 export const branchService = {
-  // Legacy methods
-  async getBranches(): Promise<BranchInfo[]> {
-    try {
-      const data = await apiCall<BranchInfo[]>('getBranches');
-      if (Array.isArray(data)) {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('opt_branches', JSON.stringify(data));
-        }
-        return data;
-      }
-    } catch (e) {
-      console.warn('getBranches API failed, returning default info:', e);
-    }
+  // Helper loggers
+  logRequest(action: string, payload: any) {
+    console.log(`%c[BRANCHES API REQ] Action: ${action}`, 'color: #3b82f6; font-weight: bold;', {
+      timestamp: new Date().toISOString(),
+      payload
+    });
+  },
 
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('opt_branches');
-      return stored ? JSON.parse(stored) : DEFAULT_BRANCHES;
-    }
-    return DEFAULT_BRANCHES;
+  logResponse(action: string, response: any) {
+    console.log(`%c[BRANCHES API RES] Action: ${action} SUCCESS`, 'color: #10b981; font-weight: bold;', {
+      timestamp: new Date().toISOString(),
+      response
+    });
+  },
+
+  logError(action: string, error: any) {
+    console.error(`%c[BRANCHES API ERROR] Action: ${action} FAILED! API URL: ${API_URL}`, 'color: #ef4444; font-weight: bold;', {
+      timestamp: new Date().toISOString(),
+      message: error.message || error,
+      error
+    });
+  },
+
+  // Legacy methods (mapped to new V2 backend)
+  async getBranches(): Promise<BranchInfo[]> {
+    const v2 = await this.getBranchesV2();
+    return v2.map(b => ({
+      name: b.branchName,
+      address: b.address,
+      phone: b.mobile,
+      code: b.id
+    }));
   },
 
   async saveBranch(branch: BranchInfo): Promise<void> {
+    this.logRequest('saveBranch (legacy)', branch);
     try {
-      await apiCall('saveBranch', { branch });
-    } catch (e) {
-      console.warn('saveBranch API failed:', e);
-    }
-
-    if (typeof window !== 'undefined') {
-      const branches = await this.getBranches();
-      const idx = branches.findIndex(b => b.name === branch.name || b.code === branch.code);
-      if (idx >= 0) {
-        branches[idx] = branch;
-      } else {
-        branches.push(branch);
-      }
-      localStorage.setItem('opt_branches', JSON.stringify(branches));
+      await this.createBranch({
+        companyId: 'COMP-1',
+        branchName: branch.name,
+        address: branch.address,
+        mobile: branch.phone,
+        whatsAppNumber: branch.phone,
+        status: 'Active'
+      });
+    } catch (e: any) {
+      this.logError('saveBranch (legacy)', e);
+      throw e;
     }
   },
 
   async assignUserToBranch(username: string, branchName: string): Promise<boolean> {
+    this.logRequest('assignUserToBranch', { username, branchName });
     try {
       const success = await apiCall<boolean>('assignUserToBranch', { username, branchName });
+      this.logResponse('assignUserToBranch', success);
       return success;
-    } catch (e) {
-      console.warn('assignUserToBranch API failed, running in local fallback:', e);
-      return true;
+    } catch (e: any) {
+      this.logError('assignUserToBranch', e);
+      throw e;
     }
   },
 
-  // Rich Branch CRUD methods for Super Admin
+  // Rich Branch CRUD methods for Super Admin (Direct Apps Script Integration)
   async getBranchesV2(): Promise<Branch[]> {
-    if (typeof window === 'undefined') return DEFAULT_BRANCHES_V2;
-    const stored = localStorage.getItem(STORAGE_KEY_V2);
-    if (stored) {
-      return JSON.parse(stored);
+    this.logRequest('getBranches', null);
+    try {
+      const data = await apiCall<Branch[]>('getBranches');
+      if (Array.isArray(data)) {
+        this.logResponse('getBranches', data);
+        return data;
+      }
+      throw new Error("Response is not an array");
+    } catch (e: any) {
+      this.logError('getBranches', e);
+      throw e;
     }
-    localStorage.setItem(STORAGE_KEY_V2, JSON.stringify(DEFAULT_BRANCHES_V2));
-    return DEFAULT_BRANCHES_V2;
+  },
+
+  async getBranchById(id: string): Promise<Branch> {
+    this.logRequest('getBranchById', { id });
+    if (!id) {
+      throw new Error("Branch ID is required.");
+    }
+    try {
+      const res = await apiCall<Branch>('getBranchById', { branchId: id });
+      if (res && res.id) {
+        this.logResponse('getBranchById', res);
+        return res;
+      }
+      throw new Error("Invalid response format for getBranchById");
+    } catch (e: any) {
+      this.logError('getBranchById', e);
+      throw e;
+    }
   },
 
   async createBranch(branch: Omit<Branch, 'id' | 'createdDate'>): Promise<Branch> {
-    const all = await this.getBranchesV2();
+    this.logRequest('createBranch', branch);
+    if (!branch.branchName || !branch.branchName.trim()) {
+      throw new Error("Branch Name is required.");
+    }
+    if (!branch.companyId || !branch.companyId.trim()) {
+      throw new Error("Company ID is required.");
+    }
+
     const newBranch: Branch = {
       ...branch,
-      id: `BR-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      id: `BR-${Date.now()}`,
       createdDate: Date.now()
     };
-    all.push(newBranch);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY_V2, JSON.stringify(all));
+
+    try {
+      const res = await apiCall<Branch>('createBranch', { branch: newBranch });
+      if (res && res.id) {
+        this.logResponse('createBranch', res);
+        // Refresh the entire list directly from Google Sheets
+        await this.getBranchesV2();
+        return res;
+      }
+      throw new Error("Invalid response format for createBranch");
+    } catch (e: any) {
+      this.logError('createBranch', e);
+      throw e;
     }
-    return newBranch;
   },
 
   async updateBranch(branch: Branch): Promise<Branch> {
-    const all = await this.getBranchesV2();
-    const idx = all.findIndex(b => b.id === branch.id);
-    if (idx >= 0) {
-      all[idx] = branch;
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(STORAGE_KEY_V2, JSON.stringify(all));
-      }
-    } else {
-      throw new Error(`Branch with ID ${branch.id} not found.`);
+    this.logRequest('updateBranch', branch);
+    if (!branch.id) {
+      throw new Error("Branch ID is required for update.");
     }
-    return branch;
+    if (!branch.branchName || !branch.branchName.trim()) {
+      throw new Error("Branch Name is required.");
+    }
+
+    try {
+      const res = await apiCall<Branch>('updateBranch', { branch });
+      if (res && res.id) {
+        this.logResponse('updateBranch', res);
+        // Refresh the entire list directly from Google Sheets
+        await this.getBranchesV2();
+        return res;
+      }
+      throw new Error("Invalid response format for updateBranch");
+    } catch (e: any) {
+      this.logError('updateBranch', e);
+      throw e;
+    }
   },
 
   async deleteBranch(id: string): Promise<boolean> {
-    const all = await this.getBranchesV2();
-    const filtered = all.filter(b => b.id !== id);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY_V2, JSON.stringify(filtered));
+    this.logRequest('deleteBranch', { id });
+    if (!id) {
+      throw new Error("Branch ID is required for deletion.");
     }
-    return true;
+
+    try {
+      const res = await apiCall<{ id: string; deleted: boolean }>('deleteBranch', { branchId: id });
+      if (res && res.deleted) {
+        this.logResponse('deleteBranch', res);
+        // Refresh the entire list directly from Google Sheets
+        await this.getBranchesV2();
+        return true;
+      }
+      throw new Error("Invalid response format for deleteBranch");
+    } catch (e: any) {
+      this.logError('deleteBranch', e);
+      throw e;
+    }
   }
 };
-
