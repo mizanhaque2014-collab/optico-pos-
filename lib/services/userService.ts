@@ -22,7 +22,22 @@ export interface UserAccount {
   name: string;
 }
 
-
+function parseSafeDate(val: any): number {
+  if (!val) return Date.now();
+  if (typeof val === 'number') return val;
+  if (typeof val === 'string') {
+    const cleanStr = val.trim();
+    if (/^\d+$/.test(cleanStr)) {
+      return parseInt(cleanStr, 10);
+    }
+    const d = new Date(cleanStr);
+    const t = d.getTime();
+    return isNaN(t) ? Date.now() : t;
+  }
+  const d = new Date(val);
+  const t = d.getTime();
+  return isNaN(t) ? Date.now() : t;
+}
 
 export const userService = {
   // Validate fields for users
@@ -94,12 +109,16 @@ export const userService = {
     const data = await apiCall<any[]>('getUsers');
     if (Array.isArray(data)) {
       this.logResponse('getUsers', data);
-      return data.map(u => ({
-        ...u,
-        id: u.userId || u.id,
-        createdDate: new Date(u.createdDate).getTime(),
-        updatedDate: u.updatedDate ? new Date(u.updatedDate).getTime() : new Date(u.createdDate).getTime()
-      }));
+      return data.map(u => {
+        const createdDate = parseSafeDate(u.createdDate);
+        const updatedDate = u.updatedDate ? parseSafeDate(u.updatedDate) : createdDate;
+        return {
+          ...u,
+          id: u.userId || u.id,
+          createdDate,
+          updatedDate
+        };
+      });
     }
     return [];
   },
@@ -112,13 +131,13 @@ export const userService = {
     if (res) {
       this.logResponse('getUserById', res);
       const idVal = res.userId || res.id || id;
-      const createdVal = res.createdDate ? new Date(res.createdDate).getTime() : Date.now();
-      const updatedVal = res.updatedDate ? new Date(res.updatedDate).getTime() : createdVal;
+      const createdDate = parseSafeDate(res.createdDate);
+      const updatedDate = res.updatedDate ? parseSafeDate(res.updatedDate) : createdDate;
       return {
         ...res,
         id: idVal,
-        createdDate: isNaN(createdVal) ? Date.now() : createdVal,
-        updatedDate: isNaN(updatedVal) ? Date.now() : updatedVal
+        createdDate,
+        updatedDate
       };
     }
     throw new Error("Invalid response format for getUserById");
@@ -137,13 +156,13 @@ export const userService = {
     if (res) {
       this.logResponse('createUser', res);
       const idVal = res.userId || res.id || `USR-${Date.now()}`;
-      const createdVal = res.createdDate ? new Date(res.createdDate).getTime() : Date.now();
-      const updatedVal = res.updatedDate ? new Date(res.updatedDate).getTime() : createdVal;
+      const createdDate = parseSafeDate(res.createdDate);
+      const updatedDate = res.updatedDate ? parseSafeDate(res.updatedDate) : createdDate;
       return {
         ...res,
         id: idVal,
-        createdDate: isNaN(createdVal) ? Date.now() : createdVal,
-        updatedDate: isNaN(updatedVal) ? Date.now() : updatedVal
+        createdDate,
+        updatedDate
       };
     }
     throw new Error("Invalid response format for createUser");
@@ -159,13 +178,13 @@ export const userService = {
     if (res) {
       this.logResponse('updateUser', res);
       const idVal = res.userId || res.id || user.id;
-      const createdVal = res.createdDate ? new Date(res.createdDate).getTime() : Date.now();
-      const updatedVal = res.updatedDate ? new Date(res.updatedDate).getTime() : createdVal;
+      const createdDate = parseSafeDate(res.createdDate);
+      const updatedDate = res.updatedDate ? parseSafeDate(res.updatedDate) : createdDate;
       return {
         ...res,
         id: idVal,
-        createdDate: isNaN(createdVal) ? Date.now() : createdVal,
-        updatedDate: isNaN(updatedVal) ? Date.now() : updatedVal
+        createdDate,
+        updatedDate
       };
     }
     throw new Error("Invalid response format for updateUser");

@@ -467,25 +467,28 @@ export default function SuperAdminPortal() {
   };
 
   // Filter lists based on Search bar
-  const filteredCompanies = companies.filter(c =>
-    c.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.ownerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredCompanies = companies.filter(c => {
+    const q = (searchQuery || '').toLowerCase();
+    return (c.companyName || '').toLowerCase().includes(q) ||
+           (c.ownerName || '').toLowerCase().includes(q) ||
+           (c.id || '').toLowerCase().includes(q) ||
+           (c.email || '').toLowerCase().includes(q);
+  });
 
-  const filteredBranches = branches.filter(b =>
-    b.branchName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    b.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    b.address.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredBranches = branches.filter(b => {
+    const q = (searchQuery || '').toLowerCase();
+    return (b.branchName || '').toLowerCase().includes(q) ||
+           (b.id || '').toLowerCase().includes(q) ||
+           (b.address || '').toLowerCase().includes(q);
+  });
 
-  const filteredUsers = users.filter(u =>
-    u.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    u.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    u.role.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredUsers = users.filter(u => {
+    const q = (searchQuery || '').toLowerCase();
+    return (u.fullName || '').toLowerCase().includes(q) ||
+           (u.username || '').toLowerCase().includes(q) ||
+           (u.email || '').toLowerCase().includes(q) ||
+           (u.role || '').toLowerCase().includes(q);
+  });
 
   // Return to normal dashboard
   const handleExitPortal = () => {
