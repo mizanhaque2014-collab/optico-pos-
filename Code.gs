@@ -497,7 +497,7 @@ function getUsersSheet() {
   }
   if (sheet.getLastColumn() === 0) {
     // Write default header columns
-    sheet.appendRow(["UserID", "CompanyID", "BranchID", "FullName", "Username", "Password", "Role", "Mobile", "Email", "Status", "CreatedDate", "UpdatedDate"]);
+    sheet.appendRow(["UserID", "CompanyID", "BranchID", "FullName", "Role", "Username", "Password", "Mobile", "Email", "Status", "CreatedDate"]);
   }
   return sheet;
 }
@@ -506,7 +506,7 @@ function getUsersSheet() {
 function getUserHeaders(sheet) {
   var lastColumn = sheet.getLastColumn();
   if (lastColumn === 0) {
-    var headers = ["UserID", "CompanyID", "BranchID", "FullName", "Username", "Password", "Role", "Mobile", "Email", "Status", "CreatedDate", "UpdatedDate"];
+    var headers = ["UserID", "CompanyID", "BranchID", "FullName", "Role", "Username", "Password", "Mobile", "Email", "Status", "CreatedDate"];
     sheet.appendRow(headers);
     return headers;
   }
