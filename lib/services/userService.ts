@@ -7,7 +7,7 @@ export interface User {
   fullName: string;
   username: string;
   password?: string;
-  role: 'SuperAdmin' | 'CompanyAdmin' | 'Staff';
+  role: string;
   mobile: string;
   email: string;
   status: 'Active' | 'Inactive';
@@ -17,7 +17,7 @@ export interface User {
 
 export interface UserAccount {
   username: string;
-  role: 'Admin' | 'Sales' | 'Optometrist' | 'SuperAdmin' | 'CompanyAdmin' | 'Staff';
+  role: string;
   branches: string[];
   name: string;
 }
@@ -26,18 +26,42 @@ export interface UserAccount {
 
 export const userService = {
   // Validate fields for users
-  validateUser(user: Partial<User>) {
+  validateUser(user: Partial<User>, isEdit: boolean = false) {
+    if (!user.companyId || !String(user.companyId ?? "").trim()) {
+      throw new Error("Company required");
+    }
+    if (!user.branchId || !String(user.branchId ?? "").trim()) {
+      throw new Error("Branch required");
+    }
     if (!user.fullName || !String(user.fullName ?? "").trim()) {
-      throw new Error("Full Name is required.");
+      throw new Error("Full Name required");
+    }
+    if (!user.role || !String(user.role ?? "").trim()) {
+      throw new Error("Role required");
     }
     if (!user.username || !String(user.username ?? "").trim()) {
-      throw new Error("Username is required.");
+      throw new Error("Username required");
     }
-    if (!user.role) {
-      throw new Error("Role is required.");
+    if (!isEdit && (!user.password || !String(user.password ?? "").trim())) {
+      throw new Error("Password required");
     }
-    if (!user.status) {
-      throw new Error("Status is required.");
+    const mobileVal = String(user.mobile ?? "").trim();
+    if (!mobileVal) {
+      throw new Error("Mobile required");
+    }
+    const phoneRegex = /^\+?[0-9\s\-()]{7,20}$/;
+    if (!phoneRegex.test(mobileVal)) {
+      throw new Error("Invalid mobile number format.");
+    }
+    const emailVal = String(user.email ?? "").trim();
+    if (emailVal) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(emailVal)) {
+        throw new Error("Invalid email.");
+      }
+    }
+    if (!user.status || !String(user.status ?? "").trim()) {
+      throw new Error("Status required");
     }
   },
 
@@ -129,7 +153,7 @@ export const userService = {
   async updateUser(user: User): Promise<User> {
     this.logRequest('updateUser', user);
     if (!user.id) throw new Error("User ID is required for updating.");
-    this.validateUser(user);
+    this.validateUser(user, true);
 
     const res = await apiCall<any>('updateUser', { user });
     if (res) {

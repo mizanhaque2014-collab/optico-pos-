@@ -568,47 +568,93 @@ function getUsers() {
   return users;
 }
 
+// Custom dynamic USR-XXXXXXXX format generator
+function generateUserId() {
+  var chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  var result = "";
+  for (var i = 0; i < 8; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return "USR-" + result;
+}
+
+// Backend validation using String(value ?? "").trim()
+function validateUserBackend(user, isEdit) {
+  if (!user) {
+    throw new Error("No user data provided");
+  }
+  if (!String(user.companyId ?? "").trim()) {
+    throw new Error("Company required");
+  }
+  if (!String(user.branchId ?? "").trim()) {
+    throw new Error("Branch required");
+  }
+  if (!String(user.fullName ?? "").trim()) {
+    throw new Error("Full Name required");
+  }
+  if (!String(user.role ?? "").trim()) {
+    throw new Error("Role required");
+  }
+  if (!String(user.username ?? "").trim()) {
+    throw new Error("Username required");
+  }
+  if (!isEdit && !String(user.password ?? "").trim()) {
+    throw new Error("Password required");
+  }
+  
+  var mobileVal = String(user.mobile ?? "").trim();
+  if (!mobileVal) {
+    throw new Error("Mobile required");
+  }
+  var phoneRegex = /^\+?[0-9\s\-()]{7,20}$/;
+  if (!phoneRegex.test(mobileVal)) {
+    throw new Error("Invalid mobile number format.");
+  }
+  
+  var emailVal = String(user.email ?? "").trim();
+  if (emailVal) {
+    var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailVal)) {
+      throw new Error("Invalid email.");
+    }
+  }
+  
+  if (!String(user.status ?? "").trim()) {
+    throw new Error("Status required");
+  }
+}
+
 /**
  * Endpoint action: createUser
  */
 function createUser(user) {
-  if (!user) {
-    throw new Error("No user data provided");
-  }
-  if (!user.fullName) {
-    throw new Error("Full name is required");
-  }
-  if (!user.username) {
-    throw new Error("Username is required");
-  }
+  validateUserBackend(user, false);
   
   var sheet = getUsersSheet();
   var headers = getUserHeaders(sheet);
   
-  var usernameToCreate = safeTrim(user.username).toLowerCase();
+  var usernameToCreate = String(user.username ?? "").trim().toLowerCase();
   
   // Validation: Check for duplicate username in the spreadsheet
   var allUsers = getUsers();
   var duplicate = allUsers.find(function(u) {
-    return u.username && safeTrim(u.username).toLowerCase() === usernameToCreate;
+    return u.username && String(u.username ?? "").trim().toLowerCase() === usernameToCreate;
   });
   
   if (duplicate) {
     throw new Error("A user with username '" + user.username + "' already exists in the system.");
   }
   
-  // Automatically generate UserID if empty
-  if (!user.id) {
-    user.id = "USER-" + Date.now() + Math.floor(Math.random() * 1000);
-  }
+  // Automatically generate UserID if empty or USER- format
+  var idToUse;
+  do {
+    idToUse = generateUserId();
+  } while (allUsers.some(function(u) { return u.id === idToUse; }));
+  user.id = idToUse;
   
-  // Set CreatedDate and UpdatedDate if missing
-  if (!user.createdDate) {
-    user.createdDate = Date.now();
-  }
-  if (!user.updatedDate) {
-    user.updatedDate = Date.now();
-  }
+  // Set CreatedDate and UpdatedDate
+  user.createdDate = Date.now();
+  user.updatedDate = Date.now();
   
   if (!user.status) {
     user.status = "Active";
@@ -658,18 +704,6 @@ function updateUser(user) {
     throw new Error("User with ID '" + user.id + "' not found.");
   }
   
-  // Check duplicate username if username is being changed
-  if (user.username) {
-    var usernameToUpdate = safeTrim(user.username).toLowerCase();
-    var allUsers = getUsers();
-    var duplicate = allUsers.find(function(u) {
-      return u.id !== user.id && u.username && safeTrim(u.username).toLowerCase() === usernameToUpdate;
-    });
-    if (duplicate) {
-      throw new Error("Another user with username '" + user.username + "' already exists.");
-    }
-  }
-  
   // Merge with existing user to preserve non-submitted fields
   var existingUser = getUserById(user.id);
   var mergedUser = {};
@@ -679,6 +713,21 @@ function updateUser(user) {
   for (var key in user) {
     if (user[key] !== undefined) {
       mergedUser[key] = user[key];
+    }
+  }
+  
+  // Validate merged user
+  validateUserBackend(mergedUser, true);
+  
+  // Check duplicate username if username is being changed
+  if (user.username) {
+    var usernameToUpdate = String(user.username ?? "").trim().toLowerCase();
+    var allUsers = getUsers();
+    var duplicate = allUsers.find(function(u) {
+      return u.id !== user.id && u.username && String(u.username ?? "").trim().toLowerCase() === usernameToUpdate;
+    });
+    if (duplicate) {
+      throw new Error("Another user with username '" + user.username + "' already exists.");
     }
   }
   

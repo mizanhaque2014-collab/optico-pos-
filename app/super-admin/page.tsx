@@ -117,7 +117,7 @@ export default function SuperAdminPortal() {
     fullName: '',
     username: '',
     password: '',
-    role: 'Staff' as 'SuperAdmin' | 'CompanyAdmin' | 'Staff',
+    role: 'Staff' as string,
     mobile: '',
     email: '',
     status: 'Active' as 'Active' | 'Inactive'
@@ -365,8 +365,8 @@ export default function SuperAdminPortal() {
   const handleOpenUserAdd = () => {
     setEditingUser(null);
     setUserForm({
-      companyId: companies[0]?.id || '',
-      branchId: branches.find(b => b.companyId === (companies[0]?.id || ''))?.branchName || 'Main Branch',
+      companyId: '',
+      branchId: '',
       fullName: '',
       username: '',
       password: '',
@@ -398,17 +398,33 @@ export default function SuperAdminPortal() {
     e.preventDefault();
     setActionLoading('user');
     try {
+      // Clean and trim all inputs with required String(value ?? "").trim()
+      const cleanForm = {
+        companyId: String(userForm.companyId ?? "").trim(),
+        branchId: String(userForm.branchId ?? "").trim(),
+        fullName: String(userForm.fullName ?? "").trim(),
+        username: String(userForm.username ?? "").trim(),
+        password: String(userForm.password ?? "").trim(),
+        role: String(userForm.role ?? "").trim(),
+        mobile: String(userForm.mobile ?? "").trim(),
+        email: String(userForm.email ?? "").trim(),
+        status: userForm.status
+      };
+
       if (editingUser) {
         const payload: User = {
           ...editingUser,
-          ...userForm,
+          ...cleanForm,
           updatedDate: getTimestamp()
         };
+        if (!cleanForm.password) {
+          delete payload.password;
+        }
         await userService.updateUser(payload);
         logEvent('SUCCESS', 'updateUser', `Modified user profile for "${payload.fullName}"`);
       } else {
-        await userService.createUser(userForm);
-        logEvent('SUCCESS', 'createUser', `Provisioned user login credentials for "${userForm.fullName}"`);
+        await userService.createUser(cleanForm);
+        logEvent('SUCCESS', 'createUser', `Provisioned user login credentials for "${cleanForm.fullName}"`);
       }
       setShowUserModal(false);
       await loadAllData();
@@ -893,59 +909,70 @@ export default function SuperAdminPortal() {
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="border-b border-white/10 bg-slate-950/40">
-                          <th className="p-4 text-[10px] font-black uppercase tracking-wider text-white/40">User ID</th>
+                          <th className="p-4 text-[10px] font-black uppercase tracking-wider text-white/40">Company</th>
+                          <th className="p-4 text-[10px] font-black uppercase tracking-wider text-white/40">Branch</th>
                           <th className="p-4 text-[10px] font-black uppercase tracking-wider text-white/40">Full Name</th>
-                          <th className="p-4 text-[10px] font-black uppercase tracking-wider text-white/40">Username</th>
-                          <th className="p-4 text-[10px] font-black uppercase tracking-wider text-white/40 font-mono">Company ID</th>
-                          <th className="p-4 text-[10px] font-black uppercase tracking-wider text-white/40">Branch ID</th>
                           <th className="p-4 text-[10px] font-black uppercase tracking-wider text-white/40">Role</th>
+                          <th className="p-4 text-[10px] font-black uppercase tracking-wider text-white/40">Username</th>
+                          <th className="p-4 text-[10px] font-black uppercase tracking-wider text-white/40">Mobile</th>
                           <th className="p-4 text-[10px] font-black uppercase tracking-wider text-white/40">Email</th>
                           <th className="p-4 text-[10px] font-black uppercase tracking-wider text-white/40">Status</th>
+                          <th className="p-4 text-[10px] font-black uppercase tracking-wider text-white/40">Created Date</th>
                           <th className="p-4 text-[10px] font-black uppercase tracking-wider text-white/40 text-center">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5">
                         {filteredUsers.length === 0 ? (
                           <tr>
-                            <td colSpan={9} className="p-8 text-center text-xs text-white/40">
+                            <td colSpan={10} className="p-8 text-center text-xs text-white/40">
                               No users match this criteria.
                             </td>
                           </tr>
                         ) : (
-                          filteredUsers.map(u => (
-                            <tr key={u.id} className="hover:bg-slate-900/40 transition-colors">
-                              <td className="p-4 text-xs font-mono font-bold text-cyan-400">{u.id}</td>
-                              <td className="p-4 text-sm font-bold text-white">{u.fullName}</td>
-                              <td className="p-4 text-xs font-mono text-white/90">{u.username}</td>
-                              <td className="p-4 text-xs font-mono text-white/50">{u.companyId || 'Global'}</td>
-                              <td className="p-4 text-xs text-white/70">{u.branchId || 'All Branches'}</td>
-                              <td className="p-4 text-xs font-bold text-cyan-300">{u.role}</td>
-                              <td className="p-4 text-xs text-white/70">{u.email}</td>
-                              <td className="p-4 text-xs">
-                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                                  u.status === 'Active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
-                                }`}>
-                                  {u.status}
-                                </span>
-                              </td>
-                              <td className="p-4 text-xs">
-                                <div className="flex items-center justify-center gap-2">
-                                  <button
-                                    onClick={() => handleOpenUserEdit(u)}
-                                    className="p-1.5 hover:bg-white/5 rounded text-white/60 hover:text-cyan-400 transition-all"
-                                  >
-                                    <Edit2 size={14} />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteUser(u.id, u.fullName)}
-                                    className="p-1.5 hover:bg-white/5 rounded text-white/60 hover:text-red-400 transition-all"
-                                  >
-                                    <Trash2 size={14} />
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))
+                          filteredUsers.map(u => {
+                            const compObj = companies.find(c => c.id === u.companyId);
+                            const branchObj = branches.find(b => b.id === u.branchId || b.branchName === u.branchId);
+                            const formattedCreatedDate = u.createdDate ? new Date(u.createdDate).toLocaleDateString() : 'N/A';
+                            return (
+                              <tr key={u.id} className="hover:bg-slate-900/40 transition-colors">
+                                <td className="p-4 text-xs font-bold text-cyan-400">
+                                  {compObj ? compObj.companyName : u.companyId || 'N/A'}
+                                </td>
+                                <td className="p-4 text-xs text-white/70">
+                                  {branchObj ? branchObj.branchName : u.branchId || 'N/A'}
+                                </td>
+                                <td className="p-4 text-sm font-bold text-white">{u.fullName}</td>
+                                <td className="p-4 text-xs font-bold text-cyan-300">{u.role}</td>
+                                <td className="p-4 text-xs font-mono text-white/90">{u.username}</td>
+                                <td className="p-4 text-xs text-white/70">{u.mobile || 'N/A'}</td>
+                                <td className="p-4 text-xs text-white/70">{u.email || 'N/A'}</td>
+                                <td className="p-4 text-xs">
+                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                    u.status === 'Active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
+                                  }`}>
+                                    {u.status}
+                                  </span>
+                                </td>
+                                <td className="p-4 text-xs text-white/50 font-mono">{formattedCreatedDate}</td>
+                                <td className="p-4 text-xs">
+                                  <div className="flex items-center justify-center gap-2">
+                                    <button
+                                      onClick={() => handleOpenUserEdit(u)}
+                                      className="p-1.5 hover:bg-white/5 rounded text-white/60 hover:text-cyan-400 transition-all"
+                                    >
+                                      <Edit2 size={14} />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteUser(u.id, u.fullName)}
+                                      className="p-1.5 hover:bg-white/5 rounded text-white/60 hover:text-red-400 transition-all"
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })
                         )}
                       </tbody>
                     </table>
@@ -1669,12 +1696,14 @@ export default function SuperAdminPortal() {
                   <label className="text-white/50 font-bold">Select Company Tenant</label>
                   <select
                     value={userForm.companyId}
-                    onChange={(e) => setUserForm({ ...userForm, companyId: e.target.value })}
+                    onChange={(e) => setUserForm({ ...userForm, companyId: e.target.value, branchId: "" })}
                     className="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-white"
+                    required
                   >
+                    <option value="">Select Company Tenant</option>
                     {companies.map(comp => (
                       <option key={comp.id} value={comp.id}>
-                        {comp.companyName}
+                        {comp.companyName} ({comp.id})
                       </option>
                     ))}
                   </select>
@@ -1685,8 +1714,11 @@ export default function SuperAdminPortal() {
                   <select
                     value={userForm.branchId}
                     onChange={(e) => setUserForm({ ...userForm, branchId: e.target.value })}
-                    className="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-white"
+                    disabled={!userForm.companyId}
+                    className="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    required
                   >
+                    <option value="">Select Branch Location</option>
                     {branches
                       .filter(b => b.companyId === userForm.companyId)
                       .map(b => (
@@ -1694,7 +1726,6 @@ export default function SuperAdminPortal() {
                           {b.branchName}
                         </option>
                       ))}
-                    <option value="Main Branch">Main Branch (Fallback)</option>
                   </select>
                 </div>
               </div>
@@ -1715,12 +1746,18 @@ export default function SuperAdminPortal() {
                   <label className="text-white/50 font-bold">User Permission Role</label>
                   <select
                     value={userForm.role}
-                    onChange={(e) => setUserForm({ ...userForm, role: e.target.value as 'SuperAdmin' | 'CompanyAdmin' | 'Staff' })}
+                    onChange={(e) => setUserForm({ ...userForm, role: e.target.value })}
                     className="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-white"
+                    required
                   >
-                    <option value="Staff">Staff (Assigned Branch Only)</option>
-                    <option value="CompanyAdmin">Company Admin (Assigned Company Only)</option>
-                    <option value="SuperAdmin">Super Admin (Universal Access)</option>
+                    <option value="Super Admin">Super Admin</option>
+                    <option value="Admin">Admin</option>
+                    <option value="Manager">Manager</option>
+                    <option value="Staff">Staff</option>
+                    <option value="Reception">Reception</option>
+                    <option value="Optometrist">Optometrist</option>
+                    <option value="Cashier">Cashier</option>
+                    <option value="Lab Technician">Lab Technician</option>
                   </select>
                 </div>
               </div>
@@ -1755,6 +1792,7 @@ export default function SuperAdminPortal() {
                   <label className="text-white/50 font-bold">Mobile</label>
                   <input
                     type="text"
+                    required
                     value={userForm.mobile}
                     onChange={(e) => setUserForm({ ...userForm, mobile: e.target.value })}
                     className="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-white"
