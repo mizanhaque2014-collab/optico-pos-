@@ -1,18 +1,17 @@
 import { apiCall } from '../apiClient';
 
 export interface User {
-  id: string;
-  companyId: string;
-  branchId: string;
-  fullName: string;
-  username: string;
-  password?: string;
-  role: string;
-  mobile: string;
-  email: string;
-  status: 'Active' | 'Inactive';
-  createdDate: number;
-  updatedDate: number;
+  UserID: string;
+  CompanyID: string;
+  BranchID: string;
+  FullName: string;
+  Username: string;
+  Password?: string;
+  Role: string;
+  Mobile: string;
+  Email: string;
+  Status: 'Active' | 'Inactive';
+  CreatedDate: number;
 }
 
 export interface UserAccount {
@@ -42,25 +41,25 @@ function parseSafeDate(val: any): number {
 export const userService = {
   // Validate fields for users
   validateUser(user: Partial<User>, isEdit: boolean = false) {
-    if (!user.companyId || !String(user.companyId ?? "").trim()) {
+    if (!user.CompanyID || !String(user.CompanyID ?? "").trim()) {
       throw new Error("Company required");
     }
-    if (!user.branchId || !String(user.branchId ?? "").trim()) {
+    if (!user.BranchID || !String(user.BranchID ?? "").trim()) {
       throw new Error("Branch required");
     }
-    if (!user.fullName || !String(user.fullName ?? "").trim()) {
+    if (!user.FullName || !String(user.FullName ?? "").trim()) {
       throw new Error("Full Name required");
     }
-    if (!user.role || !String(user.role ?? "").trim()) {
+    if (!user.Role || !String(user.Role ?? "").trim()) {
       throw new Error("Role required");
     }
-    if (!user.username || !String(user.username ?? "").trim()) {
+    if (!user.Username || !String(user.Username ?? "").trim()) {
       throw new Error("Username required");
     }
-    if (!isEdit && (!user.password || !String(user.password ?? "").trim())) {
+    if (!isEdit && (!user.Password || !String(user.Password ?? "").trim())) {
       throw new Error("Password required");
     }
-    const mobileVal = String(user.mobile ?? "").trim();
+    const mobileVal = String(user.Mobile ?? "").trim();
     if (!mobileVal) {
       throw new Error("Mobile required");
     }
@@ -68,14 +67,14 @@ export const userService = {
     if (!phoneRegex.test(mobileVal)) {
       throw new Error("Invalid mobile number format.");
     }
-    const emailVal = String(user.email ?? "").trim();
+    const emailVal = String(user.Email ?? "").trim();
     if (emailVal) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(emailVal)) {
         throw new Error("Invalid email.");
       }
     }
-    if (!user.status || !String(user.status ?? "").trim()) {
+    if (!user.Status || !String(user.Status ?? "").trim()) {
       throw new Error("Status required");
     }
   },
@@ -110,13 +109,28 @@ export const userService = {
     if (Array.isArray(data)) {
       this.logResponse('getUsers', data);
       return data.map(u => {
-        const createdDate = parseSafeDate(u.createdDate);
-        const updatedDate = u.updatedDate ? parseSafeDate(u.updatedDate) : createdDate;
+        const idVal = u.UserID || u.userId || u.id;
+        const companyVal = u.CompanyID || u.companyId;
+        const branchVal = u.BranchID || u.branchId;
+        const fullNameVal = u.FullName || u.fullName;
+        const usernameVal = u.Username || u.username;
+        const roleVal = u.Role || u.role;
+        const mobileVal = u.Mobile || u.mobile;
+        const emailVal = u.Email || u.email;
+        const statusVal = u.Status || u.status || 'Active';
+        const createdDate = parseSafeDate(u.CreatedDate || u.createdDate);
         return {
-          ...u,
-          id: u.userId || u.id,
-          createdDate,
-          updatedDate
+          UserID: idVal,
+          CompanyID: companyVal,
+          BranchID: branchVal,
+          FullName: fullNameVal,
+          Username: usernameVal,
+          Password: u.Password || u.password,
+          Role: roleVal,
+          Mobile: mobileVal,
+          Email: emailVal,
+          Status: statusVal,
+          CreatedDate: createdDate
         };
       });
     }
@@ -130,39 +144,77 @@ export const userService = {
     const res = await apiCall<any>('getUserById', { userId: id });
     if (res) {
       this.logResponse('getUserById', res);
-      const idVal = res.userId || res.id || id;
-      const createdDate = parseSafeDate(res.createdDate);
-      const updatedDate = res.updatedDate ? parseSafeDate(res.updatedDate) : createdDate;
+      const idVal = res.UserID || res.userId || res.id || id;
+      const companyVal = res.CompanyID || res.companyId;
+      const branchVal = res.BranchID || res.branchId;
+      const fullNameVal = res.FullName || res.fullName;
+      const usernameVal = res.Username || res.username;
+      const roleVal = res.Role || res.role;
+      const mobileVal = res.Mobile || res.mobile;
+      const emailVal = res.Email || res.email;
+      const statusVal = res.Status || res.status || 'Active';
+      const createdDate = parseSafeDate(res.CreatedDate || res.createdDate);
       return {
-        ...res,
-        id: idVal,
-        createdDate,
-        updatedDate
+        UserID: idVal,
+        CompanyID: companyVal,
+        BranchID: branchVal,
+        FullName: fullNameVal,
+        Username: usernameVal,
+        Password: res.Password || res.password,
+        Role: roleVal,
+        Mobile: mobileVal,
+        Email: emailVal,
+        Status: statusVal,
+        CreatedDate: createdDate
       };
     }
     throw new Error("Invalid response format for getUserById");
   },
 
   // Create User
-  async createUser(user: Omit<User, 'id' | 'createdDate' | 'updatedDate'> & { id?: string; createdDate?: number; updatedDate?: number }): Promise<User> {
+  async createUser(user: Omit<User, 'UserID' | 'CreatedDate'> & { UserID?: string; CreatedDate?: number }): Promise<User> {
     this.logRequest('createUser', user);
     this.validateUser(user);
 
     const newUser: any = {
-      ...user,
+      UserID: user.UserID,
+      CompanyID: user.CompanyID,
+      BranchID: user.BranchID,
+      FullName: user.FullName,
+      Username: user.Username,
+      Password: user.Password,
+      Role: user.Role,
+      Mobile: user.Mobile,
+      Email: user.Email,
+      Status: user.Status,
+      CreatedDate: user.CreatedDate
     };
 
     const res = await apiCall<any>('createUser', { user: newUser });
     if (res) {
       this.logResponse('createUser', res);
-      const idVal = res.userId || res.id || `USR-${Date.now()}`;
-      const createdDate = parseSafeDate(res.createdDate);
-      const updatedDate = res.updatedDate ? parseSafeDate(res.updatedDate) : createdDate;
+      const idVal = res.UserID || res.userId || res.id || `USR-${Date.now()}`;
+      const companyVal = res.CompanyID || res.companyId || user.CompanyID;
+      const branchVal = res.BranchID || res.branchId || user.BranchID;
+      const fullNameVal = res.FullName || res.fullName || user.FullName;
+      const usernameVal = res.Username || res.username || user.Username;
+      const roleVal = res.Role || res.role || user.Role;
+      const mobileVal = res.Mobile || res.mobile || user.Mobile;
+      const emailVal = res.Email || res.email || user.Email;
+      const statusVal = res.Status || res.status || user.Status || 'Active';
+      const createdDate = parseSafeDate(res.CreatedDate || res.createdDate);
       return {
-        ...res,
-        id: idVal,
-        createdDate,
-        updatedDate
+        UserID: idVal,
+        CompanyID: companyVal,
+        BranchID: branchVal,
+        FullName: fullNameVal,
+        Username: usernameVal,
+        Password: res.Password || res.password || user.Password,
+        Role: roleVal,
+        Mobile: mobileVal,
+        Email: emailVal,
+        Status: statusVal,
+        CreatedDate: createdDate
       };
     }
     throw new Error("Invalid response format for createUser");
@@ -171,20 +223,34 @@ export const userService = {
   // Update User
   async updateUser(user: User): Promise<User> {
     this.logRequest('updateUser', user);
-    if (!user.id) throw new Error("User ID is required for updating.");
+    if (!user.UserID) throw new Error("User ID is required for updating.");
     this.validateUser(user, true);
 
     const res = await apiCall<any>('updateUser', { user });
     if (res) {
       this.logResponse('updateUser', res);
-      const idVal = res.userId || res.id || user.id;
-      const createdDate = parseSafeDate(res.createdDate);
-      const updatedDate = res.updatedDate ? parseSafeDate(res.updatedDate) : createdDate;
+      const idVal = res.UserID || res.userId || res.id || user.UserID;
+      const companyVal = res.CompanyID || res.companyId || user.CompanyID;
+      const branchVal = res.BranchID || res.branchId || user.BranchID;
+      const fullNameVal = res.FullName || res.fullName || user.FullName;
+      const usernameVal = res.Username || res.username || user.Username;
+      const roleVal = res.Role || res.role || user.Role;
+      const mobileVal = res.Mobile || res.mobile || user.Mobile;
+      const emailVal = res.Email || res.email || user.Email;
+      const statusVal = res.Status || res.status || user.Status || 'Active';
+      const createdDate = parseSafeDate(res.CreatedDate || res.createdDate || user.CreatedDate);
       return {
-        ...res,
-        id: idVal,
-        createdDate,
-        updatedDate
+        UserID: idVal,
+        CompanyID: companyVal,
+        BranchID: branchVal,
+        FullName: fullNameVal,
+        Username: usernameVal,
+        Password: res.Password || res.password || user.Password,
+        Role: roleVal,
+        Mobile: mobileVal,
+        Email: emailVal,
+        Status: statusVal,
+        CreatedDate: createdDate
       };
     }
     throw new Error("Invalid response format for updateUser");
@@ -206,12 +272,31 @@ export const userService = {
     const res = await apiCall<any[]>('searchUser', { query });
     if (Array.isArray(res)) {
       this.logResponse('searchUser', res);
-      return res.map(u => ({
-        ...u,
-        id: u.userId || u.id,
-        createdDate: new Date(u.createdDate).getTime(),
-        updatedDate: u.updatedDate ? new Date(u.updatedDate).getTime() : new Date(u.createdDate).getTime()
-      }));
+      return res.map(u => {
+        const idVal = u.UserID || u.userId || u.id;
+        const companyVal = u.CompanyID || u.companyId;
+        const branchVal = u.BranchID || u.branchId;
+        const fullNameVal = u.FullName || u.fullName;
+        const usernameVal = u.Username || u.username;
+        const roleVal = u.Role || u.role;
+        const mobileVal = u.Mobile || u.mobile;
+        const emailVal = u.Email || u.email;
+        const statusVal = u.Status || u.status || 'Active';
+        const createdDate = parseSafeDate(u.CreatedDate || u.createdDate);
+        return {
+          UserID: idVal,
+          CompanyID: companyVal,
+          BranchID: branchVal,
+          FullName: fullNameVal,
+          Username: usernameVal,
+          Password: u.Password || u.password,
+          Role: roleVal,
+          Mobile: mobileVal,
+          Email: emailVal,
+          Status: statusVal,
+          CreatedDate: createdDate
+        };
+      });
     }
     return [];
   },
@@ -219,36 +304,36 @@ export const userService = {
   // Save user helper to route upserts appropriately
   async saveUser(user: User): Promise<void> {
     this.logRequest('saveUser', user);
-    if (user.id && !user.id.startsWith('USER-') && user.id.length > 5) {
+    if (user.UserID && !user.UserID.startsWith('USER-') && user.UserID.length > 5) {
       await this.updateUser(user);
     } else {
       await this.createUser(user);
     }
   },
 
-  // Existing authenticate function updated to keep compatibility
+  // Authenticate
   async authenticate(username: string, password?: string): Promise<UserAccount | null> {
     this.logRequest('authenticate', { username });
     try {
       const users = await this.getUsers();
       const matchedUser = users.find(u => 
-        String(u.username ?? "").trim().toLowerCase() === String(username ?? "").trim().toLowerCase() && 
-        u.status === 'Active'
+        String(u.Username ?? "").trim().toLowerCase() === String(username ?? "").trim().toLowerCase() && 
+        u.Status === 'Active'
       );
 
       if (matchedUser) {
         let legacyRole: 'Admin' | 'Sales' | 'Optometrist' = 'Sales';
-        if (matchedUser.role === 'SuperAdmin' || matchedUser.role === 'CompanyAdmin') {
+        if (matchedUser.Role === 'SuperAdmin' || matchedUser.Role === 'CompanyAdmin') {
           legacyRole = 'Admin';
-        } else if (matchedUser.fullName.toLowerCase().includes('optom')) {
+        } else if (matchedUser.FullName.toLowerCase().includes('optom')) {
           legacyRole = 'Optometrist';
         }
 
         const userAccount: UserAccount = {
-          username: matchedUser.username,
+          username: matchedUser.Username,
           role: legacyRole,
-          branches: [matchedUser.branchId || 'Main Branch'],
-          name: matchedUser.fullName
+          branches: [matchedUser.BranchID || 'Main Branch'],
+          name: matchedUser.FullName
         };
 
         this.logResponse('authenticate', userAccount);
@@ -285,5 +370,4 @@ export const userService = {
       localStorage.removeItem('opt_current_user');
     }
   },
-
-  };
+};

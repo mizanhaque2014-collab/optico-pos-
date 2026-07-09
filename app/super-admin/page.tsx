@@ -112,15 +112,15 @@ export default function SuperAdminPortal() {
   const [showUserModal, setShowUserModal] = useState<boolean>(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [userForm, setUserForm] = useState({
-    companyId: '',
-    branchId: '',
-    fullName: '',
-    username: '',
-    password: '',
-    role: 'Staff' as string,
-    mobile: '',
-    email: '',
-    status: 'Active' as 'Active' | 'Inactive'
+    CompanyID: '',
+    BranchID: '',
+    FullName: '',
+    Username: '',
+    Password: '',
+    Role: 'Staff' as string,
+    Mobile: '',
+    Email: '',
+    Status: 'Active' as 'Active' | 'Inactive'
   });
 
   // Diagnostics and Log Monitor Simulation state
@@ -365,15 +365,15 @@ export default function SuperAdminPortal() {
   const handleOpenUserAdd = () => {
     setEditingUser(null);
     setUserForm({
-      companyId: '',
-      branchId: '',
-      fullName: '',
-      username: '',
-      password: '',
-      role: 'Staff',
-      mobile: '',
-      email: '',
-      status: 'Active'
+      CompanyID: '',
+      BranchID: '',
+      FullName: '',
+      Username: '',
+      Password: '',
+      Role: 'Staff',
+      Mobile: '',
+      Email: '',
+      Status: 'Active'
     });
     setShowUserModal(true);
   };
@@ -381,15 +381,15 @@ export default function SuperAdminPortal() {
   const handleOpenUserEdit = (u: User) => {
     setEditingUser(u);
     setUserForm({
-      companyId: u.companyId,
-      branchId: u.branchId,
-      fullName: u.fullName,
-      username: u.username,
-      password: u.password || '',
-      role: u.role,
-      mobile: u.mobile,
-      email: u.email,
-      status: u.status
+      CompanyID: u.CompanyID,
+      BranchID: u.BranchID,
+      FullName: u.FullName,
+      Username: u.Username,
+      Password: u.Password || '',
+      Role: u.Role,
+      Mobile: u.Mobile,
+      Email: u.Email,
+      Status: u.Status
     });
     setShowUserModal(true);
   };
@@ -400,31 +400,31 @@ export default function SuperAdminPortal() {
     try {
       // Clean and trim all inputs with required String(value ?? "").trim()
       const cleanForm = {
-        companyId: String(userForm.companyId ?? "").trim(),
-        branchId: String(userForm.branchId ?? "").trim(),
-        fullName: String(userForm.fullName ?? "").trim(),
-        username: String(userForm.username ?? "").trim(),
-        password: String(userForm.password ?? "").trim(),
-        role: String(userForm.role ?? "").trim(),
-        mobile: String(userForm.mobile ?? "").trim(),
-        email: String(userForm.email ?? "").trim(),
-        status: userForm.status
+        CompanyID: String(userForm.CompanyID ?? "").trim(),
+        BranchID: String(userForm.BranchID ?? "").trim(),
+        FullName: String(userForm.FullName ?? "").trim(),
+        Username: String(userForm.Username ?? "").trim(),
+        Password: String(userForm.Password ?? "").trim(),
+        Role: String(userForm.Role ?? "").trim(),
+        Mobile: String(userForm.Mobile ?? "").trim(),
+        Email: String(userForm.Email ?? "").trim(),
+        Status: userForm.Status
       };
 
       if (editingUser) {
         const payload: User = {
           ...editingUser,
           ...cleanForm,
-          updatedDate: getTimestamp()
+          CreatedDate: editingUser.CreatedDate || getTimestamp()
         };
-        if (!cleanForm.password) {
-          delete payload.password;
+        if (!cleanForm.Password) {
+          delete payload.Password;
         }
         await userService.updateUser(payload);
-        logEvent('SUCCESS', 'updateUser', `Modified user profile for "${payload.fullName}"`);
+        logEvent('SUCCESS', 'updateUser', `Modified user profile for "${payload.FullName}"`);
       } else {
         await userService.createUser(cleanForm);
-        logEvent('SUCCESS', 'createUser', `Provisioned user login credentials for "${cleanForm.fullName}"`);
+        logEvent('SUCCESS', 'createUser', `Provisioned user login credentials for "${cleanForm.FullName}"`);
       }
       setShowUserModal(false);
       await loadAllData();
@@ -484,10 +484,10 @@ export default function SuperAdminPortal() {
 
   const filteredUsers = users.filter(u => {
     const q = (searchQuery || '').toLowerCase();
-    return (u.fullName || '').toLowerCase().includes(q) ||
-           (u.username || '').toLowerCase().includes(q) ||
-           (u.email || '').toLowerCase().includes(q) ||
-           (u.role || '').toLowerCase().includes(q);
+    return (u.FullName || '').toLowerCase().includes(q) ||
+           (u.Username || '').toLowerCase().includes(q) ||
+           (u.Email || '').toLowerCase().includes(q) ||
+           (u.Role || '').toLowerCase().includes(q);
   });
 
   // Return to normal dashboard
@@ -933,27 +933,27 @@ export default function SuperAdminPortal() {
                           </tr>
                         ) : (
                           filteredUsers.map(u => {
-                            const compObj = companies.find(c => c.id === u.companyId);
-                            const branchObj = branches.find(b => b.id === u.branchId || b.branchName === u.branchId);
-                            const formattedCreatedDate = u.createdDate ? new Date(u.createdDate).toLocaleDateString() : 'N/A';
+                            const compObj = companies.find(c => c.id === u.CompanyID);
+                            const branchObj = branches.find(b => b.id === u.BranchID || b.branchName === u.BranchID);
+                            const formattedCreatedDate = u.CreatedDate ? new Date(u.CreatedDate).toLocaleDateString() : 'N/A';
                             return (
-                              <tr key={u.id} className="hover:bg-slate-900/40 transition-colors">
+                              <tr key={u.UserID} className="hover:bg-slate-900/40 transition-colors">
                                 <td className="p-4 text-xs font-bold text-cyan-400">
-                                  {compObj ? compObj.companyName : u.companyId || 'N/A'}
+                                  {compObj ? compObj.companyName : u.CompanyID || 'N/A'}
                                 </td>
                                 <td className="p-4 text-xs text-white/70">
-                                  {branchObj ? branchObj.branchName : u.branchId || 'N/A'}
+                                  {branchObj ? branchObj.branchName : u.BranchID || 'N/A'}
                                 </td>
-                                <td className="p-4 text-sm font-bold text-white">{u.fullName}</td>
-                                <td className="p-4 text-xs font-bold text-cyan-300">{u.role}</td>
-                                <td className="p-4 text-xs font-mono text-white/90">{u.username}</td>
-                                <td className="p-4 text-xs text-white/70">{u.mobile || 'N/A'}</td>
-                                <td className="p-4 text-xs text-white/70">{u.email || 'N/A'}</td>
+                                <td className="p-4 text-sm font-bold text-white">{u.FullName}</td>
+                                <td className="p-4 text-xs font-bold text-cyan-300">{u.Role}</td>
+                                <td className="p-4 text-xs font-mono text-white/90">{u.Username}</td>
+                                <td className="p-4 text-xs text-white/70">{u.Mobile || 'N/A'}</td>
+                                <td className="p-4 text-xs text-white/70">{u.Email || 'N/A'}</td>
                                 <td className="p-4 text-xs">
                                   <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                                    u.status === 'Active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
+                                    u.Status === 'Active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
                                   }`}>
-                                    {u.status}
+                                    {u.Status}
                                   </span>
                                 </td>
                                 <td className="p-4 text-xs text-white/50 font-mono">{formattedCreatedDate}</td>
@@ -966,7 +966,7 @@ export default function SuperAdminPortal() {
                                       <Edit2 size={14} />
                                     </button>
                                     <button
-                                      onClick={() => handleDeleteUser(u.id, u.fullName)}
+                                      onClick={() => handleDeleteUser(u.UserID, u.FullName)}
                                       className="p-1.5 hover:bg-white/5 rounded text-white/60 hover:text-red-400 transition-all"
                                     >
                                       <Trash2 size={14} />
@@ -1118,8 +1118,8 @@ export default function SuperAdminPortal() {
                     <div className="bg-[#0F172A] p-6 rounded-2xl border border-white/5">
                       <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">User Roles Distribution</h3>
                       <div className="space-y-4 text-xs">
-                        {['SuperAdmin', 'CompanyAdmin', 'Staff'].map(role => {
-                          const count = users.filter(u => u.role === role).length;
+                        {['Super Admin', 'Admin', 'Staff'].map(role => {
+                          const count = users.filter(u => u.Role === role).length;
                           const pct = Math.round((count / (users.length || 1)) * 100);
                           return (
                             <div key={role} className="space-y-1">
@@ -1698,8 +1698,8 @@ export default function SuperAdminPortal() {
                 <div className="space-y-1">
                   <label className="text-white/50 font-bold">Select Company Tenant</label>
                   <select
-                    value={userForm.companyId}
-                    onChange={(e) => setUserForm({ ...userForm, companyId: e.target.value, branchId: "" })}
+                    value={userForm.CompanyID}
+                    onChange={(e) => setUserForm({ ...userForm, CompanyID: e.target.value, BranchID: "" })}
                     className="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-white"
                     required
                   >
@@ -1715,15 +1715,15 @@ export default function SuperAdminPortal() {
                 <div className="space-y-1">
                   <label className="text-white/50 font-bold">Select Branch Location</label>
                   <select
-                    value={userForm.branchId}
-                    onChange={(e) => setUserForm({ ...userForm, branchId: e.target.value })}
-                    disabled={!userForm.companyId}
+                    value={userForm.BranchID}
+                    onChange={(e) => setUserForm({ ...userForm, BranchID: e.target.value })}
+                    disabled={!userForm.CompanyID}
                     className="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                     required
                   >
                     <option value="">Select Branch Location</option>
                     {branches
-                      .filter(b => b.companyId === userForm.companyId)
+                      .filter(b => b.companyId === userForm.CompanyID)
                       .map(b => (
                         <option key={b.id} value={b.id}>
                           {b.branchName}
@@ -1739,8 +1739,8 @@ export default function SuperAdminPortal() {
                   <input
                     type="text"
                     required
-                    value={userForm.fullName}
-                    onChange={(e) => setUserForm({ ...userForm, fullName: e.target.value })}
+                    value={userForm.FullName}
+                    onChange={(e) => setUserForm({ ...userForm, FullName: e.target.value })}
                     className="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-white"
                   />
                 </div>
@@ -1748,8 +1748,8 @@ export default function SuperAdminPortal() {
                 <div className="space-y-1">
                   <label className="text-white/50 font-bold">User Permission Role</label>
                   <select
-                    value={userForm.role}
-                    onChange={(e) => setUserForm({ ...userForm, role: e.target.value })}
+                    value={userForm.Role}
+                    onChange={(e) => setUserForm({ ...userForm, Role: e.target.value })}
                     className="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-white"
                     required
                   >
@@ -1771,8 +1771,8 @@ export default function SuperAdminPortal() {
                   <input
                     type="text"
                     required
-                    value={userForm.username}
-                    onChange={(e) => setUserForm({ ...userForm, username: e.target.value })}
+                    value={userForm.Username}
+                    onChange={(e) => setUserForm({ ...userForm, Username: e.target.value })}
                     className="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-white"
                   />
                 </div>
@@ -1783,8 +1783,8 @@ export default function SuperAdminPortal() {
                     type="password"
                     required={!editingUser}
                     placeholder={editingUser ? 'Leave blank to preserve' : ''}
-                    value={userForm.password}
-                    onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
+                    value={userForm.Password}
+                    onChange={(e) => setUserForm({ ...userForm, Password: e.target.value })}
                     className="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-white"
                   />
                 </div>
@@ -1796,8 +1796,8 @@ export default function SuperAdminPortal() {
                   <input
                     type="text"
                     required
-                    value={userForm.mobile}
-                    onChange={(e) => setUserForm({ ...userForm, mobile: e.target.value })}
+                    value={userForm.Mobile}
+                    onChange={(e) => setUserForm({ ...userForm, Mobile: e.target.value })}
                     className="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-white"
                   />
                 </div>
@@ -1806,8 +1806,8 @@ export default function SuperAdminPortal() {
                   <label className="text-white/50 font-bold">Email</label>
                   <input
                     type="email"
-                    value={userForm.email}
-                    onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
+                    value={userForm.Email}
+                    onChange={(e) => setUserForm({ ...userForm, Email: e.target.value })}
                     className="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-white"
                   />
                 </div>
@@ -1816,8 +1816,8 @@ export default function SuperAdminPortal() {
               <div className="space-y-1">
                 <label className="text-white/50 font-bold">Account Access Status</label>
                 <select
-                  value={userForm.status}
-                  onChange={(e) => setUserForm({ ...userForm, status: e.target.value as 'Active' | 'Inactive' })}
+                  value={userForm.Status}
+                  onChange={(e) => setUserForm({ ...userForm, Status: e.target.value as 'Active' | 'Inactive' })}
                   className="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-white"
                 >
                   <option value="Active">Active</option>

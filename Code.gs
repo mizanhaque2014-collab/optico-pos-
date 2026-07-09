@@ -516,19 +516,18 @@ function getUserHeaders(sheet) {
 // Map User sheet header names to exact JavaScript property names
 function mapUserHeaderToKey(header) {
   var clean = safeTrim(header).toLowerCase().replace(/[\s_-]/g, '');
-  if (clean === 'userid' || clean === 'id') return 'id';
-  if (clean === 'companyid') return 'companyId';
-  if (clean === 'branchid') return 'branchId';
-  if (clean === 'fullname') return 'fullName';
-  if (clean === 'username') return 'username';
-  if (clean === 'password') return 'password';
-  if (clean === 'role') return 'role';
-  if (clean === 'mobile') return 'mobile';
-  if (clean === 'email') return 'email';
-  if (clean === 'status') return 'status';
-  if (clean === 'createddate') return 'createdDate';
-  if (clean === 'updateddate') return 'updatedDate';
-  return clean;
+  if (clean === 'userid' || clean === 'id') return 'UserID';
+  if (clean === 'companyid') return 'CompanyID';
+  if (clean === 'branchid') return 'BranchID';
+  if (clean === 'fullname') return 'FullName';
+  if (clean === 'username') return 'Username';
+  if (clean === 'password') return 'Password';
+  if (clean === 'role') return 'Role';
+  if (clean === 'mobile') return 'Mobile';
+  if (clean === 'email') return 'Email';
+  if (clean === 'status') return 'Status';
+  if (clean === 'createddate') return 'CreatedDate';
+  return header;
 }
 
 // Serialize user object fields into spreadsheet row indices
@@ -537,6 +536,19 @@ function userToRow(user, headers) {
   for (var i = 0; i < headers.length; i++) {
     var key = mapUserHeaderToKey(headers[i]);
     var val = user[key];
+    if (val === undefined) {
+      if (key === 'UserID') val = user.UserID || user.userId || user.id || user.UserId;
+      else if (key === 'CompanyID') val = user.CompanyID || user.companyId || user.CompanyId;
+      else if (key === 'BranchID') val = user.BranchID || user.branchId || user.BranchId;
+      else if (key === 'FullName') val = user.FullName || user.fullName || user.fullname;
+      else if (key === 'Username') val = user.Username || user.username;
+      else if (key === 'Password') val = user.Password || user.password;
+      else if (key === 'Role') val = user.Role || user.role;
+      else if (key === 'Mobile') val = user.Mobile || user.mobile;
+      else if (key === 'Email') val = user.Email || user.email;
+      else if (key === 'Status') val = user.Status || user.status;
+      else if (key === 'CreatedDate') val = user.CreatedDate || user.createdDate;
+    }
     if (val === undefined) val = "";
     row.push(val);
   }
@@ -583,26 +595,36 @@ function validateUserBackend(user, isEdit) {
   if (!user) {
     throw new Error("No user data provided");
   }
-  if (!String(user.companyId ?? "").trim()) {
+  var companyId = user.CompanyID || user.companyId || user.CompanyId;
+  var branchId = user.BranchID || user.branchId || user.BranchId;
+  var fullName = user.FullName || user.fullName || user.fullname;
+  var role = user.Role || user.role;
+  var username = user.Username || user.username;
+  var password = user.Password || user.password;
+  var mobile = user.Mobile || user.mobile;
+  var email = user.Email || user.email;
+  var status = user.Status || user.status;
+
+  if (!String(companyId ?? "").trim()) {
     throw new Error("Company required");
   }
-  if (!String(user.branchId ?? "").trim()) {
+  if (!String(branchId ?? "").trim()) {
     throw new Error("Branch required");
   }
-  if (!String(user.fullName ?? "").trim()) {
+  if (!String(fullName ?? "").trim()) {
     throw new Error("Full Name required");
   }
-  if (!String(user.role ?? "").trim()) {
+  if (!String(role ?? "").trim()) {
     throw new Error("Role required");
   }
-  if (!String(user.username ?? "").trim()) {
+  if (!String(username ?? "").trim()) {
     throw new Error("Username required");
   }
-  if (!isEdit && !String(user.password ?? "").trim()) {
+  if (!isEdit && !String(password ?? "").trim()) {
     throw new Error("Password required");
   }
   
-  var mobileVal = String(user.mobile ?? "").trim();
+  var mobileVal = String(mobile ?? "").trim();
   if (!mobileVal) {
     throw new Error("Mobile required");
   }
@@ -611,7 +633,7 @@ function validateUserBackend(user, isEdit) {
     throw new Error("Invalid mobile number format.");
   }
   
-  var emailVal = String(user.email ?? "").trim();
+  var emailVal = String(email ?? "").trim();
   if (emailVal) {
     var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(emailVal)) {
@@ -619,7 +641,7 @@ function validateUserBackend(user, isEdit) {
     }
   }
   
-  if (!String(user.status ?? "").trim()) {
+  if (!String(status ?? "").trim()) {
     throw new Error("Status required");
   }
 }
@@ -633,30 +655,38 @@ function createUser(user) {
   var sheet = getUsersSheet();
   var headers = getUserHeaders(sheet);
   
-  var usernameToCreate = String(user.username ?? "").trim().toLowerCase();
+  var usernameToCreate = String((user.Username || user.username) ?? "").trim().toLowerCase();
   
   // Validation: Check for duplicate username in the spreadsheet
   var allUsers = getUsers();
   var duplicate = allUsers.find(function(u) {
-    return u.username && String(u.username ?? "").trim().toLowerCase() === usernameToCreate;
+    var uName = u.Username || u.username;
+    return uName && String(uName ?? "").trim().toLowerCase() === usernameToCreate;
   });
   
   if (duplicate) {
-    throw new Error("A user with username '" + user.username + "' already exists in the system.");
+    throw new Error("A user with username '" + (user.Username || user.username) + "' already exists in the system.");
   }
   
   // Automatically generate UserID if empty or USER- format
   var idToUse;
   do {
     idToUse = generateUserId();
-  } while (allUsers.some(function(u) { return u.id === idToUse; }));
-  user.id = idToUse;
+  } while (allUsers.some(function(u) {
+    var uId = u.UserID || u.id || u.userId;
+    return uId === idToUse;
+  }));
   
-  // Set CreatedDate and UpdatedDate
-  user.createdDate = Date.now();
-  user.updatedDate = Date.now();
+  user.UserID = idToUse;
+  user.id = idToUse; // safety fallback
   
-  if (!user.status) {
+  // Set CreatedDate
+  var now = Date.now();
+  user.CreatedDate = now;
+  user.createdDate = now; // safety fallback
+  
+  if (!user.Status && !user.status) {
+    user.Status = "Active";
     user.status = "Active";
   }
   
@@ -670,14 +700,15 @@ function createUser(user) {
  * Endpoint action: updateUser
  */
 function updateUser(user) {
-  if (!user || !user.id) {
+  var userId = user.UserID || user.id || user.userId;
+  if (!userId) {
     throw new Error("User ID is required for updating details.");
   }
   
   var sheet = getUsersSheet();
   var lastRow = sheet.getLastRow();
   if (lastRow <= 1) {
-    throw new Error("User with ID " + user.id + " not found (sheet is empty).");
+    throw new Error("User with ID " + userId + " not found (sheet is empty).");
   }
   
   var headers = getUserHeaders(sheet);
@@ -688,24 +719,25 @@ function updateUser(user) {
     var row = values[i];
     var idColIdx = -1;
     for (var j = 0; j < headers.length; j++) {
-      if (mapUserHeaderToKey(headers[j]) === 'id') {
+      var headerKey = mapUserHeaderToKey(headers[j]);
+      if (headerKey === 'UserID' || headerKey === 'id') {
         idColIdx = j;
         break;
       }
     }
     
-    if (idColIdx !== -1 && row[idColIdx].toString() === user.id.toString()) {
+    if (idColIdx !== -1 && row[idColIdx].toString() === userId.toString()) {
       targetRowIndex = i + 2; // +2 for 1-based index and skipping header row
       break;
     }
   }
   
   if (targetRowIndex === -1) {
-    throw new Error("User with ID '" + user.id + "' not found.");
+    throw new Error("User with ID '" + userId + "' not found.");
   }
   
   // Merge with existing user to preserve non-submitted fields
-  var existingUser = getUserById(user.id);
+  var existingUser = getUserById(userId);
   var mergedUser = {};
   for (var key in existingUser) {
     mergedUser[key] = existingUser[key];
@@ -720,18 +752,19 @@ function updateUser(user) {
   validateUserBackend(mergedUser, true);
   
   // Check duplicate username if username is being changed
-  if (user.username) {
-    var usernameToUpdate = String(user.username ?? "").trim().toLowerCase();
+  var usernameVal = user.Username || user.username;
+  if (usernameVal) {
+    var usernameToUpdate = String(usernameVal ?? "").trim().toLowerCase();
     var allUsers = getUsers();
     var duplicate = allUsers.find(function(u) {
-      return u.id !== user.id && u.username && String(u.username ?? "").trim().toLowerCase() === usernameToUpdate;
+      var uId = u.UserID || u.id || u.userId;
+      var uName = u.Username || u.username;
+      return uId !== userId && uName && String(uName ?? "").trim().toLowerCase() === usernameToUpdate;
     });
     if (duplicate) {
-      throw new Error("Another user with username '" + user.username + "' already exists.");
+      throw new Error("Another user with username '" + usernameVal + "' already exists.");
     }
   }
-  
-  mergedUser.updatedDate = Date.now();
   
   var rowData = userToRow(mergedUser, headers);
   sheet.getRange(targetRowIndex, 1, 1, headers.length).setValues([rowData]);
@@ -761,7 +794,8 @@ function deleteUser(id) {
     var row = values[i];
     var idColIdx = -1;
     for (var j = 0; j < headers.length; j++) {
-      if (mapUserHeaderToKey(headers[j]) === 'id') {
+      var headerKey = mapUserHeaderToKey(headers[j]);
+      if (headerKey === 'UserID' || headerKey === 'id') {
         idColIdx = j;
         break;
       }
@@ -790,7 +824,8 @@ function getUserById(id) {
   }
   var all = getUsers();
   var user = all.find(function(u) {
-    return u.id && u.id.toString() === id.toString();
+    var uId = u.UserID || u.id || u.userId;
+    return uId && uId.toString() === id.toString();
   });
   if (!user) {
     throw new Error("User not found with ID: " + id);
