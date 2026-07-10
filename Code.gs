@@ -164,7 +164,7 @@ function createCustomer(customer) {
  * Updates existing customer fields and preserves unaltered fields.
  */
 function updateCustomer(customer) {
-  if (!customer || !customer.id) {
+  if (!customer || !customer.id || customer.id.toString().trim() === "") {
     throw new Error("Customer ID is required for updating details.");
   }
   

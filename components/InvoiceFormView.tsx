@@ -11,6 +11,8 @@ import { OpticalInvoiceA5 } from './OpticalInvoiceA5';
 import PrescriptionSection from './PrescriptionSection';
 import { Trash2, Plus, Receipt } from 'lucide-react';
 import { Prescription } from '@/lib/types';
+import { prescriptionService } from '@/lib/services/prescriptionService';
+import { customerService } from '@/lib/services/customerService';
 
 interface Props {
   type: InvoiceType;
@@ -129,7 +131,7 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
   const [saveSuccessMessage, setSaveSuccessMessage] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
 
-  const handleSaveCustomerOnly = () => {
+  const handleSaveCustomerOnly = async () => {
     if (!customer) {
       alert('Please select a customer.');
       return;
@@ -150,9 +152,17 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
       } else {
         updatedCustomer.prescriptions = updatedCustomer.prescriptions.map(p => p.id === prescription.id ? prescription : p);
       }
+      
+      // Save prescription to sheet via its own endpoint
+      try {
+        await prescriptionService.savePrescription(customer.id, prescription);
+      } catch (err) {
+        console.warn("Failed to save prescription:", err);
+      }
     }
 
-    saveCustomer(updatedCustomer);
+    // Update client-side local cache only, do not invoke remote master Customer sheet save/overwrite
+    customerService.updateLocalCache(updatedCustomer);
     setCustomer(updatedCustomer);
     setSaveSuccessMessage(true);
     setTimeout(() => setSaveSuccessMessage(false), 5000);
@@ -170,7 +180,7 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
     setShowConfirmation(true);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!customer) return;
     
     // In Direct Sale, advance is full amount
@@ -190,9 +200,18 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
         updatedCustomer.prescriptions = updatedCustomer.prescriptions.map(p => p.id === prescription.id ? prescription : p);
       }
       finalPrescriptionId = prescription.id;
+
+      // Save prescription to sheet via its own endpoint
+      try {
+        await prescriptionService.savePrescription(customer.id, prescription);
+      } catch (err) {
+        console.warn("Failed to save prescription on submit:", err);
+      }
     }
     updatedCustomer.status = type === 'Sales Order' ? 'Sales Order Customer' : 'Buyer';
-    saveCustomer(updatedCustomer);
+    
+    // Update client-side local cache only, do not invoke remote master Customer sheet save/overwrite
+    customerService.updateLocalCache(updatedCustomer);
 
     const newInvoice = {
       id: crypto.randomUUID(),

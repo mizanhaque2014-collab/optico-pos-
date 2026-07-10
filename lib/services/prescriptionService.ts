@@ -23,7 +23,7 @@ export const prescriptionService = {
         prescriptions.push(prescription);
       }
       customer.prescriptions = prescriptions;
-      await customerService.saveCustomer(customer);
+      customerService.updateLocalCache(customer);
     }
   },
 
