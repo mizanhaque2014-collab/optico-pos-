@@ -20,11 +20,6 @@ export default function Home() {
   const [preloadedEyeTest, setPreloadedEyeTest] = useState<any>(null);
 
   useEffect(() => {
-    // Run the connection diagnostics suite on load to verify Google Sheets Web App connectivity
-    runApiDiagnostics().catch((err) => {
-      console.warn("Background API diagnostics failed/offline fallback:", err);
-    });
-
     // Keyboard shortcut (Ctrl + Shift + O) to open Super Admin Portal
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === 'O') {

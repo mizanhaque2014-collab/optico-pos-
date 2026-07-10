@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { Customer } from '@/lib/types';
 import { useStore } from '@/lib/store';
-import { Search, Plus, UserPlus } from 'lucide-react';
+import { Search, UserPlus } from 'lucide-react';
 
 interface Props {
   selectedCustomer: Customer | null;
@@ -13,9 +13,10 @@ interface Props {
 export function CustomerSelect({ selectedCustomer, onSelect }: Props) {
   const { getCustomers, saveCustomer } = useStore();
   const [isAdding, setIsAdding] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [search, setSearch] = useState('');
   
-  // New customer form state
+  // Customer form state (used for both Add and Edit)
   const [name, setName] = useState('');
   const [mobile, setMobile] = useState('');
   const [dob, setDob] = useState('');
@@ -32,46 +33,86 @@ export function CustomerSelect({ selectedCustomer, onSelect }: Props) {
     ).slice(0, 5); // top 5 results
   }, [search, customers]);
 
-  const handleSaveNew = () => {
+  const handleSaveCustomer = async () => {
     if (!name || !mobile) {
       alert("Name and Mobile are required");
       return;
     }
-    const newCustomer: Customer = {
-      id: crypto.randomUUID(),
+    
+    // Explicitly set ID to blank if we are adding a brand-new customer
+    // This triggers createCustomer() instead of updateCustomer()
+    const customerPayload: Customer = {
+      id: isEditing && selectedCustomer ? selectedCustomer.id : '', 
       name,
       mobile,
       dob,
       address,
-      createdAt: Date.now()
+      createdAt: isEditing && selectedCustomer ? selectedCustomer.createdAt : Date.now()
     };
-    saveCustomer(newCustomer);
-    onSelect(newCustomer);
-    setIsAdding(false);
-    setSearch('');
+
+    try {
+      const saved = await saveCustomer(customerPayload);
+      onSelect(saved);
+      setIsAdding(false);
+      setIsEditing(false);
+      setSearch('');
+    } catch (err: any) {
+      alert("Failed to save customer: " + err.message);
+    }
   };
 
-  if (selectedCustomer && !isAdding) {
+  const handleStartEditing = () => {
+    if (!selectedCustomer) return;
+    setName(selectedCustomer.name);
+    setMobile(selectedCustomer.mobile);
+    setDob(selectedCustomer.dob || '');
+    setAddress(selectedCustomer.address || '');
+    setIsEditing(true);
+    setIsAdding(false);
+  };
+
+  const handleStartAdding = () => {
+    setName('');
+    setMobile('');
+    setDob('');
+    setAddress('');
+    setIsAdding(true);
+    setIsEditing(false);
+  };
+
+  if (selectedCustomer && !isAdding && !isEditing) {
     return (
       <div className="bg-cyan-900/20 border border-cyan-500/20 p-4 rounded-xl flex justify-between items-center">
         <div>
           <p className="font-bold text-lg text-white">{selectedCustomer.name}</p>
           <p className="text-sm text-cyan-200/60">📞 {selectedCustomer.mobile} | 🏠 {selectedCustomer.address || 'N/A'}</p>
         </div>
-        <button 
-          onClick={() => onSelect(null as any)}
-          className="text-xs font-bold text-cyan-400 hover:text-cyan-300 px-3 py-1 rounded border border-cyan-500/30 bg-cyan-900/40 uppercase tracking-wider"
-        >
-          Change
-        </button>
+        <div className="flex gap-2">
+          <button 
+            type="button"
+            onClick={handleStartEditing}
+            className="text-xs font-bold text-yellow-400 hover:text-yellow-300 px-3 py-1 rounded border border-yellow-500/30 bg-yellow-900/40 uppercase tracking-wider transition-colors"
+          >
+            Edit Details
+          </button>
+          <button 
+            type="button"
+            onClick={() => onSelect(null as any)}
+            className="text-xs font-bold text-cyan-400 hover:text-cyan-300 px-3 py-1 rounded border border-cyan-500/30 bg-cyan-900/40 uppercase tracking-wider transition-colors"
+          >
+            Change
+          </button>
+        </div>
       </div>
     );
   }
 
-  if (isAdding) {
+  if (isAdding || isEditing) {
     return (
       <div className="bg-[#1E293B] p-4 rounded-xl border border-white/10">
-        <h3 className="font-black mb-3 flex items-center gap-2 text-emerald-400 uppercase tracking-wider text-xs"><UserPlus size={16} /> Add New Customer</h3>
+        <h3 className="font-black mb-3 flex items-center gap-2 text-emerald-400 uppercase tracking-wider text-xs">
+          <UserPlus size={16} /> {isEditing ? 'Edit Customer Details' : 'Add New Customer'}
+        </h3>
         <div className="grid grid-cols-2 gap-4 mb-4">
           <input 
             type="text" placeholder="Full Name *" 
@@ -95,8 +136,23 @@ export function CustomerSelect({ selectedCustomer, onSelect }: Props) {
           />
         </div>
         <div className="flex gap-2">
-          <button onClick={handleSaveNew} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-black uppercase text-xs">Save & Select</button>
-          <button onClick={() => setIsAdding(false)} className="bg-[#020617] hover:bg-white/5 border border-white/10 text-white/60 px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider">Cancel</button>
+          <button 
+            type="button"
+            onClick={handleSaveCustomer} 
+            className="bg-[#10B981] hover:bg-[#059669] text-white px-4 py-2 rounded-lg font-black uppercase text-xs transition-colors"
+          >
+            {isEditing ? 'Update Customer' : 'Save & Select'}
+          </button>
+          <button 
+            type="button"
+            onClick={() => {
+              setIsAdding(false);
+              setIsEditing(false);
+            }} 
+            className="bg-[#020617] hover:bg-white/5 border border-white/10 text-white/60 px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-colors"
+          >
+            Cancel
+          </button>
         </div>
       </div>
     );
@@ -142,7 +198,7 @@ export function CustomerSelect({ selectedCustomer, onSelect }: Props) {
       <div className="w-[1px] h-12 bg-white/5 mx-2"></div>
       
       <button 
-        onClick={() => setIsAdding(true)}
+        onClick={handleStartAdding}
         className="flex flex-col items-center gap-1 text-emerald-400 group hover:text-emerald-300 transition-colors"
       >
         <div className="text-3xl">➕</div>

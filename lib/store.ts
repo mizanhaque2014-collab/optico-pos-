@@ -37,10 +37,11 @@ export const useStore = () => {
     return memoryCache.customers;
   };
 
-  const saveCustomer = async (customer: Customer): Promise<void> => {
-    await customerService.saveCustomer(customer);
+  const saveCustomer = async (customer: Customer): Promise<Customer> => {
+    const saved = await customerService.saveCustomer(customer);
     memoryCache.customers = await customerService.getCustomers();
     notify();
+    return saved;
   };
 
   const getInvoices = (): Invoice[] => {

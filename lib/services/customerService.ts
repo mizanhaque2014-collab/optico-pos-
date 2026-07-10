@@ -93,19 +93,23 @@ export const customerService = {
   },
 
   // Existing saveCustomer method updated to use new endpoints
-  async saveCustomer(customer: Customer): Promise<void> {
+  async saveCustomer(customer: Customer): Promise<Customer> {
     console.log("CUSTOMER SAVE START", customer);
     try {
-      const customers = await this.getCustomers();
-      const exists = customers.some(c => c.id === customer.id);
-      if (exists) {
-        await this.updateCustomer(customer);
+      if (!customer.id) {
+        return await this.createCustomer(customer);
       } else {
-        await this.createCustomer(customer);
+        return await this.updateCustomer(customer);
       }
     } catch (e) {
       console.warn('customerService.saveCustomer api failed, storing locally:', e);
-      this.updateLocalCache(customer);
+      const localCustomer: Customer = {
+        ...customer,
+        id: customer.id || `CUST-local-${Date.now()}`,
+        createdAt: customer.createdAt || Date.now()
+      };
+      this.updateLocalCache(localCustomer);
+      return localCustomer;
     }
   },
 
