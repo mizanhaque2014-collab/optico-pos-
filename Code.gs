@@ -386,16 +386,16 @@ function doPost(e) {
         result = getPayments(payload.customerId || e.parameter.customerId);
         break;
       case 'savePrescription':
-        result = payload.prescription || {};
+        result = savePrescription(payload.prescription || payload);
         break;
       case 'loadPrescriptions':
-        result = [];
+        result = getPrescriptions(payload.customerId || e.parameter.customerId);
         break;
       case 'saveEyeTest':
-        result = payload.eyeTestDetails || {};
+        result = saveEyeTest(payload.eyeTest || payload.eyeTestDetails || payload);
         break;
       case 'loadEyeTests':
-        result = [];
+        result = getEyeTests(payload.customerId || e.parameter.customerId);
         break;
       case 'saveInvoiceItem':
         result = payload.items || [];
@@ -1261,5 +1261,155 @@ function savePayment(pay) {
     sheet.appendRow(rowData);
   }
   return pay;
+}
+
+// Helper to get or create EyeTests sheet
+function getEyeTestsSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("EyeTests");
+  if (!sheet) {
+    sheet = ss.insertSheet("EyeTests");
+  }
+  if (sheet.getLastColumn() === 0) {
+    sheet.appendRow(["id", "companyId", "branchId", "customerId", "eyeTestDate", "optometristName", "sphOd", "cylOd", "axisOd", "sphOs", "cylOs", "axisOs", "addPower", "pdDistance", "pdNear", "segmentHeight", "lensRecommendation", "remarks", "createdAt"]);
+  }
+  return sheet;
+}
+
+// Get EyeTests
+function getEyeTests(customerId) {
+  var sheet = getEyeTestsSheet();
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return [];
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
+  var eyeTests = [];
+  for (var i = 0; i < values.length; i++) {
+    var row = values[i];
+    var et = {};
+    for (var j = 0; j < headers.length; j++) {
+      et[headers[j]] = row[j];
+    }
+    if (!customerId || et.customerId.toString() === customerId.toString()) {
+      eyeTests.push(et);
+    }
+  }
+  return eyeTests;
+}
+
+// Save EyeTest
+function saveEyeTest(et) {
+  if (!et) throw new Error("No eye test record provided");
+  var sheet = getEyeTestsSheet();
+  var lastRow = sheet.getLastRow();
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  
+  if (!et.id) {
+    et.id = "et-" + Date.now();
+  }
+  if (!et.createdAt) {
+    et.createdAt = Date.now();
+  }
+  
+  var targetRowIndex = -1;
+  if (lastRow > 1) {
+    var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
+    for (var i = 0; i < values.length; i++) {
+      if (values[i][0].toString() === et.id.toString()) {
+        targetRowIndex = i + 2;
+        break;
+      }
+    }
+  }
+  
+  var rowData = [];
+  for (var k = 0; k < headers.length; k++) {
+    var key = headers[k];
+    var val = et[key];
+    if (val === undefined || val === null) val = "";
+    rowData.push(val);
+  }
+  
+  if (targetRowIndex !== -1) {
+    sheet.getRange(targetRowIndex, 1, 1, headers.length).setValues([rowData]);
+  } else {
+    sheet.appendRow(rowData);
+  }
+  return et;
+}
+
+// Helper to get or create Prescriptions sheet
+function getPrescriptionsSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("Prescriptions");
+  if (!sheet) {
+    sheet = ss.insertSheet("Prescriptions");
+  }
+  if (sheet.getLastColumn() === 0) {
+    sheet.appendRow(["id", "companyId", "branchId", "customerId", "source", "rightSph", "rightCyl", "rightAxis", "rightAdd", "rightVa", "leftSph", "leftCyl", "leftAxis", "leftAdd", "leftVa", "pdDistance", "pdNear", "remarks", "createdAt"]);
+  }
+  return sheet;
+}
+
+// Get Prescriptions
+function getPrescriptions(customerId) {
+  var sheet = getPrescriptionsSheet();
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return [];
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
+  var prescriptions = [];
+  for (var i = 0; i < values.length; i++) {
+    var row = values[i];
+    var p = {};
+    for (var j = 0; j < headers.length; j++) {
+      p[headers[j]] = row[j];
+    }
+    if (!customerId || p.customerId.toString() === customerId.toString()) {
+      prescriptions.push(p);
+    }
+  }
+  return prescriptions;
+}
+
+// Save Prescription
+function savePrescription(p) {
+  if (!p) throw new Error("No prescription provided");
+  var sheet = getPrescriptionsSheet();
+  var lastRow = sheet.getLastRow();
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  
+  if (!p.id) {
+    p.id = "p-" + Date.now();
+  }
+  if (!p.createdAt) {
+    p.createdAt = Date.now();
+  }
+  
+  var targetRowIndex = -1;
+  if (lastRow > 1) {
+    var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
+    for (var i = 0; i < values.length; i++) {
+      if (values[i][0].toString() === p.id.toString()) {
+        targetRowIndex = i + 2;
+        break;
+      }
+    }
+  }
+  
+  var rowData = [];
+  for (var k = 0; k < headers.length; k++) {
+    var key = headers[k];
+    var val = p[key];
+    if (val === undefined || val === null) val = "";
+    rowData.push(val);
+  }
+  
+  if (targetRowIndex !== -1) {
+    sheet.getRange(targetRowIndex, 1, 1, headers.length).setValues([rowData]);
+  } else {
+    sheet.appendRow(rowData);
+  }
+  return p;
 }
 

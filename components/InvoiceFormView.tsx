@@ -16,16 +16,46 @@ interface Props {
   type: InvoiceType;
   onBack: () => void;
   initialCustomer?: Customer;
+  preloadedEyeTest?: any;
 }
 
-export function InvoiceFormView({ type, onBack, initialCustomer }: Props) {
+export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTest }: Props) {
   const { saveInvoice, generateInvoiceNumber, saveCustomer, getCustomers, getStockInventory } = useStore();
   const [stableCurrentTime, setStableCurrentTime] = useState<number>(0);
   useEffect(() => {
     setStableCurrentTime(Date.now());
   }, []);
   const [customer, setCustomer] = useState<Customer | null>(initialCustomer || null);
-  const [prescription, setPrescription] = useState<Prescription | null>(initialCustomer?.prescriptions?.[initialCustomer.prescriptions.length - 1] || null);
+  const [prescription, setPrescription] = useState<Prescription | null>(() => {
+    if (preloadedEyeTest) {
+      return {
+        id: preloadedEyeTest.id || `P-ET-${Date.now()}`,
+        source: 'Eye Test Performed In Shop',
+        rightEye: {
+          sph: preloadedEyeTest.sphOd || '',
+          cyl: preloadedEyeTest.cylOd || '',
+          axis: preloadedEyeTest.axisOd || '',
+          add: preloadedEyeTest.addPower || '',
+        },
+        leftEye: {
+          sph: preloadedEyeTest.sphOs || '',
+          cyl: preloadedEyeTest.cylOs || '',
+          axis: preloadedEyeTest.axisOs || '',
+          add: preloadedEyeTest.addPower || '',
+        },
+        pdDistance: preloadedEyeTest.pdDistance || '',
+        pdNear: preloadedEyeTest.pdNear || '',
+        remarks: preloadedEyeTest.remarks || '',
+        eyeTestDetails: {
+          optometristName: preloadedEyeTest.optometristName || '',
+          eyeTestDate: preloadedEyeTest.eyeTestDate || '',
+          remarks: preloadedEyeTest.remarks || '',
+        },
+        createdAt: preloadedEyeTest.createdAt || Date.now()
+      };
+    }
+    return initialCustomer?.prescriptions?.[initialCustomer.prescriptions.length - 1] || null;
+  });
 
   const [items, setItems] = useState<OrderItem[]>([]);
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('Cash');

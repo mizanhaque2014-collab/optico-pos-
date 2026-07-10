@@ -8,14 +8,16 @@ import { CustomersView } from '@/components/CustomersView';
 import { StockInventoryView } from '@/components/StockInventoryView';
 import { DailySalesReportView } from '@/components/DailySalesReportView';
 import { WhatsAppMarketingView } from '@/components/WhatsAppMarketingView';
+import { EyeTestFormView } from '@/components/EyeTestFormView';
 import { ArrowLeft } from 'lucide-react';
 import { runApiDiagnostics } from '@/lib/apiTest';
 
-export type ViewState = 'dashboard' | 'sales_order' | 'direct_sale' | 'delivery_collection' | 'customers' | 'stock_inventory' | 'daily_sales_report' | 'whatsapp_marketing';
+export type ViewState = 'dashboard' | 'sales_order' | 'direct_sale' | 'delivery_collection' | 'customers' | 'stock_inventory' | 'daily_sales_report' | 'whatsapp_marketing' | 'eye_test';
 
 export default function Home() {
   const [currentView, setCurrentView] = useState<ViewState>('dashboard');
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [preloadedEyeTest, setPreloadedEyeTest] = useState<any>(null);
 
   useEffect(() => {
     // Run the connection diagnostics suite on load to verify Google Sheets Web App connectivity
@@ -34,8 +36,9 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const navigateTo = (view: ViewState, customer?: any) => {
+  const navigateTo = (view: ViewState, customer?: any, eyeTest?: any) => {
     setSelectedCustomer(customer || null);
+    setPreloadedEyeTest(eyeTest || null);
     setCurrentView(view);
   };
 
@@ -81,10 +84,11 @@ export default function Home() {
       <div className="flex flex-1 overflow-hidden">
         <main className="flex-1 flex flex-col p-6 gap-6 bg-[#020617] overflow-y-auto">
           {currentView === 'dashboard' && <DashboardView onViewChange={navigateTo} />}
-          {currentView === 'sales_order' && <InvoiceFormView type="Sales Order" initialCustomer={selectedCustomer} onBack={() => navigateTo('dashboard')} />}
-          {currentView === 'direct_sale' && <InvoiceFormView type="Direct Sale" initialCustomer={selectedCustomer} onBack={() => navigateTo('dashboard')} />}
+          {currentView === 'sales_order' && <InvoiceFormView type="Sales Order" initialCustomer={selectedCustomer} preloadedEyeTest={preloadedEyeTest} onBack={() => navigateTo('customers', selectedCustomer)} />}
+          {currentView === 'direct_sale' && <InvoiceFormView type="Direct Sale" initialCustomer={selectedCustomer} preloadedEyeTest={preloadedEyeTest} onBack={() => navigateTo('customers', selectedCustomer)} />}
           {currentView === 'delivery_collection' && <DeliveryCollectionView onBack={() => navigateTo('dashboard')} />}
           {currentView === 'customers' && <CustomersView onBack={() => navigateTo('dashboard')} onNavigateTo={navigateTo} />}
+          {currentView === 'eye_test' && selectedCustomer && <EyeTestFormView customer={selectedCustomer} onBack={() => navigateTo('customers', selectedCustomer)} onContinueToBilling={(cust, et, billingType) => navigateTo(billingType, cust, et)} />}
           {currentView === 'stock_inventory' && <StockInventoryView onBack={() => navigateTo('dashboard')} />}
           {currentView === 'daily_sales_report' && <DailySalesReportView onBack={() => navigateTo('dashboard')} />}
           {currentView === 'whatsapp_marketing' && <WhatsAppMarketingView onBack={() => navigateTo('dashboard')} />}
