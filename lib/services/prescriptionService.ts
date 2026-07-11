@@ -24,6 +24,55 @@ export interface PrescriptionPascal {
   CreatedDate: number;
 }
 
+export function mapRawToPascal(p: any): PrescriptionPascal {
+  if (!p) {
+    return {
+      PrescriptionID: '',
+      CustomerID: '',
+      CompanyID: '',
+      BranchID: '',
+      DoctorName: '',
+      ExamDate: '',
+      Complaint: '',
+      Diagnosis: '',
+      Advice: '',
+      Remarks: '',
+      OD_Distance_SPH: '',
+      OD_Distance_CYL: '',
+      OD_Distance_AXIS: '',
+      OS_Distance_SPH: '',
+      OS_Distance_CYL: '',
+      OS_Distance_AXIS: '',
+      AddPower: '',
+      PD_Distance: '',
+      PD_Near: '',
+      CreatedDate: Date.now()
+    };
+  }
+  return {
+    PrescriptionID: String(p.PrescriptionID || p.prescriptionId || p.id || p.prescriptionID || ''),
+    CustomerID: String(p.CustomerID || p.customerId || p.customerId || ''),
+    CompanyID: String(p.CompanyID || p.companyId || ''),
+    BranchID: String(p.BranchID || p.branchId || ''),
+    DoctorName: String(p.DoctorName || p.doctorName || p.optometristName || p.optometrist || (p.eyeTestDetails && p.eyeTestDetails.optometristName) || ''),
+    ExamDate: String(p.ExamDate || p.examDate || p.eyeTestDate || (p.eyeTestDetails && p.eyeTestDetails.eyeTestDate) || ''),
+    Complaint: String(p.Complaint || p.complaint || ''),
+    Diagnosis: String(p.Diagnosis || p.diagnosis || ''),
+    Advice: String(p.Advice || p.advice || ''),
+    Remarks: String(p.Remarks || p.remarks || (p.eyeTestDetails && p.eyeTestDetails.remarks) || ''),
+    OD_Distance_SPH: String(p.OD_Distance_SPH || p.rightSph || p.sphOd || (p.rightEye && p.rightEye.sph) || ''),
+    OD_Distance_CYL: String(p.OD_Distance_CYL || p.rightCyl || p.cylOd || (p.rightEye && p.rightEye.cyl) || ''),
+    OD_Distance_AXIS: String(p.OD_Distance_AXIS || p.rightAxis || p.axisOd || (p.rightEye && p.rightEye.axis) || ''),
+    OS_Distance_SPH: String(p.OS_Distance_SPH || p.leftSph || p.sphOs || (p.leftEye && p.leftEye.sph) || ''),
+    OS_Distance_CYL: String(p.OS_Distance_CYL || p.leftCyl || p.cylOs || (p.leftEye && p.leftEye.cyl) || ''),
+    OS_Distance_AXIS: String(p.OS_Distance_AXIS || p.leftAxis || p.axisOs || (p.leftEye && p.leftEye.axis) || ''),
+    AddPower: String(p.AddPower || p.addPower || p.rightAdd || p.leftAdd || (p.rightEye && p.rightEye.add) || ''),
+    PD_Distance: String(p.PD_Distance || p.pdDistance || ''),
+    PD_Near: String(p.PD_Near || p.pdNear || ''),
+    CreatedDate: Number(p.CreatedDate || p.createdAt || p.createdDate || Date.now())
+  };
+}
+
 // Convert from PascalCase (API/DB representation) to Standard (Frontend state representation)
 export function mapPascalToStandard(p: PrescriptionPascal): any {
   return {
@@ -111,11 +160,11 @@ async function savePrescriptionImpl(
     if (prescription.PrescriptionID) {
       // Update prescription
       const res = await apiCall<any>('updatePrescription', { prescription });
-      result = res.data || res;
+      result = mapRawToPascal(res.data || res);
     } else {
       // Create prescription
       const res = await apiCall<any>('createPrescription', { prescription });
-      result = res.data || res;
+      result = mapRawToPascal(res.data || res);
     }
   } catch (e) {
     console.warn('Remote savePrescription failed, fallback to local save:', e);
@@ -176,7 +225,7 @@ export const prescriptionService = {
       const res = await apiCall<any>('getPrescriptionsByCustomer', { customerId });
       const data = res.data || res;
       if (Array.isArray(data)) {
-        return data;
+        return data.map(mapRawToPascal);
       }
     } catch (e) {
       console.warn('getPrescriptionsByCustomer API failed, loading from customer store:', e);

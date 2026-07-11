@@ -22,7 +22,7 @@ export function CustomersView({ onBack, onNavigateTo }: Props) {
     if(!String(search ?? "").trim()) return customers;
     const q = search.toLowerCase();
     return customers.filter(c => 
-      c.name.toLowerCase().includes(q) || 
+      (c.name && c.name.toLowerCase().includes(q)) || 
       (c.mobile && String(c.mobile).includes(q))
     );
   }, [search, customers]);

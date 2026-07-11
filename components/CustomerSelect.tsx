@@ -28,7 +28,7 @@ export function CustomerSelect({ selectedCustomer, onSelect }: Props) {
     if (!String(search ?? "").trim()) return [];
     const query = search.toLowerCase();
     return customers.filter(c => 
-      c.name.toLowerCase().includes(query) || 
+      (c.name && c.name.toLowerCase().includes(query)) || 
       (c.mobile && String(c.mobile).includes(query))
     ).slice(0, 5); // top 5 results
   }, [search, customers]);

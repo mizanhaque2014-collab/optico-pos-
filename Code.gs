@@ -22,281 +22,74 @@ function safeTrim(val) {
   return val.toString().trim();
 }
 
-// Helper to get or create the Customers sheet with standard columns
-function getCustomersSheet() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName("Customers");
-  if (!sheet) {
-    sheet = ss.insertSheet("Customers");
-    // Write default header columns
-    sheet.appendRow(["id", "name", "mobile", "dob", "address", "status", "prescriptions", "createdAt"]);
-  }
-  return sheet;
-}
-
-// Map column header names to exact JavaScript camelCase property names
-function mapHeaderToKey(header) {
-  var clean = safeTrim(header).toLowerCase().replace(/[\s_-]/g, '');
-  if (clean === 'customerid' || clean === 'id') return 'id';
-  if (clean === 'customername' || clean === 'name') return 'name';
-  if (clean === 'mobilenumber' || clean === 'mobile' || clean === 'mobilenumber') return 'mobile';
-  if (clean === 'dateofbirth' || clean === 'dob') return 'dob';
-  if (clean === 'address') return 'address';
-  if (clean === 'status') return 'status';
-  if (clean === 'prescriptions') return 'prescriptions';
-  if (clean === 'createdat') return 'createdAt';
-  return clean;
-}
-
-// Retrieve headers of the Customers sheet
-function getHeaders(sheet) {
-  var lastColumn = sheet.getLastColumn();
-  if (lastColumn === 0) {
-    var headers = ["id", "name", "mobile", "dob", "address", "status", "prescriptions", "createdAt"];
-    sheet.appendRow(headers);
-    return headers;
-  }
-  
-  var existingHeaders = sheet.getRange(1, 1, 1, lastColumn).getValues()[0];
-  var standardHeaders = ["id", "name", "mobile", "dob", "address", "status", "prescriptions", "createdAt"];
-  
-  // Normalize existing headers to keys
-  var existingKeys = [];
-  for (var i = 0; i < existingHeaders.length; i++) {
-    existingKeys.push(mapHeaderToKey(existingHeaders[i]));
-  }
-  
-  for (var j = 0; j < standardHeaders.length; j++) {
-    var std = standardHeaders[j];
-    if (existingKeys.indexOf(std) === -1) {
-      sheet.getRange(1, lastColumn + 1).setValue(std);
-      lastColumn++;
-      existingHeaders.push(std);
-      existingKeys.push(std);
-    }
-  }
-  
-  return existingHeaders;
-}
-
-// Serialize customer object fields into spreadsheet row indices
-function customerToRow(customer, headers) {
-  var row = [];
-  for (var i = 0; i < headers.length; i++) {
-    var key = mapHeaderToKey(headers[i]);
-    var val = customer[key];
-    if (val === undefined || val === null) val = "";
-    
-    if (key === 'prescriptions') {
-      row.push(JSON.stringify(val || []));
-    } else {
-      row.push(val);
-    }
-  }
-  return row;
-}
+// Customer functions are defined in Customers.gs to support PascalCase and robust multi-tenant logic.
 
 /**
- * Endpoint action: getCustomers (Read All Customers)
- * Fallback / backward compatibility helper
+ * Endpoint action: loadCustomerHistory
+ * Aggregates a customer's entire profile and clinical/transactional history.
  */
-function getCustomers() {
-  var sheet = getCustomersSheet();
-  var lastRow = sheet.getLastRow();
-  if (lastRow <= 1) return [];
-  
-  var headers = getHeaders(sheet);
-  var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
-  var customers = [];
-  
-  for (var i = 0; i < values.length; i++) {
-    var row = values[i];
-    var customer = {};
-    for (var j = 0; j < headers.length; j++) {
-      var header = headers[j];
-      var key = mapHeaderToKey(header);
-      var val = row[j];
-      
-      if (key === 'prescriptions') {
-        try {
-          customer[key] = val ? JSON.parse(val) : [];
-        } catch (e) {
-          customer[key] = [];
-        }
-      } else {
-        customer[key] = val;
-      }
-    }
-    customers.push(customer);
-  }
-  return customers;
-}
-
-/**
- * Endpoint action: createCustomer
- * Saves new customer, automatically generates CustomerID if empty, and prevents duplicate mobile numbers.
- */
-function createCustomer(customer) {
-  if (!customer) {
-    throw new Error("No customer data provided");
-  }
-  if (!customer.name) {
-    throw new Error("Customer name is required");
-  }
-  if (!customer.mobile) {
-    throw new Error("Customer mobile is required");
+function loadCustomerHistory(customerId) {
+  if (!customerId) {
+    throw new Error("CustomerID is required to load customer history.");
   }
   
-  var sheet = getCustomersSheet();
-  var headers = getHeaders(sheet);
-  
-  // Clean mobile number for duplicate validation check
-  var mobileToCreate = safeTrim(customer.mobile);
-  
-  // Validation: Check for duplicates in the spreadsheet
-  var allCustomers = getCustomers();
-  var duplicate = allCustomers.find(function(c) {
-    return c.mobile && safeTrim(c.mobile) === mobileToCreate;
-  });
-  
-  if (duplicate) {
-    throw new Error("A customer with mobile number '" + mobileToCreate + "' already exists in the system.");
+  // 1. Get customer
+  var customer = null;
+  try {
+    customer = getCustomerById(customerId);
+  } catch (e) {
+    // Return empty history if customer does not exist
+    return {
+      customer: null,
+      prescriptions: [],
+      eyeTests: [],
+      invoices: [],
+      payments: []
+    };
   }
   
-  // Automatically generate Customer ID if empty
-  if (!customer.id) {
-    customer.id = "CUST-" + Date.now() + Math.floor(Math.random() * 1000);
+  // 2. Get prescriptions
+  var prescriptions = [];
+  try {
+    prescriptions = getPrescriptionsByCustomer(customerId);
+  } catch (e) {
+    // Keep empty if query fails
   }
   
-  // Set createdAt if missing
-  if (!customer.createdAt) {
-    customer.createdAt = Date.now();
+  // 3. Get eye tests
+  var eyeTests = [];
+  try {
+    eyeTests = getEyeTests(customerId);
+  } catch (e) {
+    // Keep empty if query fails
   }
   
-  var rowData = customerToRow(customer, headers);
-  sheet.appendRow(rowData);
-  
-  return customer;
-}
-
-/**
- * Endpoint action: updateCustomer
- * Updates existing customer fields and preserves unaltered fields.
- */
-function updateCustomer(customer) {
-  if (!customer || !customer.id || customer.id.toString().trim() === "") {
-    throw new Error("Customer ID is required for updating details.");
-  }
-  
-  if (customer.id.toString().indexOf("local") !== -1) {
-    customer.id = "";
-    return createCustomer(customer);
-  }
-  
-  var sheet = getCustomersSheet();
-  var lastRow = sheet.getLastRow();
-  if (lastRow <= 1) {
-    customer.id = "";
-    return createCustomer(customer);
-  }
-  
-  var headers = getHeaders(sheet);
-  var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
-  
-  var targetRowIndex = -1;
-  for (var i = 0; i < values.length; i++) {
-    var row = values[i];
-    var idColIdx = -1;
-    for (var j = 0; j < headers.length; j++) {
-      if (mapHeaderToKey(headers[j]) === 'id') {
-        idColIdx = j;
-        break;
-      }
-    }
-    
-    if (idColIdx !== -1 && row[idColIdx].toString() === customer.id.toString()) {
-      targetRowIndex = i + 2; // +2 for 1-based index and skipping header row
-      break;
-    }
-  }
-  
-  if (targetRowIndex === -1) {
-    customer.id = "";
-    return createCustomer(customer);
-  }
-  
-  // Check duplicate mobile if mobile is being changed
-  if (customer.mobile) {
-    var mobileToUpdate = safeTrim(customer.mobile);
-    var allCustomers = getCustomers();
-    var duplicate = allCustomers.find(function(c) {
-      return c.id !== customer.id && c.mobile && safeTrim(c.mobile) === mobileToUpdate;
+  // 4. Get invoices filtered by customerId
+  var invoices = [];
+  try {
+    var allInvoices = getInvoices();
+    invoices = allInvoices.filter(function(inv) {
+      return inv.customerId && inv.customerId.toString() === customerId.toString();
     });
-    if (duplicate) {
-      throw new Error("Another customer with mobile number '" + mobileToUpdate + "' already exists.");
-    }
+  } catch (e) {
+    // Keep empty if query fails
   }
   
-  // Merge with existing customer to preserve non-submitted fields (e.g. prescriptions)
-  var existingCustomer = getCustomerById(customer.id);
-  var mergedCustomer = {};
-  for (var key in existingCustomer) {
-    mergedCustomer[key] = existingCustomer[key];
-  }
-  for (var key in customer) {
-    if (customer[key] !== undefined) {
-      mergedCustomer[key] = customer[key];
-    }
+  // 5. Get payments
+  var payments = [];
+  try {
+    payments = getPayments(customerId);
+  } catch (e) {
+    // Keep empty if query fails
   }
   
-  var rowData = customerToRow(mergedCustomer, headers);
-  sheet.getRange(targetRowIndex, 1, 1, headers.length).setValues([rowData]);
-  
-  return mergedCustomer;
-}
-
-/**
- * Endpoint action: searchCustomerByMobile
- * Searches for customers matching or containing the mobile number
- */
-function searchCustomerByMobile(mobile) {
-  if (!mobile) return [];
-  var searchStr = safeTrim(mobile);
-  var all = getCustomers();
-  return all.filter(function(c) {
-    return c.mobile && safeTrim(c.mobile).includes(searchStr);
-  });
-}
-
-/**
- * Endpoint action: searchCustomerByName
- * Searches for customers matching name partially (case-insensitive)
- */
-function searchCustomerByName(name) {
-  if (!name) return [];
-  var searchStr = safeTrim(name).toLowerCase();
-  var all = getCustomers();
-  return all.filter(function(c) {
-    return c.name && safeTrim(c.name).toLowerCase().includes(searchStr);
-  });
-}
-
-/**
- * Endpoint action: getCustomerById
- * Retrieve full customer details by ID
- */
-function getCustomerById(id) {
-  if (!id) {
-    throw new Error("Customer ID is required.");
-  }
-  var all = getCustomers();
-  var customer = all.find(function(c) {
-    return c.id && c.id.toString() === id.toString();
-  });
-  if (!customer) {
-    throw new Error("Customer not found with ID: " + id);
-  }
-  return customer;
+  return {
+    customer: customer,
+    prescriptions: prescriptions,
+    eyeTests: eyeTests,
+    invoices: invoices,
+    payments: payments
+  };
 }
 
 /**
@@ -329,6 +122,9 @@ function doPost(e) {
         break;
       case 'getCustomerById':
         result = getCustomerById(payload.customerId || payload.id || e.parameter.customerId || e.parameter.id);
+        break;
+      case 'loadCustomerHistory':
+        result = loadCustomerHistory(payload.customerId || payload.id || e.parameter.customerId || e.parameter.id);
         break;
       case 'getCustomers':
         result = getCustomers();
@@ -396,6 +192,18 @@ function doPost(e) {
         break;
       case 'saveInventory':
         result = saveInventory(payload.inventoryItem || payload);
+        break;
+      case 'createInventory':
+        result = createInventory(payload.inventoryItem || payload);
+        break;
+      case 'updateInventory':
+        result = updateInventory(payload.inventoryItem || payload);
+        break;
+      case 'deleteInventory':
+        result = deleteInventory(payload.inventoryItemId || payload.id || e.parameter.inventoryItemId || e.parameter.id);
+        break;
+      case 'searchInventory':
+        result = searchInventory(payload.query || e.parameter.query);
         break;
       case 'getInventory':
         result = getInventory();
@@ -492,6 +300,9 @@ function doGet(e) {
       case 'getCustomerById':
         result = getCustomerById(e.parameter.customerId || e.parameter.id);
         break;
+      case 'loadCustomerHistory':
+        result = loadCustomerHistory(e.parameter.customerId || e.parameter.id);
+        break;
       case 'getCustomers':
         result = getCustomers();
         break;
@@ -530,6 +341,12 @@ function doGet(e) {
         break;
       case 'searchPrescription':
         result = searchPrescription(e.parameter.query);
+        break;
+      case 'getInventory':
+        result = getInventory();
+        break;
+      case 'searchInventory':
+        result = searchInventory(e.parameter.query);
         break;
       default:
         throw new Error("Unsupported GET action: " + action);
@@ -1149,6 +966,48 @@ function saveInventory(item) {
   return item;
 }
 
+// Create Inventory Item
+function createInventory(item) {
+  if (!item) throw new Error("No inventory item provided");
+  item.id = ""; // Clear id to let saveInventory generate a new one
+  return saveInventory(item);
+}
+
+// Update Inventory Item
+function updateInventory(item) {
+  if (!item || !item.id) throw new Error("Inventory Item ID is required for update");
+  return saveInventory(item);
+}
+
+// Delete Inventory Item
+function deleteInventory(id) {
+  if (!id) throw new Error("Inventory Item ID is required for delete");
+  var sheet = getInventorySheet();
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return;
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
+  for (var i = 0; i < values.length; i++) {
+    if (values[i][0].toString() === id.toString()) {
+      sheet.deleteRow(i + 2);
+      break;
+    }
+  }
+}
+
+// Search Inventory Item
+function searchInventory(query) {
+  if (!query) return getInventory();
+  var q = query.toString().toLowerCase();
+  var all = getInventory();
+  return all.filter(function(item) {
+    return (item.brand && item.brand.toLowerCase().includes(q)) ||
+           (item.modelNumber && item.modelNumber.toLowerCase().includes(q)) ||
+           (item.barcode && item.barcode.toLowerCase().includes(q)) ||
+           (item.category && item.category.toLowerCase().includes(q));
+  });
+}
+
 // Helper to get or create Invoices sheet
 function getInvoicesSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -1398,48 +1257,5 @@ function saveEyeTest(et) {
   return et;
 }
 
-// Helper to get or create Prescriptions sheet
-function getPrescriptionsSheet() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName("Prescriptions");
-  if (!sheet) {
-    sheet = ss.insertSheet("Prescriptions");
-  }
-  if (sheet.getLastColumn() === 0) {
-    sheet.appendRow(["id", "companyId", "branchId", "customerId", "source", "rightSph", "rightCyl", "rightAxis", "rightAdd", "rightVa", "leftSph", "leftCyl", "leftAxis", "leftAdd", "leftVa", "pdDistance", "pdNear", "remarks", "createdAt"]);
-  }
-  return sheet;
-}
-
-// Get Prescriptions
-function getPrescriptions(customerId) {
-  var sheet = getPrescriptionsSheet();
-  var lastRow = sheet.getLastRow();
-  if (lastRow <= 1) return [];
-  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
-  var prescriptions = [];
-  for (var i = 0; i < values.length; i++) {
-    var row = values[i];
-    var p = {};
-    for (var j = 0; j < headers.length; j++) {
-      p[headers[j]] = row[j];
-    }
-    if (!customerId || p.customerId.toString() === customerId.toString()) {
-      prescriptions.push(p);
-    }
-  }
-  return prescriptions;
-}
-
-// Save Prescription
-function savePrescription(p) {
-  if (!p) throw new Error("No prescription provided");
-  var pId = p.PrescriptionID || p.prescriptionId || p.id || p.prescriptionID;
-  if (pId && pId.toString().indexOf("PRE-") === 0) {
-    return updatePrescription(p);
-  } else {
-    return createPrescription(p);
-  }
-}
+// Prescription and User functions are defined in Prescriptions.gs and Users.gs respectively.
 

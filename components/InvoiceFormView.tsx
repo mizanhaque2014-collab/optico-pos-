@@ -153,7 +153,7 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
         updatedCustomer.prescriptions = updatedCustomer.prescriptions.map(p => p.id === prescription.id ? prescription : p);
       }
       
-      // Save prescription to sheet via its own endpoint
+      // Step 2. Save Prescription
       try {
         await prescriptionService.savePrescription(customer.id, prescription);
       } catch (err) {
@@ -161,16 +161,33 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
       }
     }
 
-    // Save updated customer details to Google Sheets and local cache
+    // Step 1. Save Customer
+    let savedCustomerResult = null;
     try {
-      await saveCustomer(updatedCustomer);
+      savedCustomerResult = await saveCustomer(updatedCustomer);
     } catch (err) {
       console.warn("Failed to sync customer changes to remote sheet:", err);
       customerService.updateLocalCache(updatedCustomer);
+      savedCustomerResult = updatedCustomer;
     }
-    setCustomer(updatedCustomer);
+
+    // Step 3. Reload Customer
+    let reloadedCustomer = savedCustomerResult || updatedCustomer;
+    try {
+      reloadedCustomer = await customerService.getCustomerById(customer.id || reloadedCustomer.id);
+    } catch (err) {
+      console.warn("Failed to reload customer:", err);
+    }
+
+    // Step 4 & 5. Display Customer and Prescription History
+    setCustomer(reloadedCustomer);
+    await getCustomers(); // refresh list in cache/store
+
     setSaveSuccessMessage(true);
     setTimeout(() => setSaveSuccessMessage(false), 5000);
+
+    // Step 6. Continue to Billing Automatically
+    setContinueToBilling(true);
   };
 
   const handleInitiateSubmit = () => {
