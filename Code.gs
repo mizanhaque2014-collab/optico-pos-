@@ -56,7 +56,27 @@ function getHeaders(sheet) {
     sheet.appendRow(headers);
     return headers;
   }
-  return sheet.getRange(1, 1, 1, lastColumn).getValues()[0];
+  
+  var existingHeaders = sheet.getRange(1, 1, 1, lastColumn).getValues()[0];
+  var standardHeaders = ["id", "name", "mobile", "dob", "address", "status", "prescriptions", "createdAt"];
+  
+  // Normalize existing headers to keys
+  var existingKeys = [];
+  for (var i = 0; i < existingHeaders.length; i++) {
+    existingKeys.push(mapHeaderToKey(existingHeaders[i]));
+  }
+  
+  for (var j = 0; j < standardHeaders.length; j++) {
+    var std = standardHeaders[j];
+    if (existingKeys.indexOf(std) === -1) {
+      sheet.getRange(1, lastColumn + 1).setValue(std);
+      lastColumn++;
+      existingHeaders.push(std);
+      existingKeys.push(std);
+    }
+  }
+  
+  return existingHeaders;
 }
 
 // Serialize customer object fields into spreadsheet row indices
@@ -65,7 +85,7 @@ function customerToRow(customer, headers) {
   for (var i = 0; i < headers.length; i++) {
     var key = mapHeaderToKey(headers[i]);
     var val = customer[key];
-    if (val === undefined) val = "";
+    if (val === undefined || val === null) val = "";
     
     if (key === 'prescriptions') {
       row.push(JSON.stringify(val || []));
@@ -168,10 +188,16 @@ function updateCustomer(customer) {
     throw new Error("Customer ID is required for updating details.");
   }
   
+  if (customer.id.toString().indexOf("local") !== -1) {
+    customer.id = "";
+    return createCustomer(customer);
+  }
+  
   var sheet = getCustomersSheet();
   var lastRow = sheet.getLastRow();
   if (lastRow <= 1) {
-    throw new Error("Customer with ID " + customer.id + " not found (sheet is empty).");
+    customer.id = "";
+    return createCustomer(customer);
   }
   
   var headers = getHeaders(sheet);
@@ -195,7 +221,8 @@ function updateCustomer(customer) {
   }
   
   if (targetRowIndex === -1) {
-    throw new Error("Customer with ID '" + customer.id + "' not found.");
+    customer.id = "";
+    return createCustomer(customer);
   }
   
   // Check duplicate mobile if mobile is being changed
@@ -389,7 +416,28 @@ function doPost(e) {
         result = savePrescription(payload.prescription || payload);
         break;
       case 'loadPrescriptions':
-        result = getPrescriptions(payload.customerId || e.parameter.customerId);
+        result = getPrescriptionsByCustomer(payload.customerId || e.parameter.customerId);
+        break;
+      case 'createPrescription':
+        result = createPrescription(payload.prescription || payload);
+        break;
+      case 'updatePrescription':
+        result = updatePrescription(payload.prescription || payload);
+        break;
+      case 'deletePrescription':
+        result = deletePrescription(payload.prescriptionId || payload.id || e.parameter.prescriptionId || e.parameter.id);
+        break;
+      case 'getPrescriptions':
+        result = getPrescriptions();
+        break;
+      case 'getPrescriptionById':
+        result = getPrescriptionById(payload.prescriptionId || payload.id || e.parameter.prescriptionId || e.parameter.id);
+        break;
+      case 'getPrescriptionsByCustomer':
+        result = getPrescriptionsByCustomer(payload.customerId || e.parameter.customerId);
+        break;
+      case 'searchPrescription':
+        result = searchPrescription(payload.query || e.parameter.query);
         break;
       case 'saveEyeTest':
         result = saveEyeTest(payload.eyeTest || payload.eyeTestDetails || payload);
@@ -470,6 +518,18 @@ function doGet(e) {
         break;
       case 'getBranches':
         result = getBranches();
+        break;
+      case 'getPrescriptions':
+        result = getPrescriptions();
+        break;
+      case 'getPrescriptionById':
+        result = getPrescriptionById(e.parameter.prescriptionId || e.parameter.id);
+        break;
+      case 'getPrescriptionsByCustomer':
+        result = getPrescriptionsByCustomer(e.parameter.customerId);
+        break;
+      case 'searchPrescription':
+        result = searchPrescription(e.parameter.query);
         break;
       default:
         throw new Error("Unsupported GET action: " + action);
@@ -1375,41 +1435,11 @@ function getPrescriptions(customerId) {
 // Save Prescription
 function savePrescription(p) {
   if (!p) throw new Error("No prescription provided");
-  var sheet = getPrescriptionsSheet();
-  var lastRow = sheet.getLastRow();
-  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  
-  if (!p.id) {
-    p.id = "p-" + Date.now();
-  }
-  if (!p.createdAt) {
-    p.createdAt = Date.now();
-  }
-  
-  var targetRowIndex = -1;
-  if (lastRow > 1) {
-    var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
-    for (var i = 0; i < values.length; i++) {
-      if (values[i][0].toString() === p.id.toString()) {
-        targetRowIndex = i + 2;
-        break;
-      }
-    }
-  }
-  
-  var rowData = [];
-  for (var k = 0; k < headers.length; k++) {
-    var key = headers[k];
-    var val = p[key];
-    if (val === undefined || val === null) val = "";
-    rowData.push(val);
-  }
-  
-  if (targetRowIndex !== -1) {
-    sheet.getRange(targetRowIndex, 1, 1, headers.length).setValues([rowData]);
+  var pId = p.PrescriptionID || p.prescriptionId || p.id || p.prescriptionID;
+  if (pId && pId.toString().indexOf("PRE-") === 0) {
+    return updatePrescription(p);
   } else {
-    sheet.appendRow(rowData);
+    return createPrescription(p);
   }
-  return p;
 }
 

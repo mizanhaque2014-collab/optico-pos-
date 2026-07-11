@@ -68,7 +68,7 @@ export function CustomersView({ onBack, onNavigateTo }: Props) {
                >
                 <div>
                   <h3 className="font-black text-lg text-white tracking-widest">{c.name}</h3>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-white/40 mt-1">📞 {c.mobile}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-white/40 mt-1">📞 {c.mobile} {c.dob ? `| 🎂 DOB: ${c.dob}` : ''}</p>
                 </div>
                 <div className="text-right text-[10px] font-bold text-white/40 uppercase tracking-wider space-y-1">
                   <p>{c.address || 'No Address'}</p>

@@ -161,8 +161,13 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
       }
     }
 
-    // Update client-side local cache only, do not invoke remote master Customer sheet save/overwrite
-    customerService.updateLocalCache(updatedCustomer);
+    // Save updated customer details to Google Sheets and local cache
+    try {
+      await saveCustomer(updatedCustomer);
+    } catch (err) {
+      console.warn("Failed to sync customer changes to remote sheet:", err);
+      customerService.updateLocalCache(updatedCustomer);
+    }
     setCustomer(updatedCustomer);
     setSaveSuccessMessage(true);
     setTimeout(() => setSaveSuccessMessage(false), 5000);
@@ -210,8 +215,13 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
     }
     updatedCustomer.status = type === 'Sales Order' ? 'Sales Order Customer' : 'Buyer';
     
-    // Update client-side local cache only, do not invoke remote master Customer sheet save/overwrite
-    customerService.updateLocalCache(updatedCustomer);
+    // Save updated customer details to Google Sheets and local cache
+    try {
+      await saveCustomer(updatedCustomer);
+    } catch (err) {
+      console.warn("Failed to sync customer details on submit:", err);
+      customerService.updateLocalCache(updatedCustomer);
+    }
 
     const newInvoice = {
       id: crypto.randomUUID(),

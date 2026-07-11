@@ -70,7 +70,7 @@ export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
                 </span>
               )}
               <p className="text-xs font-bold text-white/40 uppercase tracking-wider">
-                📞 {customer.mobile} | 🏠 {customer.address || 'No Address'} | Joined: {new Date(customer.createdAt).toLocaleDateString()}
+                📞 {customer.mobile} | 🎂 DOB: {customer.dob || 'N/A'} | 🏠 {customer.address || 'No Address'} | Joined: {new Date(customer.createdAt).toLocaleDateString()}
               </p>
             </div>
           </div>
