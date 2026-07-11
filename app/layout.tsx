@@ -7,7 +7,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'LEF SPECS',
+  title: 'OPTICO POS',
   description: 'Optical Store Management System',
 };
 

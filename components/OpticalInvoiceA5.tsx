@@ -238,12 +238,18 @@ export function OpticalInvoiceA5({
           <div className="border-b border-dashed border-slate-300 pb-1.5">
             <div className="flex justify-between items-start gap-2">
               <div className="flex items-start gap-1.5">
-                <div className="p-1 bg-slate-900 text-white rounded-md flex items-center justify-center mt-0.5">
-                  <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-                    <path d="M2.00412 12C2.00412 12 5.00412 5 12.0041 5C19.0041 5 22.0041 12 22.0041 12C22.0041 12 19.0041 19 12.0041 19C5.00412 19 2.00412 12 2.00412 12Z" />
-                    <circle cx="12.0041" cy="12" r="3" />
-                  </svg>
-                </div>
+                {shopConfig.logo ? (
+                  <div className="w-8 h-8 rounded-md flex items-center justify-center overflow-hidden shrink-0 mt-0.5">
+                    <img src={shopConfig.logo} alt="Shop Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+                  </div>
+                ) : (
+                  <div className="p-1 bg-slate-900 text-white rounded-md flex items-center justify-center mt-0.5 shrink-0">
+                    <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                      <path d="M2.00412 12C2.00412 12 5.00412 5 12.0041 5C19.0041 5 22.0041 12 22.0041 12C22.0041 12 19.0041 19 12.0041 19C5.00412 19 2.00412 12 2.00412 12Z" />
+                      <circle cx="12.0041" cy="12" r="3" />
+                    </svg>
+                  </div>
+                )}
                 <div>
                   <h1 className="text-sm font-black uppercase text-slate-900 tracking-wider">{shopConfig.shopName}</h1>
                   <p className="text-[8px] text-slate-500 font-medium flex items-center gap-1">

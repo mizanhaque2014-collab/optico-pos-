@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next'
  
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'LEF SPECS',
-    short_name: 'LEF SPECS',
+    name: 'OPTICO POS',
+    short_name: 'OPTICO POS',
     description: 'Optical Store Management System',
     start_url: '/',
     scope: '/',

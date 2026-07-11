@@ -1,5 +1,5 @@
 /**
- * LEF SPECS - Optical Store Management System
+ * OPTICO POS - Optical Store Management System
  * Google Sheets Apps Script Backend (Code.gs)
  * 
  * Instructions:
@@ -9,7 +9,7 @@
  * 4. Click Save (Disk Icon).
  * 5. Click Deploy -> New deployment.
  * 6. Select "Web app" as the type.
- * 7. Set Description to "LEF SPECS API v1".
+ * 7. Set Description to "OPTICO POS API v1".
  * 8. Set Execute as: "Me" (your email).
  * 9. Set Who has access: "Anyone" (CRITICAL for Next.js CORS and public connectivity).
  * 10. Click Deploy, authorize permissions, and copy the Web App URL.
