@@ -11,7 +11,7 @@ import { OpticalInvoiceA5 } from './OpticalInvoiceA5';
 import PrescriptionSection from './PrescriptionSection';
 import { Trash2, Plus, Receipt } from 'lucide-react';
 import { Prescription } from '@/lib/types';
-import { prescriptionService } from '@/lib/services/prescriptionService';
+import { prescriptionService, mapPascalToStandard } from '@/lib/services/prescriptionService';
 import { customerService } from '@/lib/services/customerService';
 
 interface Props {
@@ -107,6 +107,51 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
     }
   }, [paymentMode, advanceAmount, grandTotal, type]);
 
+  // Load and sync customer's latest prescription when customer changes
+  useEffect(() => {
+    if (!customer) {
+      setPrescription(null);
+      return;
+    }
+    
+    // If the customer has prescriptions in their object, use the latest one
+    if (customer.prescriptions && customer.prescriptions.length > 0) {
+      setPrescription(customer.prescriptions[customer.prescriptions.length - 1]);
+      return;
+    }
+
+    // Otherwise, load from API/history
+    const fetchLatestPrescription = async () => {
+      try {
+        const history = await prescriptionService.loadPrescriptionHistory(customer.id);
+        if (history && history.length > 0) {
+          const latest = mapPascalToStandard(history[0]);
+          setPrescription(latest);
+          // Also attach history to active customer
+          setCustomer(prev => {
+            if (prev && prev.id === customer.id) {
+              return {
+                ...prev,
+                prescriptions: history.map(mapPascalToStandard)
+              };
+            }
+            return prev;
+          });
+        } else {
+          setPrescription(null);
+        }
+      } catch (e) {
+        console.warn("Failed to load customer prescription on select:", e);
+        setPrescription(null);
+      }
+    };
+    
+    // Don't overwrite if preloadedEyeTest is present and active
+    if (!preloadedEyeTest) {
+      fetchLatestPrescription();
+    }
+  }, [customer?.id, preloadedEyeTest]);
+
   // Mixed mode auto-sync
   useEffect(() => {
     if (paymentMode === 'Mixed') {
@@ -145,23 +190,7 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
       updatedCustomer.status = 'Prescription Only';
     }
 
-    if (prescription && prescription.source !== 'No Prescription') {
-      if (!updatedCustomer.prescriptions) updatedCustomer.prescriptions = [];
-      if (!updatedCustomer.prescriptions.find(p => p.id === prescription.id)) {
-        updatedCustomer.prescriptions.push(prescription);
-      } else {
-        updatedCustomer.prescriptions = updatedCustomer.prescriptions.map(p => p.id === prescription.id ? prescription : p);
-      }
-      
-      // Step 2. Save Prescription
-      try {
-        await prescriptionService.savePrescription(customer.id, prescription);
-      } catch (err) {
-        console.warn("Failed to save prescription:", err);
-      }
-    }
-
-    // Step 1. Save Customer
+    // Step 1. Save Customer First
     let savedCustomerResult = null;
     try {
       savedCustomerResult = await saveCustomer(updatedCustomer);
@@ -171,16 +200,43 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
       savedCustomerResult = updatedCustomer;
     }
 
+    const finalCustomerId = savedCustomerResult?.id || customer.id;
+
+    // Step 2. Save Prescription Second
+    let finalPrescription = prescription;
+    if (prescription && prescription.source !== 'No Prescription') {
+      try {
+        const savedP = await prescriptionService.savePrescription(finalCustomerId, prescription);
+        finalPrescription = mapPascalToStandard(savedP);
+      } catch (err) {
+        console.warn("Failed to save prescription:", err);
+      }
+    }
+
     // Step 3. Reload Customer
     let reloadedCustomer = savedCustomerResult || updatedCustomer;
     try {
-      reloadedCustomer = await customerService.getCustomerById(customer.id || reloadedCustomer.id);
+      reloadedCustomer = await customerService.getCustomerById(finalCustomerId);
     } catch (err) {
       console.warn("Failed to reload customer:", err);
     }
 
+    // Load prescription history and attach to reloaded customer
+    try {
+      const history = await prescriptionService.loadPrescriptionHistory(finalCustomerId);
+      reloadedCustomer.prescriptions = history.map(mapPascalToStandard);
+    } catch (err) {
+      console.warn("Failed to load prescription history in view:", err);
+      if (finalPrescription) {
+        reloadedCustomer.prescriptions = [finalPrescription];
+      }
+    }
+
     // Step 4 & 5. Display Customer and Prescription History
     setCustomer(reloadedCustomer);
+    if (finalPrescription) {
+      setPrescription(finalPrescription);
+    }
     await getCustomers(); // refresh list in cache/store
 
     setSaveSuccessMessage(true);
@@ -210,34 +266,41 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
 
     let finalPrescriptionId = undefined;
 
-    // Save prescription to customer if exists
+    // Resolve customer status
     const updatedCustomer = { ...customer };
-    if (prescription && prescription.source !== 'No Prescription') {
-      if (!updatedCustomer.prescriptions) updatedCustomer.prescriptions = [];
-      // Only add if it's new
-      if (!updatedCustomer.prescriptions.find(p => p.id === prescription.id)) {
-        updatedCustomer.prescriptions.push(prescription);
-      } else {
-        // update existing
-        updatedCustomer.prescriptions = updatedCustomer.prescriptions.map(p => p.id === prescription.id ? prescription : p);
-      }
-      finalPrescriptionId = prescription.id;
-
-      // Save prescription to sheet via its own endpoint
-      try {
-        await prescriptionService.savePrescription(customer.id, prescription);
-      } catch (err) {
-        console.warn("Failed to save prescription on submit:", err);
-      }
-    }
     updatedCustomer.status = type === 'Sales Order' ? 'Sales Order Customer' : 'Buyer';
     
-    // Save updated customer details to Google Sheets and local cache
+    // Step 1. Save updated customer details to Google Sheets and local cache first
+    let savedCustomerResult = null;
     try {
-      await saveCustomer(updatedCustomer);
+      savedCustomerResult = await saveCustomer(updatedCustomer);
     } catch (err) {
       console.warn("Failed to sync customer details on submit:", err);
       customerService.updateLocalCache(updatedCustomer);
+      savedCustomerResult = updatedCustomer;
+    }
+
+    const finalCustomerId = savedCustomerResult?.id || customer.id;
+
+    // Step 2. Save prescription to customer if exists
+    if (prescription && prescription.source !== 'No Prescription') {
+      try {
+        const savedP = await prescriptionService.savePrescription(finalCustomerId, prescription);
+        finalPrescriptionId = savedP.PrescriptionID;
+        
+        // Update local cached prescriptions for customer
+        if (!updatedCustomer.prescriptions) updatedCustomer.prescriptions = [];
+        const stdP = mapPascalToStandard(savedP);
+        if (!updatedCustomer.prescriptions.find(p => p.id === stdP.id)) {
+          updatedCustomer.prescriptions.push(stdP);
+        } else {
+          updatedCustomer.prescriptions = updatedCustomer.prescriptions.map(p => p.id === stdP.id ? stdP : p);
+        }
+        customerService.updateLocalCache(updatedCustomer);
+      } catch (err) {
+        console.warn("Failed to save prescription on submit:", err);
+        finalPrescriptionId = prescription.id;
+      }
     }
 
     const newInvoice = {

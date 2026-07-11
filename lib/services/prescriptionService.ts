@@ -125,6 +125,21 @@ async function savePrescriptionImpl(
 ): Promise<PrescriptionPascal> {
   let prescription: Partial<PrescriptionPascal>;
 
+  let currentCompanyId = '';
+  let currentBranchId = '';
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem('opt_current_user');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        currentCompanyId = parsed.companyId || parsed.CompanyID || '';
+        currentBranchId = parsed.branchId || parsed.BranchID || (parsed.branches && parsed.branches[0]) || '';
+      }
+    } catch (e) {
+      console.warn("Failed to parse current user for prescription save:", e);
+    }
+  }
+
   if (typeof arg1 === 'string' && arg2) {
     // Legacy call: savePrescription(customerId, prescription)
     const customerId = arg1;
@@ -132,8 +147,8 @@ async function savePrescriptionImpl(
     prescription = {
       PrescriptionID: legacyP.id,
       CustomerID: customerId,
-      CompanyID: legacyP.companyId || '',
-      BranchID: legacyP.branchId || '',
+      CompanyID: legacyP.companyId || legacyP.CompanyID || currentCompanyId || 'COMP-default',
+      BranchID: legacyP.branchId || legacyP.BranchID || currentBranchId || 'BR-default',
       DoctorName: legacyP.optometristName || legacyP.doctorName || legacyP.eyeTestDetails?.optometristName || '',
       ExamDate: legacyP.eyeTestDate || legacyP.prescriptionDate || legacyP.eyeTestDetails?.eyeTestDate || new Date().toISOString().split('T')[0],
       Complaint: legacyP.complaint || '',
@@ -155,15 +170,24 @@ async function savePrescriptionImpl(
     prescription = arg1 as Partial<PrescriptionPascal>;
   }
 
+  // Ensure CompanyID and BranchID are present
+  if (!prescription.CompanyID) {
+    prescription.CompanyID = currentCompanyId || 'COMP-default';
+  }
+  if (!prescription.BranchID) {
+    prescription.BranchID = currentBranchId || 'BR-default';
+  }
+
   let result: PrescriptionPascal;
   try {
-    if (prescription.PrescriptionID) {
-      // Update prescription
-      const res = await apiCall<any>('updatePrescription', { prescription });
-      result = mapRawToPascal(res.data || res);
-    } else {
+    const isNew = !prescription.PrescriptionID || !prescription.PrescriptionID.startsWith('PRE-');
+    if (isNew) {
       // Create prescription
       const res = await apiCall<any>('createPrescription', { prescription });
+      result = mapRawToPascal(res.data || res);
+    } else {
+      // Update prescription
+      const res = await apiCall<any>('updatePrescription', { prescription });
       result = mapRawToPascal(res.data || res);
     }
   } catch (e) {

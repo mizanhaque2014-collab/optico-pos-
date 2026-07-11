@@ -151,23 +151,37 @@ function validatePrescriptionBackend(p) {
   if (!p) {
     throw new Error("No prescription data provided");
   }
+  
   var customerId = p.CustomerID || p.customerId || p.customerID;
-  var companyId = p.CompanyID || p.companyId || p.companyID;
-  var branchId = p.BranchID || p.branchId || p.branchID;
-  var examDate = p.ExamDate || p.examDate;
-
   if (!customerId || !String(customerId).trim()) {
     throw new Error("CustomerID is mandatory.");
   }
+
+  var companyId = p.CompanyID || p.companyId || p.companyID;
   if (!companyId || !String(companyId).trim()) {
-    throw new Error("CompanyID is mandatory.");
+    companyId = "COMP-default";
   }
+
+  var branchId = p.BranchID || p.branchId || p.branchID;
   if (!branchId || !String(branchId).trim()) {
-    throw new Error("BranchID is mandatory.");
+    branchId = "BR-default";
   }
+
+  var examDate = p.ExamDate || p.examDate;
   if (!examDate || !String(examDate).trim()) {
-    throw new Error("ExamDate is mandatory.");
+    examDate = new Date().toISOString().split('T')[0];
   }
+
+  // Ensure these are written back to the object so they get saved
+  p.CustomerID = customerId;
+  p.CompanyID = companyId;
+  p.BranchID = branchId;
+  p.ExamDate = examDate;
+
+  p.customerId = customerId;
+  p.companyId = companyId;
+  p.branchId = branchId;
+  p.examDate = examDate;
 
   // Validate customer exists
   try {
