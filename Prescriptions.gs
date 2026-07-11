@@ -141,14 +141,9 @@ function rowToPrescription(row, headers) {
   return p;
 }
 
-// Generate unique ID with PRE- prefix and 12 uppercase characters
+// Generate unique ID in the format: PRE-<timestamp>
 function generatePrescriptionId() {
-  var chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  var result = "";
-  for (var i = 0; i < 12; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return "PRE-" + result;
+  return "PRE-" + Date.now();
 }
 
 // Validate fields
