@@ -177,7 +177,12 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
   const [showConfirmation, setShowConfirmation] = useState(false);
 
   const handleSaveCustomerOnly = async () => {
+    console.log("================= START handleSaveCustomerOnly =================");
+    console.log("[DEBUG 1] Active customer state:", customer);
+    console.log("[DEBUG 2] Active prescription state:", prescription);
+    
     if (!customer) {
+      console.warn("[DEBUG EXIT] No customer selected. Alerting and exiting.");
       alert('Please select a customer.');
       return;
     }
@@ -185,54 +190,75 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
     const updatedCustomer = { ...customer };
     
     if (prescription && prescription.source === 'Eye Test Performed In Shop') {
+      console.log("[DEBUG] Setting customer status to 'Eye Test Only'");
       updatedCustomer.status = 'Eye Test Only';
     } else if (prescription && prescription.source !== 'No Prescription') {
+      console.log("[DEBUG] Setting customer status to 'Prescription Only' because source is:", prescription.source);
       updatedCustomer.status = 'Prescription Only';
+    } else {
+      console.log("[DEBUG] No valid prescription or source is 'No Prescription'");
     }
 
     // Step 1. Save Customer First
+    console.log("[DEBUG 3] Saving customer...", updatedCustomer);
     let savedCustomerResult = null;
     try {
       savedCustomerResult = await saveCustomer(updatedCustomer);
+      console.log("[DEBUG 4] Save customer response:", savedCustomerResult);
     } catch (err) {
-      console.warn("Failed to sync customer changes to remote sheet:", err);
+      console.warn("[DEBUG ERROR] Failed to sync customer changes to remote sheet:", err);
       customerService.updateLocalCache(updatedCustomer);
       savedCustomerResult = updatedCustomer;
     }
 
     const finalCustomerId = savedCustomerResult?.id || customer.id;
+    console.log("[DEBUG 5] Resolved finalCustomerId:", finalCustomerId);
+    if (!finalCustomerId) {
+      console.error("[DEBUG ERROR] finalCustomerId is null or empty! Cannot save prescription.");
+    }
 
     // Step 2. Save Prescription Second
     let finalPrescription = prescription;
+    console.log("[DEBUG 6] Checking if prescription should be saved. prescription source:", prescription?.source);
     if (prescription && prescription.source !== 'No Prescription') {
+      console.log("[DEBUG 7] Prescription source is valid. Calling prescriptionService.savePrescription...");
       try {
         const savedP = await prescriptionService.savePrescription(finalCustomerId, prescription);
+        console.log("[DEBUG 8] savePrescription response:", savedP);
         finalPrescription = mapPascalToStandard(savedP);
+        console.log("[DEBUG 9] Mapped finalPrescription standard:", finalPrescription);
       } catch (err) {
-        console.warn("Failed to save prescription:", err);
+        console.warn("[DEBUG ERROR] Failed to save prescription:", err);
       }
+    } else {
+      console.log("[DEBUG 10] Skipped saving prescription. Reason: prescription is null or source is 'No Prescription'");
     }
 
     // Step 3. Reload Customer
+    console.log("[DEBUG 11] Reloading customer by ID:", finalCustomerId);
     let reloadedCustomer = savedCustomerResult || updatedCustomer;
     try {
       reloadedCustomer = await customerService.getCustomerById(finalCustomerId);
+      console.log("[DEBUG 12] Reloaded customer from DB:", reloadedCustomer);
     } catch (err) {
-      console.warn("Failed to reload customer:", err);
+      console.warn("[DEBUG ERROR] Failed to reload customer:", err);
     }
 
     // Load prescription history and attach to reloaded customer
+    console.log("[DEBUG 13] Loading prescription history for ID:", finalCustomerId);
     try {
       const history = await prescriptionService.loadPrescriptionHistory(finalCustomerId);
+      console.log("[DEBUG 14] Prescription history loaded:", history);
       reloadedCustomer.prescriptions = history.map(mapPascalToStandard);
     } catch (err) {
-      console.warn("Failed to load prescription history in view:", err);
+      console.warn("[DEBUG ERROR] Failed to load prescription history in view:", err);
       if (finalPrescription) {
         reloadedCustomer.prescriptions = [finalPrescription];
       }
     }
 
     // Step 4 & 5. Display Customer and Prescription History
+    console.log("[DEBUG 15] Updating component states with reloaded customer and prescription");
     setCustomer(reloadedCustomer);
     if (finalPrescription) {
       setPrescription(finalPrescription);
@@ -243,7 +269,9 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
     setTimeout(() => setSaveSuccessMessage(false), 5000);
 
     // Step 6. Continue to Billing Automatically
+    console.log("[DEBUG 16] Triggering continueToBilling");
     setContinueToBilling(true);
+    console.log("================= END handleSaveCustomerOnly =================");
   };
 
   const handleInitiateSubmit = () => {
@@ -259,34 +287,49 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
   };
 
   const handleSubmit = async () => {
-    if (!customer) return;
+    console.log("================= START handleSubmit =================");
+    console.log("[SUBMIT DEBUG 1] Active customer state:", customer);
+    console.log("[SUBMIT DEBUG 2] Active prescription state:", prescription);
+    
+    if (!customer) {
+      console.warn("[SUBMIT DEBUG EXIT] No customer. Exiting.");
+      return;
+    }
     
     // In Direct Sale, advance is full amount
     const finalAdvance = type === 'Direct Sale' ? grandTotal : advanceAmount;
+    console.log("[SUBMIT DEBUG 3] Calculated finalAdvance:", finalAdvance, "type:", type);
 
     let finalPrescriptionId = undefined;
 
     // Resolve customer status
     const updatedCustomer = { ...customer };
     updatedCustomer.status = type === 'Sales Order' ? 'Sales Order Customer' : 'Buyer';
+    console.log("[SUBMIT DEBUG 4] Saving updated customer...", updatedCustomer);
     
     // Step 1. Save updated customer details to Google Sheets and local cache first
     let savedCustomerResult = null;
     try {
       savedCustomerResult = await saveCustomer(updatedCustomer);
+      console.log("[SUBMIT DEBUG 5] Save customer response:", savedCustomerResult);
     } catch (err) {
-      console.warn("Failed to sync customer details on submit:", err);
+      console.warn("[SUBMIT DEBUG ERROR] Failed to sync customer details on submit:", err);
       customerService.updateLocalCache(updatedCustomer);
       savedCustomerResult = updatedCustomer;
     }
 
     const finalCustomerId = savedCustomerResult?.id || customer.id;
+    console.log("[SUBMIT DEBUG 6] Resolved finalCustomerId:", finalCustomerId);
 
     // Step 2. Save prescription to customer if exists
+    console.log("[SUBMIT DEBUG 7] Checking if prescription should be saved. prescription source:", prescription?.source);
     if (prescription && prescription.source !== 'No Prescription') {
+      console.log("[SUBMIT DEBUG 8] Prescription source is valid. Calling savePrescription...");
       try {
         const savedP = await prescriptionService.savePrescription(finalCustomerId, prescription);
+        console.log("[SUBMIT DEBUG 9] savePrescription response:", savedP);
         finalPrescriptionId = savedP.PrescriptionID;
+        console.log("[SUBMIT DEBUG 10] Set finalPrescriptionId to:", finalPrescriptionId);
         
         // Update local cached prescriptions for customer
         if (!updatedCustomer.prescriptions) updatedCustomer.prescriptions = [];
@@ -298,9 +341,11 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
         }
         customerService.updateLocalCache(updatedCustomer);
       } catch (err) {
-        console.warn("Failed to save prescription on submit:", err);
+        console.warn("[SUBMIT DEBUG ERROR] Failed to save prescription on submit:", err);
         finalPrescriptionId = prescription.id;
       }
+    } else {
+      console.log("[SUBMIT DEBUG 11] Skipped saving prescription. Reason: prescription is null or source is 'No Prescription'");
     }
 
     const newInvoice = {

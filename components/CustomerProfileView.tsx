@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Customer, Invoice } from '@/lib/types';
 import { useStore } from '@/lib/store';
 import { eyeTestService, EyeTestRecord } from '@/lib/services/eyeTestService';
-import { prescriptionService } from '@/lib/services/prescriptionService';
+import { prescriptionService, mapPascalToStandard } from '@/lib/services/prescriptionService';
 import { User, FileText, IndianRupee, Clock, CheckCircle, Activity, ShoppingCart, Calendar, Eye, Stethoscope } from 'lucide-react';
 
 interface Props {
@@ -37,7 +37,7 @@ export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
         const etList = await eyeTestService.loadEyeTestHistory(customer.id);
         const pList = await prescriptionService.loadPrescriptionHistory(customer.id);
         setEyeTests(etList);
-        setPrescriptions(pList);
+        setPrescriptions(pList.map(mapPascalToStandard));
       } catch (e) {
         console.error("Failed to load customer profile history streams:", e);
       } finally {

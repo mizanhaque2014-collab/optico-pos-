@@ -123,6 +123,9 @@ async function savePrescriptionImpl(
   arg1: Partial<PrescriptionPascal> | string,
   arg2?: any
 ): Promise<PrescriptionPascal> {
+  console.log("================= START savePrescriptionImpl =================");
+  console.log("[SERVICE DEBUG 1] Received arguments - arg1:", arg1, "arg2:", arg2);
+  
   let prescription: Partial<PrescriptionPascal>;
 
   let currentCompanyId = '';
@@ -134,14 +137,16 @@ async function savePrescriptionImpl(
         const parsed = JSON.parse(stored);
         currentCompanyId = parsed.companyId || parsed.CompanyID || '';
         currentBranchId = parsed.branchId || parsed.BranchID || (parsed.branches && parsed.branches[0]) || '';
+        console.log("[SERVICE DEBUG 2] Loaded from local storage - companyId:", currentCompanyId, "branchId:", currentBranchId);
       }
     } catch (e) {
-      console.warn("Failed to parse current user for prescription save:", e);
+      console.warn("[SERVICE DEBUG WARNING] Failed to parse current user for prescription save:", e);
     }
   }
 
   if (typeof arg1 === 'string' && arg2) {
     // Legacy call: savePrescription(customerId, prescription)
+    console.log("[SERVICE DEBUG 3] Processing legacy format call. CustomerID:", arg1);
     const customerId = arg1;
     const legacyP = arg2;
     prescription = {
@@ -166,8 +171,11 @@ async function savePrescriptionImpl(
       PD_Near: legacyP.pdNear || '',
       CreatedDate: legacyP.createdAt || Date.now(),
     };
+    console.log("[SERVICE DEBUG 4] Legacy mapped prescription object:", prescription);
   } else {
+    console.log("[SERVICE DEBUG 3] Processing new/direct Pascal format call.");
     prescription = arg1 as Partial<PrescriptionPascal>;
+    console.log("[SERVICE DEBUG 4] Direct prescription object:", prescription);
   }
 
   // Ensure CompanyID and BranchID are present
@@ -177,21 +185,27 @@ async function savePrescriptionImpl(
   if (!prescription.BranchID) {
     prescription.BranchID = currentBranchId || 'BR-default';
   }
+  console.log("[SERVICE DEBUG 5] Resolved company ID & branch ID:", prescription.CompanyID, prescription.BranchID);
 
   let result: PrescriptionPascal;
   try {
     const isNew = !prescription.PrescriptionID || !prescription.PrescriptionID.startsWith('PRE-');
+    console.log("[SERVICE DEBUG 6] PrescriptionID:", prescription.PrescriptionID, "isNew:", isNew);
     if (isNew) {
-      // Create prescription
+      console.log("[SERVICE DEBUG 7] Executing createPrescription API...");
       const res = await apiCall<any>('createPrescription', { prescription });
+      console.log("[SERVICE DEBUG 8] createPrescription API response raw:", res);
       result = mapRawToPascal(res.data || res);
+      console.log("[SERVICE DEBUG 9] Mapped create response:", result);
     } else {
-      // Update prescription
+      console.log("[SERVICE DEBUG 7] Executing updatePrescription API...");
       const res = await apiCall<any>('updatePrescription', { prescription });
+      console.log("[SERVICE DEBUG 8] updatePrescription API response raw:", res);
       result = mapRawToPascal(res.data || res);
+      console.log("[SERVICE DEBUG 9] Mapped update response:", result);
     }
   } catch (e) {
-    console.warn('Remote savePrescription failed, fallback to local save:', e);
+    console.warn('[SERVICE DEBUG ERROR] Remote savePrescription failed, fallback to local save:', e);
     // Construct a mockup response for local cache
     result = {
       PrescriptionID: prescription.PrescriptionID || `PRE-${Math.random().toString(36).substring(2, 14).toUpperCase()}`,
@@ -215,9 +229,11 @@ async function savePrescriptionImpl(
       PD_Near: prescription.PD_Near || '',
       CreatedDate: prescription.CreatedDate || Date.now(),
     };
+    console.log("[SERVICE DEBUG 10] Created fallback result:", result);
   }
 
   // Sync to local customer list cache
+  console.log("[SERVICE DEBUG 11] Syncing saved prescription to local cache for customer ID:", result.CustomerID);
   const customers = await customerService.getCustomers();
   const customerId = result.CustomerID;
   const idx = customers.findIndex(c => c.id === customerId);
@@ -234,8 +250,12 @@ async function savePrescriptionImpl(
     }
     customer.prescriptions = prescriptions;
     customerService.updateLocalCache(customer);
+    console.log("[SERVICE DEBUG 12] Local customer cache sync complete!");
+  } else {
+    console.warn("[SERVICE DEBUG WARNING] Customer with ID not found in local list to update:", customerId);
   }
 
+  console.log("================= END savePrescriptionImpl =================");
   return result;
 }
 
