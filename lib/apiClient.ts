@@ -9,6 +9,24 @@ export async function apiCall<T>(action: string, argPayload?: any): Promise<T> {
     ...(argPayload || {}),
   };
 
+  // STEP 2: Print exact logs inside apiCall
+  console.log("Sending Action:", action);
+  console.log(payload);
+
+  // STEP 1: Trace every API request
+  const pData = payload.prescription || payload.eyeTest || payload.eyeTestDetails || payload;
+  const customerId = payload.CustomerID || payload.customerId || pData?.CustomerID || pData?.customerId || '';
+  const prescriptionId = payload.PrescriptionID || payload.prescriptionId || pData?.PrescriptionID || pData?.prescriptionId || '';
+  const companyId = payload.CompanyID || payload.companyId || pData?.CompanyID || pData?.companyId || '';
+  const branchId = payload.BranchID || payload.branchId || pData?.BranchID || pData?.branchId || '';
+
+  console.log("Action:", action);
+  console.log("Payload:", payload);
+  console.log("CustomerID:", customerId);
+  console.log("PrescriptionID:", prescriptionId);
+  console.log("CompanyID:", companyId);
+  console.log("BranchID:", branchId);
+
   console.log(`%c[API REQUEST] Action: ${action}`, 'color: #06b6d4; font-weight: bold;', {
     url: url.toString(),
     payload,
@@ -42,6 +60,15 @@ export async function apiCall<T>(action: string, argPayload?: any): Promise<T> {
     try {
       const result = JSON.parse(text);
       if (result && typeof result.success === 'boolean') {
+        // Output backend logs if present in the response
+        if (Array.isArray(result.logs)) {
+          console.groupCollapsed(`%c[APPS SCRIPT BACKEND LOGS] Action: ${action}`, 'color: #8b5cf6; font-weight: bold;');
+          result.logs.forEach((log: string) => {
+            console.log(`%c${log}`, 'color: #c084fc;');
+          });
+          console.groupEnd();
+        }
+
         if (!result.success) {
           throw new Error(result.error || 'Unknown error');
         }

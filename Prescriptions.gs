@@ -164,11 +164,13 @@ function generatePrescriptionId() {
 
 // Validate fields
 function validatePrescriptionBackend(p) {
+  logBackend("validatePrescriptionBackend start.", p);
   if (!p) {
     throw new Error("No prescription data provided");
   }
   
   var customerId = p.CustomerID || p.customerId || p.customerID;
+  logBackend("Resolved customerId for prescription: " + customerId);
   if (!customerId || !String(customerId).trim()) {
     throw new Error("CustomerID is mandatory.");
   }
@@ -199,11 +201,22 @@ function validatePrescriptionBackend(p) {
   p.branchId = branchId;
   p.examDate = examDate;
 
-  // Validate customer exists
+  // Validate customer exists (STEP 7: Verify getCustomerById)
   try {
-    getCustomerById(customerId);
+    logBackend("Incoming CustomerID: " + customerId);
+    var cust = getCustomerById(customerId);
+    if (cust) {
+      logBackend("Customer Found = true");
+      logBackend("Returned object: " + JSON.stringify(cust));
+      logBackend("Customer found");
+    } else {
+      logBackend("Customer Found = false");
+      logBackend("Returned object: null");
+    }
   } catch (err) {
-    throw new Error("Validation Failed: Customer with ID '" + customerId + "' does not exist.");
+    logBackend("Customer Found = false");
+    logBackend("validatePrescriptionBackend customer check failed: " + err.toString());
+    throw new Error("Validation Failed: " + err.toString());
   }
 }
 
@@ -211,10 +224,13 @@ function validatePrescriptionBackend(p) {
  * Endpoint action: createPrescription
  */
 function createPrescription(p) {
+  logBackend("Received payload", p);
   validatePrescriptionBackend(p);
+  logBackend("Validation passed");
   
   var sheet = getPrescriptionsSheet();
   var headers = getPrescriptionHeaders(sheet);
+  logBackend("Headers of Prescriptions sheet: " + headers.join(", "));
   
   var all = getPrescriptions();
   var idToUse;
@@ -228,10 +244,31 @@ function createPrescription(p) {
   p.PrescriptionID = idToUse;
   p.id = idToUse;
   p.CreatedDate = Date.now();
+  logBackend("Generated new PrescriptionID: " + idToUse);
   
+  logBackend("Preparing row");
   var rowData = prescriptionToRow(p, headers);
-  sheet.appendRow(rowData);
+  logBackend("Converting prescription to rowData for appendRow. Columns count: " + rowData.length + ", Row content: " + JSON.stringify(rowData));
   
+  logBackend("Appending row");
+  sheet.appendRow(rowData);
+  logBackend("appendRow finished");
+  
+  // STEP 8: Verify getPrescriptionsByCustomer
+  try {
+    logBackend("Step 8: Verifying immediately using getPrescriptionsByCustomer...");
+    var cid = p.CustomerID || p.customerId;
+    var list = getPrescriptionsByCustomer(cid);
+    logBackend("getPrescriptionsByCustomer returned " + list.length + " rows.");
+    var foundNew = list.some(function(item) {
+      return (item.PrescriptionID || item.id) === idToUse;
+    });
+    logBackend("Prescription row exists in Google Sheets = " + foundNew);
+  } catch (verifyErr) {
+    logBackend("Step 8 Verification error: " + verifyErr.toString());
+  }
+  
+  logBackend("Returning success", p);
   return p;
 }
 

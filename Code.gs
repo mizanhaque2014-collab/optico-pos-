@@ -83,28 +83,64 @@ function loadCustomerHistory(customerId) {
     // Keep empty if query fails
   }
   
-  return {
+  var resObj = {
     customer: customer,
     prescriptions: prescriptions,
     eyeTests: eyeTests,
     invoices: invoices,
     payments: payments
   };
+  
+  logBackend("loadCustomerHistory returned object: " + JSON.stringify(resObj));
+  return resObj;
+}
+
+// Global logging cache for request-specific tracing
+var backendLogs = [];
+function logBackend(msg, data) {
+  var logMsg = "[" + new Date().toISOString() + "] " + msg + (data ? " " + JSON.stringify(data) : "");
+  backendLogs.push(logMsg);
+  console.log(logMsg);
 }
 
 /**
  * Main Web App POST Request Entrypoint
  */
 function doPost(e) {
+  backendLogs = [];
+  logBackend("================= START doPost =================");
   try {
-    var payload;
+    var payload = {};
     if (e.postData && e.postData.contents) {
-      payload = JSON.parse(e.postData.contents);
+      try {
+        payload = JSON.parse(e.postData.contents);
+      } catch (err) {
+        // Fallback for application/x-www-form-urlencoded
+        payload = e.parameter;
+        if (payload.payload) {
+          try {
+            var innerPayload = JSON.parse(payload.payload);
+            for (var key in innerPayload) {
+              payload[key] = innerPayload[key];
+            }
+          } catch (innerErr) {
+            // Ignore inner error
+          }
+        }
+      }
     } else {
       payload = e.parameter;
     }
     
+    Logger.log(payload.action);
+    Logger.log(JSON.stringify(payload));
+    logBackend("Logger action: " + payload.action);
+    logBackend("Logger payload: " + JSON.stringify(payload));
+    
     var action = payload.action || e.parameter.action;
+    logBackend("Parsed action: " + action);
+    logBackend("Payload keys: " + Object.keys(payload || {}).join(", "));
+    
     var result;
     
     switch (action) {
@@ -138,6 +174,12 @@ function doPost(e) {
         } else {
           result = createCustomer(customer);
         }
+        break;
+      case 'createCustomer':
+        result = createCustomer(payload.customer || payload);
+        break;
+      case 'updateCustomer':
+        result = updateCustomer(payload.customer || payload);
         break;
       case 'createUser':
         result = createUser(payload.user || payload);
@@ -269,15 +311,21 @@ function doPost(e) {
         throw new Error("Unsupported action: " + action);
     }
     
+    logBackend("Successfully executed action: " + action);
+    logBackend("================= END doPost (SUCCESS) =================");
     return ContentService.createTextOutput(JSON.stringify({
       success: true,
-      data: result
+      data: result,
+      logs: backendLogs
     })).setMimeType(ContentService.MimeType.JSON);
     
   } catch (error) {
+    logBackend("FATAL ERROR in doPost: " + (error.message || error.toString()));
+    logBackend("================= END doPost (FAILED) =================");
     return ContentService.createTextOutput(JSON.stringify({
       success: false,
-      error: error.message || error.toString()
+      error: error.message || error.toString(),
+      logs: backendLogs
     })).setMimeType(ContentService.MimeType.JSON);
   }
 }
@@ -1218,10 +1266,12 @@ function getEyeTests(customerId) {
 
 // Save EyeTest
 function saveEyeTest(et) {
+  logBackend("saveEyeTest start. Input data:", et);
   if (!et) throw new Error("No eye test record provided");
   var sheet = getEyeTestsSheet();
   var lastRow = sheet.getLastRow();
   var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  logBackend("Headers of EyeTests sheet: " + headers.join(", "));
   
   if (!et.id) {
     et.id = "et-" + Date.now();
@@ -1229,6 +1279,7 @@ function saveEyeTest(et) {
   if (!et.createdAt) {
     et.createdAt = Date.now();
   }
+  logBackend("Resolved EyeTest record ID: " + et.id);
   
   var targetRowIndex = -1;
   if (lastRow > 1) {
@@ -1240,6 +1291,7 @@ function saveEyeTest(et) {
       }
     }
   }
+  logBackend("Resolved targetRowIndex for EyeTest update: " + targetRowIndex);
   
   var rowData = [];
   for (var k = 0; k < headers.length; k++) {
@@ -1248,11 +1300,14 @@ function saveEyeTest(et) {
     if (val === undefined || val === null) val = "";
     rowData.push(val);
   }
+  logBackend("EyeTest rowData: " + JSON.stringify(rowData));
   
   if (targetRowIndex !== -1) {
     sheet.getRange(targetRowIndex, 1, 1, headers.length).setValues([rowData]);
+    logBackend("Successfully updated existing EyeTest row at index: " + targetRowIndex);
   } else {
     sheet.appendRow(rowData);
+    logBackend("Successfully appended new row to EyeTests sheet!");
   }
   return et;
 }
