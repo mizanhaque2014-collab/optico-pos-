@@ -51,7 +51,7 @@ export default function PrescriptionSection({ customer, prescription, onChange }
     if (isOpen && !prescription && viewMode === 'form') {
       onChange({
         id: crypto.randomUUID(),
-        source: 'No Prescription',
+        source: 'Eye Test Performed In Shop',
         createdAt: Date.now()
       });
     }

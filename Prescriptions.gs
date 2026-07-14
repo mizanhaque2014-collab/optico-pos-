@@ -32,6 +32,7 @@ function getPrescriptionsSheet() {
       "AddPower",
       "PD_Distance",
       "PD_Near",
+      "Source",
       "CreatedDate"
     ]);
   }
@@ -61,13 +62,27 @@ function getPrescriptionHeaders(sheet) {
     "AddPower",
     "PD_Distance",
     "PD_Near",
+    "Source",
     "CreatedDate"
   ];
   if (lastColumn === 0) {
     sheet.appendRow(defaultHeaders);
     return defaultHeaders;
   }
-  return sheet.getRange(1, 1, 1, lastColumn).getValues()[0];
+  var headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0];
+  var hasSource = false;
+  for (var i = 0; i < headers.length; i++) {
+    if (headers[i].toString().toLowerCase().trim() === 'source') {
+      hasSource = true;
+      break;
+    }
+  }
+  if (!hasSource) {
+    sheet.getRange(1, lastColumn + 1).setValue("Source");
+    lastColumn++;
+    headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0];
+  }
+  return headers;
 }
 
 // Map Prescriptions sheet header names to exact PascalCase JavaScript property names
@@ -92,6 +107,7 @@ function mapPrescriptionHeaderToKey(header) {
   if (clean === 'addpower') return 'AddPower';
   if (clean === 'pddistance') return 'PD_Distance';
   if (clean === 'pdnear') return 'PD_Near';
+  if (clean === 'source') return 'Source';
   if (clean === 'createddate') return 'CreatedDate';
   return header;
 }

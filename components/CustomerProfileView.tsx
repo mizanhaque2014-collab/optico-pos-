@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Customer, Invoice } from '@/lib/types';
 import { useStore } from '@/lib/store';
+import { customerService } from '@/lib/services/customerService';
 import { eyeTestService, EyeTestRecord } from '@/lib/services/eyeTestService';
 import { prescriptionService, mapPascalToStandard } from '@/lib/services/prescriptionService';
 import { User, FileText, IndianRupee, Clock, CheckCircle, Activity, ShoppingCart, Calendar, Eye, Stethoscope } from 'lucide-react';
@@ -34,12 +35,28 @@ export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
   useEffect(() => {
     async function loadHistory() {
       try {
-        const etList = await eyeTestService.loadEyeTestHistory(customer.id);
-        const pList = await prescriptionService.loadPrescriptionHistory(customer.id);
-        setEyeTests(etList);
-        setPrescriptions(pList.map(mapPascalToStandard));
+        console.log("[PROFILE DEBUG] Loading full customer history for customerId:", customer.id);
+        const history = await customerService.loadCustomerHistory(customer.id);
+        console.log("[PROFILE DEBUG] Full customer history response:", history);
+        
+        // Update eye tests and prescriptions with fetched results
+        setEyeTests(history.eyeTests || []);
+        
+        // Map any PascalCase prescriptions to standard objects if needed
+        const mappedPrescriptions = (history.prescriptions || []).map((p: any) => {
+          return p.PrescriptionID ? mapPascalToStandard(p) : p;
+        });
+        setPrescriptions(mappedPrescriptions);
       } catch (e) {
-        console.error("Failed to load customer profile history streams:", e);
+        console.error("Failed to load customer profile history via loadCustomerHistory, running fallbacks:", e);
+        try {
+          const etList = await eyeTestService.loadEyeTestHistory(customer.id);
+          const pList = await prescriptionService.loadPrescriptionHistory(customer.id);
+          setEyeTests(etList);
+          setPrescriptions(pList.map(mapPascalToStandard));
+        } catch (fallbackError) {
+          console.error("Profile history fallback loading failed:", fallbackError);
+        }
       } finally {
         setLoadingHistory(false);
       }

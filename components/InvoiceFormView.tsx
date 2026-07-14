@@ -13,6 +13,7 @@ import { Trash2, Plus, Receipt } from 'lucide-react';
 import { Prescription } from '@/lib/types';
 import { prescriptionService, mapPascalToStandard } from '@/lib/services/prescriptionService';
 import { customerService } from '@/lib/services/customerService';
+import { eyeTestService } from '@/lib/services/eyeTestService';
 
 interface Props {
   type: InvoiceType;
@@ -227,6 +228,52 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
         console.log("[DEBUG 8] savePrescription response:", savedP);
         finalPrescription = mapPascalToStandard(savedP);
         console.log("[DEBUG 9] Mapped finalPrescription standard:", finalPrescription);
+
+        // Save Eye Test as well!
+        if (prescription.source === 'Eye Test Performed In Shop' || prescription.eyeTestDetails) {
+          try {
+            const eyeTestPayload = {
+              id: `et-${Date.now()}`,
+              companyId: 'COMP-default',
+              branchId: 'BR-default',
+              customerId: finalCustomerId,
+              eyeTestDate: prescription.eyeTestDetails?.eyeTestDate || new Date().toISOString().split('T')[0],
+              optometristName: prescription.eyeTestDetails?.optometristName || 'Optometrist',
+              sphOd: prescription.rightEye?.sph || '',
+              cylOd: prescription.rightEye?.cyl || '',
+              axisOd: prescription.rightEye?.axis || '',
+              sphOs: prescription.leftEye?.sph || '',
+              cylOs: prescription.leftEye?.cyl || '',
+              axisOs: prescription.leftEye?.axis || '',
+              addPower: prescription.rightEye?.add || prescription.leftEye?.add || '',
+              pdDistance: prescription.pdDistance || '',
+              pdNear: prescription.pdNear || '',
+              segmentHeight: '',
+              lensRecommendation: prescription.remarks || '',
+              remarks: prescription.remarks || '',
+              createdAt: Date.now()
+            };
+            
+            if (typeof window !== 'undefined') {
+              try {
+                const currentUserStr = localStorage.getItem('opt_current_user');
+                if (currentUserStr) {
+                  const currentUser = JSON.parse(currentUserStr);
+                  if (currentUser.companyId) eyeTestPayload.companyId = currentUser.companyId;
+                  if (currentUser.branchId) eyeTestPayload.branchId = currentUser.branchId;
+                }
+              } catch (userErr) {
+                console.warn("Failed to parse current user from local storage:", userErr);
+              }
+            }
+            
+            console.log("[DEBUG] Saving eye test inside handleSaveCustomerOnly:", eyeTestPayload);
+            await eyeTestService.saveEyeTest(eyeTestPayload);
+            console.log("[DEBUG] Eye test saved successfully inside handleSaveCustomerOnly!");
+          } catch (etErr) {
+            console.warn("Failed to save eye test record inside handleSaveCustomerOnly:", etErr);
+          }
+        }
       } catch (err) {
         console.warn("[DEBUG ERROR] Failed to save prescription:", err);
       }
@@ -331,6 +378,52 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
         finalPrescriptionId = savedP.PrescriptionID;
         console.log("[SUBMIT DEBUG 10] Set finalPrescriptionId to:", finalPrescriptionId);
         
+        // Save Eye Test as well!
+        if (prescription.source === 'Eye Test Performed In Shop' || prescription.eyeTestDetails) {
+          try {
+            const eyeTestPayload = {
+              id: `et-${Date.now()}`,
+              companyId: 'COMP-default',
+              branchId: 'BR-default',
+              customerId: finalCustomerId,
+              eyeTestDate: prescription.eyeTestDetails?.eyeTestDate || new Date().toISOString().split('T')[0],
+              optometristName: prescription.eyeTestDetails?.optometristName || 'Optometrist',
+              sphOd: prescription.rightEye?.sph || '',
+              cylOd: prescription.rightEye?.cyl || '',
+              axisOd: prescription.rightEye?.axis || '',
+              sphOs: prescription.leftEye?.sph || '',
+              cylOs: prescription.leftEye?.cyl || '',
+              axisOs: prescription.leftEye?.axis || '',
+              addPower: prescription.rightEye?.add || prescription.leftEye?.add || '',
+              pdDistance: prescription.pdDistance || '',
+              pdNear: prescription.pdNear || '',
+              segmentHeight: '',
+              lensRecommendation: prescription.remarks || '',
+              remarks: prescription.remarks || '',
+              createdAt: Date.now()
+            };
+            
+            if (typeof window !== 'undefined') {
+              try {
+                const currentUserStr = localStorage.getItem('opt_current_user');
+                if (currentUserStr) {
+                  const currentUser = JSON.parse(currentUserStr);
+                  if (currentUser.companyId) eyeTestPayload.companyId = currentUser.companyId;
+                  if (currentUser.branchId) eyeTestPayload.branchId = currentUser.branchId;
+                }
+              } catch (userErr) {
+                console.warn("Failed to parse current user from local storage:", userErr);
+              }
+            }
+            
+            console.log("[SUBMIT DEBUG] Saving eye test via eyeTestService:", eyeTestPayload);
+            await eyeTestService.saveEyeTest(eyeTestPayload);
+            console.log("[SUBMIT DEBUG] Eye test saved successfully!");
+          } catch (etErr) {
+            console.warn("Failed to save eye test record inside handleSubmit:", etErr);
+          }
+        }
+
         // Update local cached prescriptions for customer
         if (!updatedCustomer.prescriptions) updatedCustomer.prescriptions = [];
         const stdP = mapPascalToStandard(savedP);

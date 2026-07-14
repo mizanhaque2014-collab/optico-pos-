@@ -21,6 +21,7 @@ export interface PrescriptionPascal {
   AddPower: string;
   PD_Distance: string;
   PD_Near: string;
+  Source: string;
   CreatedDate: number;
 }
 
@@ -46,12 +47,13 @@ export function mapRawToPascal(p: any): PrescriptionPascal {
       AddPower: '',
       PD_Distance: '',
       PD_Near: '',
+      Source: 'Eye Test Performed In Shop',
       CreatedDate: Date.now()
     };
   }
   return {
     PrescriptionID: String(p.PrescriptionID || p.prescriptionId || p.id || p.prescriptionID || ''),
-    CustomerID: String(p.CustomerID || p.customerId || p.customerId || ''),
+    CustomerID: String(p.CustomerID || p.customerId || p.customerID || ''),
     CompanyID: String(p.CompanyID || p.companyId || ''),
     BranchID: String(p.BranchID || p.branchId || ''),
     DoctorName: String(p.DoctorName || p.doctorName || p.optometristName || p.optometrist || (p.eyeTestDetails && p.eyeTestDetails.optometristName) || ''),
@@ -69,6 +71,7 @@ export function mapRawToPascal(p: any): PrescriptionPascal {
     AddPower: String(p.AddPower || p.addPower || p.rightAdd || p.leftAdd || (p.rightEye && p.rightEye.add) || ''),
     PD_Distance: String(p.PD_Distance || p.pdDistance || ''),
     PD_Near: String(p.PD_Near || p.pdNear || ''),
+    Source: String(p.Source || p.source || 'Eye Test Performed In Shop'),
     CreatedDate: Number(p.CreatedDate || p.createdAt || p.createdDate || Date.now())
   };
 }
@@ -77,7 +80,7 @@ export function mapRawToPascal(p: any): PrescriptionPascal {
 export function mapPascalToStandard(p: PrescriptionPascal): any {
   return {
     id: p.PrescriptionID,
-    source: 'Eye Test Performed In Shop',
+    source: p.Source || 'Eye Test Performed In Shop',
     sphOd: p.OD_Distance_SPH,
     cylOd: p.OD_Distance_CYL,
     axisOd: p.OD_Distance_AXIS,
@@ -169,6 +172,7 @@ async function savePrescriptionImpl(
       AddPower: legacyP.addPower || legacyP.rightEye?.add || legacyP.leftEye?.add || '',
       PD_Distance: legacyP.pdDistance || '',
       PD_Near: legacyP.pdNear || '',
+      Source: legacyP.source || 'Eye Test Performed In Shop',
       CreatedDate: legacyP.createdAt || Date.now(),
     };
     console.log("[SERVICE DEBUG 4] Legacy mapped prescription object:", prescription);
@@ -227,6 +231,7 @@ async function savePrescriptionImpl(
       AddPower: prescription.AddPower || '',
       PD_Distance: prescription.PD_Distance || '',
       PD_Near: prescription.PD_Near || '',
+      Source: prescription.Source || 'Eye Test Performed In Shop',
       CreatedDate: prescription.CreatedDate || Date.now(),
     };
     console.log("[SERVICE DEBUG 10] Created fallback result:", result);
@@ -300,6 +305,7 @@ export const prescriptionService = {
       AddPower: p.addPower || p.rightEye?.add || p.leftEye?.add || '',
       PD_Distance: p.pdDistance || '',
       PD_Near: p.pdNear || '',
+      Source: p.source || 'Eye Test Performed In Shop',
       CreatedDate: p.createdAt || Date.now(),
     }));
   },

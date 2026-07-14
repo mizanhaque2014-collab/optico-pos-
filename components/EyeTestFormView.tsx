@@ -5,6 +5,7 @@ import { Customer } from '@/lib/types';
 import { companyService, Company } from '@/lib/services/companyService';
 import { branchService, Branch } from '@/lib/services/branchService';
 import { prescriptionService, PrescriptionPascal, mapPascalToStandard } from '@/lib/services/prescriptionService';
+import { eyeTestService, EyeTestRecord } from '@/lib/services/eyeTestService';
 import { ArrowLeft, Save, ShoppingCart, Activity, Copy, FileText, Eye, Edit2, Plus, Calendar, User } from 'lucide-react';
 
 interface Props {
@@ -168,10 +169,33 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
   };
 
   const buildPrescriptionPayload = (): Partial<PrescriptionPascal> => {
+    let resolvedCompanyId = selectedCompanyId;
+    let resolvedBranchId = selectedBranchId;
+
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('opt_current_user');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (!resolvedCompanyId) {
+            resolvedCompanyId = parsed.companyId || parsed.CompanyID || '';
+          }
+          if (!resolvedBranchId) {
+            resolvedBranchId = parsed.branchId || parsed.BranchID || (parsed.branches && parsed.branches[0]) || '';
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to read user credentials for payload resolution:", e);
+      }
+    }
+
+    if (!resolvedCompanyId) resolvedCompanyId = 'COMP-default';
+    if (!resolvedBranchId) resolvedBranchId = 'BR-default';
+
     const payload: Partial<PrescriptionPascal> = {
       CustomerID: customer.id,
-      CompanyID: selectedCompanyId || 'COMP-default',
-      BranchID: selectedBranchId || 'BR-default',
+      CompanyID: resolvedCompanyId,
+      BranchID: resolvedBranchId,
       DoctorName: doctorName || 'Optometrist',
       ExamDate: examDate || new Date().toISOString().split('T')[0],
       Complaint: complaint,
@@ -186,7 +210,8 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
       OS_Distance_AXIS: axisOs,
       AddPower: addPower,
       PD_Distance: pdDistance,
-      PD_Near: pdNear
+      PD_Near: pdNear,
+      Source: 'Eye Test Performed In Shop'
     };
 
     if (prescriptionId) {
@@ -202,14 +227,6 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
       setMessage("Error: CustomerID is mandatory.");
       return null;
     }
-    if (!selectedCompanyId) {
-      setMessage("Error: CompanyID is mandatory.");
-      return null;
-    }
-    if (!selectedBranchId) {
-      setMessage("Error: BranchID is mandatory.");
-      return null;
-    }
     if (!examDate) {
       setMessage("Error: ExamDate is mandatory.");
       return null;
@@ -223,6 +240,37 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
       setPrescriptionId(saved.PrescriptionID);
       setIsFormDirty(false);
       setMessage('Prescription Saved Successfully');
+
+      // Save Eye Test Record synchronously as well!
+      try {
+        const eyeTestPayload: EyeTestRecord = {
+          id: `et-${Date.now()}`,
+          companyId: payload.CompanyID || 'COMP-default',
+          branchId: payload.BranchID || 'BR-default',
+          customerId: customer.id,
+          eyeTestDate: examDate || new Date().toISOString().split('T')[0],
+          optometristName: doctorName || 'Optometrist',
+          sphOd: sphOd || '',
+          cylOd: cylOd || '',
+          axisOd: axisOd || '',
+          sphOs: sphOs || '',
+          cylOs: cylOs || '',
+          axisOs: axisOs || '',
+          addPower: addPower || '',
+          pdDistance: pdDistance || '',
+          pdNear: pdNear || '',
+          segmentHeight: '',
+          lensRecommendation: advice || '',
+          remarks: remarks || '',
+          createdAt: Date.now()
+        };
+        console.log("[DEBUG] Saving eye test via eyeTestService inside handleSavePrescription:", eyeTestPayload);
+        await eyeTestService.saveEyeTest(eyeTestPayload);
+        console.log("[DEBUG] Eye test saved successfully!");
+      } catch (etErr) {
+        console.warn("Failed to save eye test record inside handleSavePrescription:", etErr);
+      }
+
       loadHistoryData(); // Reload history
       setTimeout(() => setMessage(''), 5000);
       return saved;
