@@ -173,17 +173,16 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
   };
 
   const [savedInvoice, setSavedInvoice] = useState<any>(null);
-  const [continueToBilling, setContinueToBilling] = useState(false);
+  const [continueToBilling, setContinueToBilling] = useState(!!preloadedEyeTest);
   const [saveSuccessMessage, setSaveSuccessMessage] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
 
   const handleSaveCustomerOnly = async () => {
-    console.log("================= START handleSaveCustomerOnly =================");
-    console.log("[DEBUG 1] Active customer state:", customer);
-    console.log("[DEBUG 2] Active prescription state:", prescription);
+    console.log("ENTER handleSaveCustomerOnly");
+    console.log("INPUT: customer =", customer, "prescription =", prescription);
     
     if (!customer) {
-      console.warn("[DEBUG EXIT] No customer selected. Alerting and exiting.");
+      console.warn("EXIT handleSaveCustomerOnly (No customer selected)");
       alert('Please select a customer.');
       return;
     }
@@ -201,33 +200,35 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
     }
 
     // Step 1. Save Customer First
-    console.log("[DEBUG 3] Saving customer...", updatedCustomer);
+    console.log("Saving customer...", updatedCustomer);
     let savedCustomerResult = null;
     try {
       savedCustomerResult = await saveCustomer(updatedCustomer);
-      console.log("[DEBUG 4] Save customer response:", savedCustomerResult);
+      console.log("Save customer response:", savedCustomerResult);
     } catch (err) {
-      console.warn("[DEBUG ERROR] Failed to sync customer changes to remote sheet:", err);
+      console.warn("Failed to sync customer changes to remote sheet:", err);
       customerService.updateLocalCache(updatedCustomer);
       savedCustomerResult = updatedCustomer;
     }
 
     const finalCustomerId = savedCustomerResult?.id || customer.id;
-    console.log("[DEBUG 5] Resolved finalCustomerId:", finalCustomerId);
+    console.log("Resolved finalCustomerId:", finalCustomerId);
     if (!finalCustomerId) {
-      console.error("[DEBUG ERROR] finalCustomerId is null or empty! Cannot save prescription.");
+      console.error("finalCustomerId is null or empty! Cannot save prescription.");
     }
 
     // Step 2. Save Prescription Second
     let finalPrescription = prescription;
-    console.log("[DEBUG 6] Checking if prescription should be saved. prescription source:", prescription?.source);
+    console.log("Prescription object:", prescription);
+    console.log("CustomerID:", finalCustomerId);
+    
     if (prescription && prescription.source !== 'No Prescription') {
-      console.log("[DEBUG 7] Prescription source is valid. Calling prescriptionService.savePrescription...");
+      console.log("Calling savePrescription...");
       try {
         const savedP = await prescriptionService.savePrescription(finalCustomerId, prescription);
-        console.log("[DEBUG 8] savePrescription response:", savedP);
+        console.log("savePrescription response:", savedP);
         finalPrescription = mapPascalToStandard(savedP);
-        console.log("[DEBUG 9] Mapped finalPrescription standard:", finalPrescription);
+        console.log("Mapped finalPrescription standard:", finalPrescription);
 
         // Save Eye Test as well!
         if (prescription.source === 'Eye Test Performed In Shop' || prescription.eyeTestDetails) {
@@ -267,45 +268,45 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
               }
             }
             
-            console.log("[DEBUG] Saving eye test inside handleSaveCustomerOnly:", eyeTestPayload);
+            console.log("Calling saveEyeTest...");
             await eyeTestService.saveEyeTest(eyeTestPayload);
-            console.log("[DEBUG] Eye test saved successfully inside handleSaveCustomerOnly!");
+            console.log("Eye test saved successfully!");
           } catch (etErr) {
             console.warn("Failed to save eye test record inside handleSaveCustomerOnly:", etErr);
           }
         }
       } catch (err) {
-        console.warn("[DEBUG ERROR] Failed to save prescription:", err);
+        console.warn("Failed to save prescription:", err);
       }
     } else {
-      console.log("[DEBUG 10] Skipped saving prescription. Reason: prescription is null or source is 'No Prescription'");
+      console.log("Skipped saving prescription. Reason: prescription is null or source is 'No Prescription'");
     }
 
     // Step 3. Reload Customer
-    console.log("[DEBUG 11] Reloading customer by ID:", finalCustomerId);
+    console.log("Reloading customer by ID:", finalCustomerId);
     let reloadedCustomer = savedCustomerResult || updatedCustomer;
     try {
       reloadedCustomer = await customerService.getCustomerById(finalCustomerId);
-      console.log("[DEBUG 12] Reloaded customer from DB:", reloadedCustomer);
+      console.log("Reloaded customer from DB:", reloadedCustomer);
     } catch (err) {
-      console.warn("[DEBUG ERROR] Failed to reload customer:", err);
+      console.warn("Failed to reload customer:", err);
     }
 
     // Load prescription history and attach to reloaded customer
-    console.log("[DEBUG 13] Loading prescription history for ID:", finalCustomerId);
+    console.log("Loading prescription history for ID:", finalCustomerId);
     try {
       const history = await prescriptionService.loadPrescriptionHistory(finalCustomerId);
-      console.log("[DEBUG 14] Prescription history loaded:", history);
+      console.log("Prescription history loaded:", history);
       reloadedCustomer.prescriptions = history.map(mapPascalToStandard);
     } catch (err) {
-      console.warn("[DEBUG ERROR] Failed to load prescription history in view:", err);
+      console.warn("Failed to load prescription history in view:", err);
       if (finalPrescription) {
         reloadedCustomer.prescriptions = [finalPrescription];
       }
     }
 
     // Step 4 & 5. Display Customer and Prescription History
-    console.log("[DEBUG 15] Updating component states with reloaded customer and prescription");
+    console.log("Updating component states with reloaded customer and prescription");
     setCustomer(reloadedCustomer);
     if (finalPrescription) {
       setPrescription(finalPrescription);
@@ -316,9 +317,11 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
     setTimeout(() => setSaveSuccessMessage(false), 5000);
 
     // Step 6. Continue to Billing Automatically
-    console.log("[DEBUG 16] Triggering continueToBilling");
+    console.log("Navigate To Billing");
     setContinueToBilling(true);
-    console.log("================= END handleSaveCustomerOnly =================");
+    
+    console.log("EXIT handleSaveCustomerOnly");
+    console.log("RETURN/OUTPUT: success");
   };
 
   const handleInitiateSubmit = () => {
@@ -537,7 +540,7 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
                  <span>💾</span> Save Customer & Prescription
                </button>
                <button 
-                 onClick={() => setContinueToBilling(true)}
+                 onClick={handleSaveCustomerOnly}
                  className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 text-sm rounded-xl transition-colors shadow-lg shadow-blue-900/20 uppercase tracking-wider flex items-center justify-center gap-2"
                >
                  <span>🧾</span> Continue To Billing

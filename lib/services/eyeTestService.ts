@@ -29,10 +29,14 @@ export interface EyeTestRecord {
 
 export const eyeTestService = {
   async saveEyeTest(eyeTest: EyeTestRecord): Promise<EyeTestRecord> {
+    console.log("ENTER saveEyeTest");
+    console.log("INPUT: eyeTest =", eyeTest);
     try {
       const res = await apiCall<EyeTestRecord>('saveEyeTest', { eyeTestDetails: eyeTest });
       if (res && res.id) {
         this.saveLocalEyeTest(res);
+        console.log("EXIT saveEyeTest");
+        console.log("RETURN/OUTPUT:", res);
         return res;
       }
     } catch (e) {
@@ -45,6 +49,8 @@ export const eyeTestService = {
       createdAt: eyeTest.createdAt || Date.now()
     };
     this.saveLocalEyeTest(localEyeTest);
+    console.log("EXIT saveEyeTest");
+    console.log("RETURN/OUTPUT:", localEyeTest);
     return localEyeTest;
   },
 

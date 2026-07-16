@@ -126,8 +126,8 @@ async function savePrescriptionImpl(
   arg1: Partial<PrescriptionPascal> | string,
   arg2?: any
 ): Promise<PrescriptionPascal> {
-  console.log("================= START savePrescriptionImpl =================");
-  console.log("[SERVICE DEBUG 1] Received arguments - arg1:", arg1, "arg2:", arg2);
+  console.log("ENTER savePrescription");
+  console.log("INPUT: arg1:", arg1, "arg2:", arg2);
   
   let prescription: Partial<PrescriptionPascal>;
 
@@ -271,7 +271,8 @@ async function savePrescriptionImpl(
     console.warn("[SERVICE DEBUG WARNING] Customer with ID not found in local list to update:", customerId);
   }
 
-  console.log("================= END savePrescriptionImpl =================");
+  console.log("EXIT savePrescription");
+  console.log("RETURN/OUTPUT:", result);
   return result;
 }
 

@@ -10,6 +10,7 @@ export async function apiCall<T>(action: string, argPayload?: any): Promise<T> {
   };
 
   // STEP 2: Print exact logs inside apiCall
+  console.log("API Action=" + action);
   console.log("Sending Action:", action);
   console.log(payload);
 
@@ -72,6 +73,7 @@ export async function apiCall<T>(action: string, argPayload?: any): Promise<T> {
         if (!result.success) {
           throw new Error(result.error || 'Unknown error');
         }
+        console.log("Backend Success");
         console.log(`%c[API RESPONSE SUCCESS] Action: ${action}`, 'color: #10b981; font-weight: bold;', result.data);
         return result.data;
       }

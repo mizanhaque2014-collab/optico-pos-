@@ -222,12 +222,17 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
   };
 
   const handleSavePrescription = async (): Promise<PrescriptionPascal | null> => {
+    console.log("ENTER handleSavePrescription");
+    console.log("INPUT: customer.id =", customer.id, "examDate =", examDate);
+
     // Validation
     if (!customer.id) {
+      console.warn("EXIT handleSavePrescription (Validation failed: customerId is mandatory)");
       setMessage("Error: CustomerID is mandatory.");
       return null;
     }
     if (!examDate) {
+      console.warn("EXIT handleSavePrescription (Validation failed: examDate is mandatory)");
       setMessage("Error: ExamDate is mandatory.");
       return null;
     }
@@ -237,15 +242,10 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
     try {
       const payload = buildPrescriptionPayload();
       
-      console.log("================= EYE TEST FORM VIEW: SAVE PRESCRIPTION =================");
-      console.log("[savePrescription action] Action: Save/Update Prescription");
-      console.log("[savePrescription action] CustomerID:", customer.id);
-      console.log("[savePrescription action] PrescriptionID:", payload.PrescriptionID || "NEW_PRESCRIPTION");
-      console.log("[savePrescription action] CompanyID:", payload.CompanyID);
-      console.log("[savePrescription action] BranchID:", payload.BranchID);
-      console.log("[savePrescription action] Full Payload:", JSON.stringify(payload, null, 2));
-      console.log("========================================================================");
-
+      console.log("Prescription object:", payload);
+      console.log("CustomerID:", customer.id);
+      
+      console.log("Calling savePrescription...");
       const saved = await prescriptionService.savePrescription(payload);
       setPrescriptionId(saved.PrescriptionID);
       setIsFormDirty(false);
@@ -274,19 +274,23 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
           remarks: remarks || '',
           createdAt: Date.now()
         };
-        console.log("[DEBUG] Saving eye test via eyeTestService inside handleSavePrescription:", eyeTestPayload);
+        console.log("Calling saveEyeTest...");
         await eyeTestService.saveEyeTest(eyeTestPayload);
-        console.log("[DEBUG] Eye test saved successfully!");
+        console.log("Eye test saved successfully!");
       } catch (etErr) {
         console.warn("Failed to save eye test record inside handleSavePrescription:", etErr);
       }
 
       loadHistoryData(); // Reload history
       setTimeout(() => setMessage(''), 5000);
+      
+      console.log("EXIT handleSavePrescription");
+      console.log("RETURN/OUTPUT:", saved);
       return saved;
     } catch (e: any) {
       console.error(e);
       setMessage('Failed to save Prescription: ' + (e.message || e.toString()));
+      console.log("EXIT handleSavePrescription (ERROR)");
       return null;
     } finally {
       setSaving(false);
@@ -294,6 +298,9 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
   };
 
   const handleContinueBilling = async () => {
+    console.log("ENTER handleContinueToBilling");
+    console.log("INPUT: isFormDirty =", isFormDirty, "prescriptionId =", prescriptionId);
+
     // If form has unsaved changes or is a new unsaved prescription, save it first
     let activePrescription: PrescriptionPascal | null = null;
     
@@ -302,6 +309,7 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
       const saved = await handleSavePrescription();
       if (!saved) {
         setMessage('Cannot proceed to billing: failed to save prescription.');
+        console.log("EXIT handleContinueToBilling (FAILED TO SAVE)");
         return;
       }
       activePrescription = saved;
@@ -315,6 +323,11 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
     // Convert active prescription to standard form expected by billing screen
     const stdRecord = mapPascalToStandard(activePrescription);
     setSelectedViewPrescription(activePrescription);
+    
+    console.log("Navigate To Billing");
+    console.log("EXIT handleContinueToBilling");
+    console.log("RETURN/OUTPUT:", stdRecord);
+    
     setShowBillingTypeModal(true);
   };
 
