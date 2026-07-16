@@ -11,29 +11,23 @@ function getPrescriptionsSheet() {
     sheet = ss.insertSheet("Prescriptions");
   }
   if (sheet.getLastColumn() === 0) {
-    // Write default header columns
+    // Write default header columns from master prompt exactly
     sheet.appendRow([
       "PrescriptionID",
       "CustomerID",
       "CompanyID",
       "BranchID",
-      "DoctorName",
       "ExamDate",
-      "Complaint",
-      "Diagnosis",
-      "Advice",
-      "Remarks",
-      "OD_Distance_SPH",
-      "OD_Distance_CYL",
-      "OD_Distance_AXIS",
-      "OS_Distance_SPH",
-      "OS_Distance_CYL",
-      "OS_Distance_AXIS",
-      "AddPower",
-      "PD_Distance",
-      "PD_Near",
       "Source",
-      "CreatedDate"
+      "OD_SPH",
+      "OD_CYL",
+      "OD_AXIS",
+      "OS_SPH",
+      "OS_CYL",
+      "OS_AXIS",
+      "ADD",
+      "PD",
+      "Remarks"
     ]);
   }
   return sheet;
@@ -47,23 +41,17 @@ function getPrescriptionHeaders(sheet) {
     "CustomerID",
     "CompanyID",
     "BranchID",
-    "DoctorName",
     "ExamDate",
-    "Complaint",
-    "Diagnosis",
-    "Advice",
-    "Remarks",
-    "OD_Distance_SPH",
-    "OD_Distance_CYL",
-    "OD_Distance_AXIS",
-    "OS_Distance_SPH",
-    "OS_Distance_CYL",
-    "OS_Distance_AXIS",
-    "AddPower",
-    "PD_Distance",
-    "PD_Near",
     "Source",
-    "CreatedDate"
+    "OD_SPH",
+    "OD_CYL",
+    "OD_AXIS",
+    "OS_SPH",
+    "OS_CYL",
+    "OS_AXIS",
+    "ADD",
+    "PD",
+    "Remarks"
   ];
   if (lastColumn === 0) {
     sheet.appendRow(defaultHeaders);
@@ -92,23 +80,25 @@ function mapPrescriptionHeaderToKey(header) {
   if (clean === 'customerid') return 'CustomerID';
   if (clean === 'companyid') return 'CompanyID';
   if (clean === 'branchid') return 'BranchID';
-  if (clean === 'doctorname') return 'DoctorName';
   if (clean === 'examdate') return 'ExamDate';
+  if (clean === 'source') return 'Source';
+  if (clean === 'odsph' || clean === 'oddistancesph') return 'OD_SPH';
+  if (clean === 'odcyl' || clean === 'oddistancecyl') return 'OD_CYL';
+  if (clean === 'odaxis' || clean === 'oddistanceaxis') return 'OD_AXIS';
+  if (clean === 'ossph' || clean === 'osdistancesph') return 'OS_SPH';
+  if (clean === 'oscyl' || clean === 'osdistancecyl') return 'OS_CYL';
+  if (clean === 'osaxis' || clean === 'osdistanceaxis') return 'OS_AXIS';
+  if (clean === 'add' || clean === 'addpower') return 'ADD';
+  if (clean === 'pd' || clean === 'pddistance' || clean === 'pdnear') return 'PD';
+  if (clean === 'remarks') return 'Remarks';
+  
+  // Non-standard backwards-compatible column fallback mappings
+  if (clean === 'doctorname') return 'DoctorName';
   if (clean === 'complaint') return 'Complaint';
   if (clean === 'diagnosis') return 'Diagnosis';
   if (clean === 'advice') return 'Advice';
-  if (clean === 'remarks') return 'Remarks';
-  if (clean === 'oddistancesph') return 'OD_Distance_SPH';
-  if (clean === 'oddistancecyl') return 'OD_Distance_CYL';
-  if (clean === 'oddistanceaxis') return 'OD_Distance_AXIS';
-  if (clean === 'osdistancesph') return 'OS_Distance_SPH';
-  if (clean === 'osdistancecyl') return 'OS_Distance_CYL';
-  if (clean === 'osdistanceaxis') return 'OS_Distance_AXIS';
-  if (clean === 'addpower') return 'AddPower';
-  if (clean === 'pddistance') return 'PD_Distance';
-  if (clean === 'pdnear') return 'PD_Near';
-  if (clean === 'source') return 'Source';
   if (clean === 'createddate') return 'CreatedDate';
+  
   return header;
 }
 
@@ -119,26 +109,47 @@ function prescriptionToRow(p, headers) {
     var key = mapPrescriptionHeaderToKey(headers[i]);
     var val = p[key];
     if (val === undefined || val === null) {
-      if (key === 'PrescriptionID') val = p.PrescriptionID || p.id || p.prescriptionId || p.prescriptionID;
-      else if (key === 'CustomerID') val = p.CustomerID || p.customerId || p.customerID;
-      else if (key === 'CompanyID') val = p.CompanyID || p.companyId || p.companyID;
-      else if (key === 'BranchID') val = p.BranchID || p.branchId || p.branchID;
-      else if (key === 'DoctorName') val = p.DoctorName || p.doctorName;
-      else if (key === 'ExamDate') val = p.ExamDate || p.examDate;
-      else if (key === 'Complaint') val = p.Complaint || p.complaint;
-      else if (key === 'Diagnosis') val = p.Diagnosis || p.diagnosis;
-      else if (key === 'Advice') val = p.Advice || p.advice;
-      else if (key === 'Remarks') val = p.Remarks || p.remarks;
-      else if (key === 'OD_Distance_SPH') val = p.OD_Distance_SPH || p.odDistanceSph || (p.rightEye && p.rightEye.sph);
-      else if (key === 'OD_Distance_CYL') val = p.OD_Distance_CYL || p.odDistanceCyl || (p.rightEye && p.rightEye.cyl);
-      else if (key === 'OD_Distance_AXIS') val = p.OD_Distance_AXIS || p.odDistanceAxis || (p.rightEye && p.rightEye.axis);
-      else if (key === 'OS_Distance_SPH') val = p.OS_Distance_SPH || p.osDistanceSph || (p.leftEye && p.leftEye.sph);
-      else if (key === 'OS_Distance_CYL') val = p.OS_Distance_CYL || p.osDistanceCyl || (p.leftEye && p.leftEye.cyl);
-      else if (key === 'OS_Distance_AXIS') val = p.OS_Distance_AXIS || p.osDistanceAxis || (p.leftEye && p.leftEye.axis);
-      else if (key === 'AddPower') val = p.AddPower || p.addPower || (p.rightEye && p.rightEye.add) || (p.leftEye && p.leftEye.add);
-      else if (key === 'PD_Distance') val = p.PD_Distance || p.pdDistance;
-      else if (key === 'PD_Near') val = p.PD_Near || p.pdNear;
-      else if (key === 'CreatedDate') val = p.CreatedDate || p.createdDate || p.createdAt;
+      if (key === 'PrescriptionID') {
+        val = p.PrescriptionID || p.id || p.prescriptionId || p.prescriptionID;
+      } else if (key === 'CustomerID') {
+        val = p.CustomerID || p.customerId || p.customerID;
+      } else if (key === 'CompanyID') {
+        val = p.CompanyID || p.companyId || p.companyID;
+      } else if (key === 'BranchID') {
+        val = p.BranchID || p.branchId || p.branchID;
+      } else if (key === 'ExamDate') {
+        val = p.ExamDate || p.examDate || p.prescriptionDate || p.eyeTestDate;
+      } else if (key === 'Source') {
+        val = p.Source || p.source;
+      } else if (key === 'Remarks') {
+        val = p.Remarks || p.remarks;
+      } else if (key === 'DoctorName') {
+        val = p.DoctorName || p.doctorName || p.optometristName;
+      } else if (key === 'Complaint') {
+        val = p.Complaint || p.complaint;
+      } else if (key === 'Diagnosis') {
+        val = p.Diagnosis || p.diagnosis;
+      } else if (key === 'Advice') {
+        val = p.Advice || p.advice;
+      } else if (key === 'CreatedDate') {
+        val = p.CreatedDate || p.createdDate || p.createdAt;
+      } else if (key === 'OD_SPH' || key === 'OD_Distance_SPH') {
+        val = p.OD_SPH || p.OD_Distance_SPH || p.sphOd || p.odDistanceSph || (p.rightEye && p.rightEye.sph);
+      } else if (key === 'OD_CYL' || key === 'OD_Distance_CYL') {
+        val = p.OD_CYL || p.OD_Distance_CYL || p.cylOd || p.odDistanceCyl || (p.rightEye && p.rightEye.cyl);
+      } else if (key === 'OD_AXIS' || key === 'OD_Distance_AXIS') {
+        val = p.OD_AXIS || p.OD_Distance_AXIS || p.axisOd || p.odDistanceAxis || (p.rightEye && p.rightEye.axis);
+      } else if (key === 'OS_SPH' || key === 'OS_Distance_SPH') {
+        val = p.OS_SPH || p.OS_Distance_SPH || p.sphOs || p.osDistanceSph || (p.leftEye && p.leftEye.sph);
+      } else if (key === 'OS_CYL' || key === 'OS_Distance_CYL') {
+        val = p.OS_CYL || p.OS_Distance_CYL || p.cylOs || p.osDistanceCyl || (p.leftEye && p.leftEye.cyl);
+      } else if (key === 'OS_AXIS' || key === 'OS_Distance_AXIS') {
+        val = p.OS_AXIS || p.OS_Distance_AXIS || p.axisOs || p.osDistanceAxis || (p.leftEye && p.leftEye.axis);
+      } else if (key === 'ADD' || key === 'AddPower') {
+        val = p.ADD || p.AddPower || p.addPower || (p.rightEye && p.rightEye.add) || (p.leftEye && p.leftEye.add);
+      } else if (key === 'PD' || key === 'PD_Distance' || key === 'PD_Near') {
+        val = p.PD || p.PD_Distance || p.pdDistance || p.PD_Near || p.pdNear || p.pd;
+      }
     }
     if (val === undefined || val === null) val = "";
     row.push(val);

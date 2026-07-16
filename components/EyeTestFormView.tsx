@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Customer } from '@/lib/types';
 import { companyService, Company } from '@/lib/services/companyService';
 import { branchService, Branch } from '@/lib/services/branchService';
@@ -66,17 +66,57 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
   // Billing selection modal states
   const [showBillingTypeModal, setShowBillingTypeModal] = useState(false);
 
-  const loadHistoryData = async () => {
+  const loadHistoryData = useCallback(async () => {
     setLoadingHistory(true);
     try {
       const data = await prescriptionService.loadPrescriptionHistory(activeCustomer.id);
       setHistory(data);
+      if (data && data.length > 0) {
+        const latest = data[0];
+        setPrescriptionId(latest.PrescriptionID || '');
+        setDoctorName(latest.DoctorName || 'Optometrist');
+        setExamDate(latest.ExamDate || new Date().toISOString().split('T')[0]);
+        setComplaint(latest.Complaint || '');
+        setDiagnosis(latest.Diagnosis || '');
+        setAdvice(latest.Advice || '');
+        setRemarks(latest.Remarks || '');
+        setSphOd(latest.OD_Distance_SPH || '');
+        setCylOd(latest.OD_Distance_CYL || '');
+        setAxisOd(latest.OD_Distance_AXIS || '');
+        setSphOs(latest.OS_Distance_SPH || '');
+        setCylOs(latest.OS_Distance_CYL || '');
+        setAxisOs(latest.OS_Distance_AXIS || '');
+        setAddPower(latest.AddPower || '');
+        setPdDistance(latest.PD_Distance || '');
+        setPdNear(latest.PD_Near || '');
+        if (latest.CompanyID) setSelectedCompanyId(latest.CompanyID);
+        if (latest.BranchID) setSelectedBranchId(latest.BranchID);
+        setIsFormDirty(false);
+      } else {
+        setPrescriptionId('');
+        setDoctorName('Optometrist');
+        setExamDate(new Date().toISOString().split('T')[0]);
+        setComplaint('');
+        setDiagnosis('');
+        setAdvice('');
+        setRemarks('');
+        setSphOd('');
+        setCylOd('');
+        setAxisOd('');
+        setSphOs('');
+        setCylOs('');
+        setAxisOs('');
+        setAddPower('');
+        setPdDistance('');
+        setPdNear('');
+        setIsFormDirty(false);
+      }
     } catch (e) {
       console.error("Failed to load prescription history", e);
     } finally {
       setLoadingHistory(false);
     }
-  };
+  }, [activeCustomer.id]);
 
   useEffect(() => {
     // Initial Defaults
@@ -100,7 +140,7 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
 
     // Load history
     loadHistoryData();
-  }, [activeCustomer.id]);
+  }, [loadHistoryData]);
 
   const handleCopyPrevious = async () => {
     try {
