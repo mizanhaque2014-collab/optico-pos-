@@ -7,6 +7,7 @@ import { branchService, Branch } from '@/lib/services/branchService';
 import { prescriptionService, PrescriptionPascal, mapPascalToStandard } from '@/lib/services/prescriptionService';
 import { eyeTestService, EyeTestRecord } from '@/lib/services/eyeTestService';
 import { ArrowLeft, Save, ShoppingCart, Activity, Copy, FileText, Eye, Edit2, Plus, Calendar, User } from 'lucide-react';
+import { useStore } from '@/lib/store';
 
 interface Props {
   customer: Customer;
@@ -15,6 +16,13 @@ interface Props {
 }
 
 export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props) {
+  const store = useStore();
+  const [activeCustomer, setActiveCustomer] = useState<Customer>(customer);
+
+  useEffect(() => {
+    setActiveCustomer(customer);
+  }, [customer]);
+
   const [companies, setCompanies] = useState<Company[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   
@@ -61,7 +69,7 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
   const loadHistoryData = async () => {
     setLoadingHistory(true);
     try {
-      const data = await prescriptionService.loadPrescriptionHistory(customer.id);
+      const data = await prescriptionService.loadPrescriptionHistory(activeCustomer.id);
       setHistory(data);
     } catch (e) {
       console.error("Failed to load prescription history", e);
@@ -92,11 +100,11 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
 
     // Load history
     loadHistoryData();
-  }, [customer.id]);
+  }, [activeCustomer.id]);
 
   const handleCopyPrevious = async () => {
     try {
-      const latest = await prescriptionService.copyPreviousPrescription(customer.id);
+      const latest = await prescriptionService.copyPreviousPrescription(activeCustomer.id);
       if (latest) {
         setDoctorName(latest.DoctorName || '');
         setComplaint(latest.Complaint || '');
@@ -193,7 +201,7 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
     if (!resolvedBranchId) resolvedBranchId = 'BR-default';
 
     const payload: Partial<PrescriptionPascal> = {
-      CustomerID: customer.id,
+      CustomerID: activeCustomer.id,
       CompanyID: resolvedCompanyId,
       BranchID: resolvedBranchId,
       DoctorName: doctorName || 'Optometrist',
@@ -222,21 +230,13 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
   };
 
   const handleSavePrescription = async (): Promise<PrescriptionPascal | null> => {
-    const payload = buildPrescriptionPayload();
     console.log("ENTER handleSavePrescription");
-    console.log("Payload:", payload);
-    console.log("CustomerID:", customer.id);
+    console.log("CustomerID:", activeCustomer.id);
     console.log("PrescriptionID:", prescriptionId || "NEW_PRESCRIPTION");
     console.log("Action: savePrescription");
-    console.log("INPUT: customer.id =", customer.id, "examDate =", examDate);
+    console.log("INPUT: activeCustomer.id =", activeCustomer.id, "examDate =", examDate);
 
     // Validation
-    if (!customer.id) {
-      console.warn("EXIT handleSavePrescription (Validation failed: customerId is mandatory)");
-      setMessage("Error: CustomerID is mandatory.");
-      console.log("Return value: null");
-      return null;
-    }
     if (!examDate) {
       console.warn("EXIT handleSavePrescription (Validation failed: examDate is mandatory)");
       setMessage("Error: ExamDate is mandatory.");
@@ -247,14 +247,32 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
     setSaving(true);
     setMessage('');
     try {
+      // 1. Save customer if new/local
+      let currentCustomer = activeCustomer;
+      const isNewCustomer = !currentCustomer.id || currentCustomer.id.startsWith('CUST-local-') || currentCustomer.id.startsWith('temp-');
+      if (isNewCustomer) {
+        console.log("Customer is new/local. Saving customer first...", currentCustomer);
+        const savedCustomer = await store.saveCustomer(currentCustomer);
+        console.log("Customer saved successfully. New Customer ID:", savedCustomer.id);
+        currentCustomer = savedCustomer;
+        setActiveCustomer(savedCustomer);
+      }
+
+      // 2. Build prescription payload using the resolved customer ID
+      const payload = buildPrescriptionPayload();
+      payload.CustomerID = currentCustomer.id;
+      if (prescriptionId) {
+        payload.PrescriptionID = prescriptionId;
+      }
+
       console.log("Prescription object:", payload);
-      console.log("CustomerID:", customer.id);
+      console.log("CustomerID:", currentCustomer.id);
       
       console.log("Calling savePrescription...");
       const saved = await prescriptionService.savePrescription(payload);
       setPrescriptionId(saved.PrescriptionID);
       setIsFormDirty(false);
-      setMessage('Prescription Saved Successfully');
+      setMessage('Eye Test Saved Successfully.');
 
       // Save Eye Test Record synchronously as well!
       try {
@@ -262,7 +280,7 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
           id: `et-${Date.now()}`,
           companyId: payload.CompanyID || 'COMP-default',
           branchId: payload.BranchID || 'BR-default',
-          customerId: customer.id,
+          customerId: currentCustomer.id,
           eyeTestDate: examDate || new Date().toISOString().split('T')[0],
           optometristName: doctorName || 'Optometrist',
           sphOd: sphOd || '',
@@ -286,7 +304,9 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
         console.warn("Failed to save eye test record inside handleSavePrescription:", etErr);
       }
 
-      loadHistoryData(); // Reload history
+      // Reload history using the (potentially new) customer ID
+      const updatedHistory = await prescriptionService.loadPrescriptionHistory(currentCustomer.id);
+      setHistory(updatedHistory);
       setTimeout(() => setMessage(''), 5000);
       
       console.log("Return value:", saved);
@@ -294,7 +314,7 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
       return saved;
     } catch (e: any) {
       console.error(e);
-      setMessage('Failed to save Prescription: ' + (e.message || e.toString()));
+      setMessage('Failed to save Eye Test: ' + (e.message || e.toString()));
       console.log("Return value: null");
       console.log("EXIT handleSavePrescription");
       return null;
@@ -306,7 +326,7 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
   const handleContinueBilling = async () => {
     console.log("ENTER handleContinueToBilling");
     console.log("Payload:", null);
-    console.log("CustomerID:", customer.id);
+    console.log("CustomerID:", activeCustomer.id);
     console.log("PrescriptionID:", prescriptionId || "NEW_PRESCRIPTION");
     console.log("Action: continueToBilling");
     console.log("INPUT: isFormDirty =", isFormDirty, "prescriptionId =", prescriptionId);
@@ -344,7 +364,7 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
 
   const handleHistoricalRowBilling = (p: PrescriptionPascal) => {
     const stdRecord = mapPascalToStandard(p);
-    onContinueToBilling(customer, stdRecord, 'direct_sale'); // Default direct sale or can select inside
+    onContinueToBilling(activeCustomer, stdRecord, 'direct_sale'); // Default direct sale or can select inside
   };
 
   return (
@@ -365,7 +385,7 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
             <div>
               <h2 className="text-xl font-black text-cyan-400 tracking-widest uppercase">🔬 Prescription / Eye Test</h2>
               <p className="text-[10px] font-bold text-white/40 uppercase tracking-wider mt-0.5">
-                Customer: <span className="text-white">{customer.name}</span> | ID: {customer.id} | Status: <span className="text-cyan-400">{customer.status || 'N/A'}</span>
+                Customer: <span className="text-white">{activeCustomer.name}</span> | ID: {activeCustomer.id} | Status: <span className="text-cyan-400">{activeCustomer.status || 'N/A'}</span>
               </p>
             </div>
           </div>
@@ -630,7 +650,7 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
               onClick={handleSavePrescription}
               className="flex-1 bg-cyan-600 hover:bg-cyan-500 disabled:bg-cyan-800 text-white font-black py-3 rounded-xl uppercase text-xs tracking-widest flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-all"
             >
-              <Save size={16} /> {saving ? 'Saving...' : 'SAVE PRESCRIPTION'}
+              <Save size={16} /> {saving ? 'Saving...' : 'SAVE EYE TEST'}
             </button>
             
             <button 
@@ -655,19 +675,19 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
           </h3>
 
           <div className="space-y-2">
-            <p className="text-lg font-black text-white tracking-wider">{customer.name}</p>
+            <p className="text-lg font-black text-white tracking-wider">{activeCustomer.name}</p>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div>
                 <span className="text-white/40 font-bold uppercase block text-[10px]">Mobile</span>
-                <span className="text-white font-mono">{customer.mobile}</span>
+                <span className="text-white font-mono">{activeCustomer.mobile}</span>
               </div>
               <div>
                 <span className="text-white/40 font-bold uppercase block text-[10px]">Birth Date</span>
-                <span className="text-white">{customer.dob || 'N/A'}</span>
+                <span className="text-white">{activeCustomer.dob || 'N/A'}</span>
               </div>
               <div className="col-span-2">
                 <span className="text-white/40 font-bold uppercase block text-[10px]">Address</span>
-                <span className="text-white text-xs">{customer.address || 'No Address Logged'}</span>
+                <span className="text-white text-xs">{activeCustomer.address || 'No Address Logged'}</span>
               </div>
             </div>
           </div>
@@ -884,7 +904,7 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
               <button
                 onClick={() => {
                   const std = mapPascalToStandard(selectedViewPrescription);
-                  onContinueToBilling(customer, std, 'direct_sale');
+                  onContinueToBilling(activeCustomer, std, 'direct_sale');
                 }}
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-colors"
               >
@@ -901,7 +921,7 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
           <div className="bg-[#1E293B] border border-white/10 p-6 rounded-2xl max-w-md w-full shadow-2xl space-y-6">
             <div className="text-center">
               <h3 className="text-lg font-black text-cyan-400 uppercase tracking-widest">Select Billing Type</h3>
-              <p className="text-xs text-white/60 mt-1">Choose how you would like to proceed with the billing for {customer.name}</p>
+              <p className="text-xs text-white/60 mt-1">Choose how you would like to proceed with the billing for {activeCustomer.name}</p>
             </div>
             
             <div className="grid grid-cols-1 gap-3">
@@ -909,7 +929,7 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
                 type="button"
                 onClick={() => {
                   const std = mapPascalToStandard(selectedViewPrescription!);
-                  onContinueToBilling(customer, std, 'direct_sale');
+                  onContinueToBilling(activeCustomer, std, 'direct_sale');
                 }}
                 className="bg-emerald-600 hover:bg-emerald-500 text-white p-4 rounded-xl font-bold flex items-center justify-between transition-colors shadow-lg text-left active:scale-[0.98]"
               >
@@ -924,7 +944,7 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
                 type="button"
                 onClick={() => {
                   const std = mapPascalToStandard(selectedViewPrescription!);
-                  onContinueToBilling(customer, std, 'sales_order');
+                  onContinueToBilling(activeCustomer, std, 'sales_order');
                 }}
                 className="bg-purple-600 hover:bg-purple-500 text-white p-4 rounded-xl font-bold flex items-center justify-between transition-colors shadow-lg text-left active:scale-[0.98]"
               >
