@@ -77,44 +77,45 @@ export function mapRawToPascal(p: any): PrescriptionPascal {
 }
 
 // Convert from PascalCase (API/DB representation) to Standard (Frontend state representation)
-export function mapPascalToStandard(p: PrescriptionPascal): any {
+export function mapPascalToStandard(p: PrescriptionPascal | any): any {
+  const o = mapRawToPascal(p);
   return {
-    id: p.PrescriptionID,
-    source: p.Source || 'Eye Test Performed In Shop',
-    sphOd: p.OD_Distance_SPH,
-    cylOd: p.OD_Distance_CYL,
-    axisOd: p.OD_Distance_AXIS,
-    sphOs: p.OS_Distance_SPH,
-    cylOs: p.OS_Distance_CYL,
-    axisOs: p.OS_Distance_AXIS,
-    addPower: p.AddPower,
-    pdDistance: p.PD_Distance,
-    pdNear: p.PD_Near,
-    remarks: p.Remarks,
-    optometristName: p.DoctorName,
-    eyeTestDate: p.ExamDate,
-    complaint: p.Complaint,
-    diagnosis: p.Diagnosis,
-    advice: p.Advice,
-    createdAt: p.CreatedDate || Date.now(),
+    id: o.PrescriptionID,
+    source: o.Source || 'Eye Test Performed In Shop',
+    sphOd: o.OD_Distance_SPH,
+    cylOd: o.OD_Distance_CYL,
+    axisOd: o.OD_Distance_AXIS,
+    sphOs: o.OS_Distance_SPH,
+    cylOs: o.OS_Distance_CYL,
+    axisOs: o.OS_Distance_AXIS,
+    addPower: o.AddPower,
+    pdDistance: o.PD_Distance,
+    pdNear: o.PD_Near,
+    remarks: o.Remarks,
+    optometristName: o.DoctorName,
+    eyeTestDate: o.ExamDate,
+    complaint: o.Complaint,
+    diagnosis: o.Diagnosis,
+    advice: o.Advice,
+    createdAt: o.CreatedDate || Date.now(),
     
     // Nested structure for compatibility with standard types
     rightEye: {
-      sph: p.OD_Distance_SPH,
-      cyl: p.OD_Distance_CYL,
-      axis: p.OD_Distance_AXIS,
-      add: p.AddPower,
+      sph: o.OD_Distance_SPH,
+      cyl: o.OD_Distance_CYL,
+      axis: o.OD_Distance_AXIS,
+      add: o.AddPower,
     },
     leftEye: {
-      sph: p.OS_Distance_SPH,
-      cyl: p.OS_Distance_CYL,
-      axis: p.OS_Distance_AXIS,
-      add: p.AddPower,
+      sph: o.OS_Distance_SPH,
+      cyl: o.OS_Distance_CYL,
+      axis: o.OS_Distance_AXIS,
+      add: o.AddPower,
     },
     eyeTestDetails: {
-      optometristName: p.DoctorName,
-      eyeTestDate: p.ExamDate,
-      remarks: p.Remarks,
+      optometristName: o.DoctorName,
+      eyeTestDate: o.ExamDate,
+      remarks: o.Remarks,
     }
   };
 }

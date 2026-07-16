@@ -1257,7 +1257,8 @@ function getEyeTests(customerId) {
     for (var j = 0; j < headers.length; j++) {
       et[headers[j]] = row[j];
     }
-    if (!customerId || et.customerId.toString() === customerId.toString()) {
+    var etCustId = et.customerId || et.CustomerID || et.customerID || "";
+    if (!customerId || etCustId.toString().trim().toLowerCase() === customerId.toString().trim().toLowerCase()) {
       eyeTests.push(et);
     }
   }

@@ -94,22 +94,24 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
         setIsFormDirty(false);
       } else {
         setPrescriptionId('');
-        setDoctorName('Optometrist');
-        setExamDate(new Date().toISOString().split('T')[0]);
-        setComplaint('');
-        setDiagnosis('');
-        setAdvice('');
-        setRemarks('');
-        setSphOd('');
-        setCylOd('');
-        setAxisOd('');
-        setSphOs('');
-        setCylOs('');
-        setAxisOs('');
-        setAddPower('');
-        setPdDistance('');
-        setPdNear('');
-        setIsFormDirty(false);
+        if (!isFormDirty) {
+          setDoctorName('Optometrist');
+          setExamDate(new Date().toISOString().split('T')[0]);
+          setComplaint('');
+          setDiagnosis('');
+          setAdvice('');
+          setRemarks('');
+          setSphOd('');
+          setCylOd('');
+          setAxisOd('');
+          setSphOs('');
+          setCylOs('');
+          setAxisOs('');
+          setAddPower('');
+          setPdDistance('');
+          setPdNear('');
+          setIsFormDirty(false);
+        }
       }
     } catch (e) {
       console.error("Failed to load prescription history", e);

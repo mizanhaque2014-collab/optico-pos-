@@ -258,13 +258,98 @@ export const customerService = {
         };
       }
     } catch (e) {
-      console.warn('loadCustomerHistory API failed, resolving from customer store:', e);
+      console.warn('loadCustomerHistory API failed, resolving via parallel fallbacks:', e);
     }
 
-    // Fallback to customer prescriptions
+    // Fallback: load customer from local memory or sheets
     const customers = await this.getCustomers();
     const customer = customers.find(c => c.id === customerId) || null;
+
+    // Fallback: load prescriptions
+    let prescriptions: any[] = [];
+    try {
+      const res = await apiCall<any>('getPrescriptionsByCustomer', { customerId });
+      const data = res?.data || res;
+      if (Array.isArray(data)) {
+        prescriptions = data;
+      }
+    } catch (e) {
+      console.warn('loadCustomerHistory fallback: getPrescriptionsByCustomer failed:', e);
+    }
+    if (prescriptions.length === 0) {
+      prescriptions = customer?.prescriptions || [];
+    }
+
+    // Fallback: load eye tests
+    let eyeTests: any[] = [];
+    try {
+      const res = await apiCall<any[]>('loadEyeTests', { customerId });
+      if (Array.isArray(res)) {
+        eyeTests = res;
+      }
+    } catch (e) {
+      console.warn('loadCustomerHistory fallback: loadEyeTests failed:', e);
+    }
+    if (eyeTests.length === 0 && typeof window !== 'undefined') {
+      try {
+        const storedEt = localStorage.getItem('opt_eyetests');
+        const localEt = storedEt ? JSON.parse(storedEt) : [];
+        eyeTests = localEt.filter((et: any) => et.customerId === customerId);
+      } catch (err) {
+        console.error('Error loading local eye tests:', err);
+      }
+    }
     
+    // Map prescriptions to eye tests if no explicit eye test records exist
+    if (eyeTests.length === 0 && prescriptions.length > 0) {
+      eyeTests = prescriptions
+        .filter((p: any) => p.eyeTestDetails || p.Remarks || p.DoctorName)
+        .map((p: any) => {
+          if (p.PrescriptionID) {
+            // It's a PascalCase prescription
+            return {
+              id: `et-p-${p.PrescriptionID}`,
+              customerId: customerId,
+              eyeTestDate: p.ExamDate || new Date(Number(p.CreatedDate || Date.now())).toISOString().split('T')[0],
+              optometristName: p.DoctorName || 'Optometrist',
+              sphOd: p.OD_Distance_SPH || '',
+              cylOd: p.OD_Distance_CYL || '',
+              axisOd: p.OD_Distance_AXIS || '',
+              sphOs: p.OS_Distance_SPH || '',
+              cylOs: p.OS_Distance_CYL || '',
+              axisOs: p.OS_Distance_AXIS || '',
+              addPower: p.AddPower || '',
+              pdDistance: p.PD_Distance || '',
+              pdNear: p.PD_Near || '',
+              remarks: p.Remarks || '',
+              lensRecommendation: p.Advice || '',
+              createdAt: Number(p.CreatedDate || Date.now())
+            };
+          } else {
+            // It's a Standard format prescription
+            return {
+              id: `et-p-${p.id}`,
+              customerId: customerId,
+              eyeTestDate: p.eyeTestDate || new Date(Number(p.createdAt || Date.now())).toISOString().split('T')[0],
+              optometristName: p.optometristName || 'Optometrist',
+              sphOd: p.sphOd || '',
+              cylOd: p.cylOd || '',
+              axisOd: p.axisOd || '',
+              sphOs: p.sphOs || '',
+              cylOs: p.cylOs || '',
+              axisOs: p.axisOs || '',
+              addPower: p.addPower || '',
+              pdDistance: p.pdDistance || '',
+              pdNear: p.pdNear || '',
+              remarks: p.remarks || '',
+              lensRecommendation: p.advice || '',
+              createdAt: Number(p.createdAt || Date.now())
+            };
+          }
+        });
+    }
+
+    // Fallback: load invoices
     let localInvoices: any[] = [];
     if (typeof window !== 'undefined') {
       const storedInv = localStorage.getItem('opt_invoices');
@@ -272,6 +357,7 @@ export const customerService = {
     }
     const customerInvoices = localInvoices.filter((inv: any) => inv.customerId === customerId);
 
+    // Fallback: load payments
     const payments = customerInvoices.map((inv: any) => ({
       id: `pay-${inv.id}`,
       invoiceId: inv.id,
@@ -282,19 +368,10 @@ export const customerService = {
       detail: inv.paymentDetail,
     })).filter((p: any) => p.amount > 0);
 
-    const prescriptions = customer?.prescriptions || [];
-    const eyeTests = prescriptions
-      .filter((p: any) => p.eyeTestDetails)
-      .map((p: any) => ({
-        prescriptionId: p.id,
-        ...p.eyeTestDetails,
-        date: p.createdAt,
-      }));
-
     return {
       customer,
       prescriptions,
-      eyeTests,
+      eyeTests: eyeTests.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)),
       invoices: customerInvoices,
       payments,
     };

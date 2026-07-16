@@ -144,10 +144,11 @@ function getCustomerById(id) {
   if (!id) {
     throw new Error("Customer ID is required.");
   }
+  var targetId = id.toString().trim().toLowerCase();
   var all = getCustomers();
   var customer = all.find(function(c) {
     var cId = c.CustomerID || c.id;
-    return cId && cId.toString() === id.toString();
+    return cId && cId.toString().trim().toLowerCase() === targetId;
   });
   if (!customer) {
     throw new Error("Customer not found with ID: " + id);

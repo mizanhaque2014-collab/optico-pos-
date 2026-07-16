@@ -426,10 +426,12 @@ function getPrescriptionById(id) {
  */
 function getPrescriptionsByCustomer(customerId) {
   if (!customerId) return [];
+  var targetId = customerId.toString().trim().toLowerCase();
   var all = getPrescriptions();
   var matches = all.filter(function(item) {
-    var cId = item.CustomerID || item.customerId;
-    return cId && cId.toString() === customerId.toString();
+    var cId = item.CustomerID || item.customerId || item.customerID;
+    if (!cId) return false;
+    return cId.toString().trim().toLowerCase() === targetId;
   });
   matches.sort(function(a, b) {
     var da = Number(a.CreatedDate || a.createdDate || 0);
