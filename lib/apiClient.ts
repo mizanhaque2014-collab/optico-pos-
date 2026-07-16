@@ -9,24 +9,15 @@ export async function apiCall<T>(action: string, argPayload?: any): Promise<T> {
     ...(argPayload || {}),
   };
 
-  // STEP 2: Print exact logs inside apiCall
-  console.log("API Action=" + action);
-  console.log("Sending Action:", action);
-  console.log(payload);
-
-  // STEP 1: Trace every API request
   const pData = payload.prescription || payload.eyeTest || payload.eyeTestDetails || payload;
   const customerId = payload.CustomerID || payload.customerId || pData?.CustomerID || pData?.customerId || '';
   const prescriptionId = payload.PrescriptionID || payload.prescriptionId || pData?.PrescriptionID || pData?.prescriptionId || '';
-  const companyId = payload.CompanyID || payload.companyId || pData?.CompanyID || pData?.companyId || '';
-  const branchId = payload.BranchID || payload.branchId || pData?.BranchID || pData?.branchId || '';
 
-  console.log("Action:", action);
+  console.log("ENTER apiClient.apiCall");
   console.log("Payload:", payload);
   console.log("CustomerID:", customerId);
   console.log("PrescriptionID:", prescriptionId);
-  console.log("CompanyID:", companyId);
-  console.log("BranchID:", branchId);
+  console.log("Action:", action);
 
   console.log(`%c[API REQUEST] Action: ${action}`, 'color: #06b6d4; font-weight: bold;', {
     url: url.toString(),
@@ -39,7 +30,14 @@ export async function apiCall<T>(action: string, argPayload?: any): Promise<T> {
     controller.abort();
   }, 60000); // Extended 60 seconds timeout specifically for cold-starting Apps Script web apps
 
+  let text = '';
   try {
+    console.log("ENTER fetch");
+    console.log("Payload:", JSON.stringify(payload));
+    console.log("CustomerID:", customerId);
+    console.log("PrescriptionID:", prescriptionId);
+    console.log("Action: POST " + url.toString());
+
     const response = await fetch(url.toString(), {
       method: 'POST',
       headers: {
@@ -55,7 +53,9 @@ export async function apiCall<T>(action: string, argPayload?: any): Promise<T> {
       throw new Error(`API error: ${response.status} ${response.statusText}`);
     }
     
-    const text = await response.text();
+    text = await response.text();
+    console.log("Return value:", text);
+    console.log("EXIT fetch");
     console.log(`%c[API RAW RESPONSE] Action: ${action}`, 'color: #10b981;', text);
     
     try {
@@ -68,6 +68,68 @@ export async function apiCall<T>(action: string, argPayload?: any): Promise<T> {
             console.log(`%c${log}`, 'color: #c084fc;');
           });
           console.groupEnd();
+
+          // Step-by-step trace parsing for backend execution logs
+          console.log("%c================ BACKEND EXECUTION TRACE ================", "color: #a855f7; font-weight: bold;");
+          
+          // 1. doPost
+          console.log("ENTER Google Apps Script doPost()");
+          console.log("Payload:", payload);
+          console.log("CustomerID:", customerId);
+          console.log("PrescriptionID:", prescriptionId);
+          console.log("Action: doPost");
+
+          // 2. Router switch(action)
+          console.log("ENTER Router switch(action)");
+          console.log("Payload:", payload);
+          console.log("CustomerID:", customerId);
+          console.log("PrescriptionID:", prescriptionId);
+          console.log("Action: switch(" + action + ")");
+          console.log("Return value: matched case '" + action + "'");
+          console.log("EXIT Router switch(action)");
+
+          // 3. createPrescription / validatePrescriptionBackend / appendRow (conditional check)
+          const hasValidationStart = result.logs.some((l: string) => l.includes("validatePrescriptionBackend start"));
+          const hasValidationPassed = result.logs.some((l: string) => l.includes("Validation passed"));
+          const hasAppendingRow = result.logs.some((l: string) => l.includes("Appending row"));
+          const hasAppendFinished = result.logs.some((l: string) => l.includes("appendRow finished"));
+          const hasSuccess = result.success;
+
+          if (action === 'createPrescription') {
+            console.log("ENTER createPrescription()");
+            console.log("Payload:", payload);
+            console.log("CustomerID:", customerId);
+            console.log("PrescriptionID:", prescriptionId);
+            console.log("Action: createPrescription");
+
+            if (hasValidationStart) {
+              console.log("ENTER validatePrescriptionBackend()");
+              console.log("Payload:", payload);
+              console.log("CustomerID:", customerId);
+              console.log("PrescriptionID:", prescriptionId);
+              console.log("Action: validatePrescriptionBackend");
+              console.log("Return value: " + (hasValidationPassed ? "Validation Passed" : "Validation Failed"));
+              console.log("EXIT validatePrescriptionBackend()");
+            }
+
+            if (hasAppendingRow) {
+              console.log("ENTER appendRow()");
+              console.log("Payload:", payload);
+              console.log("CustomerID:", customerId);
+              console.log("PrescriptionID:", prescriptionId);
+              console.log("Action: appendRow to sheet 'Prescriptions'");
+              console.log("Return value: " + (hasAppendFinished ? "Success" : "Failed"));
+              console.log("EXIT appendRow()");
+            }
+
+            console.log("Return value:", result.data);
+            console.log("EXIT createPrescription()");
+          }
+
+          // Return success:true
+          console.log("Return value: { success: " + hasSuccess + ", data: " + JSON.stringify(result.data) + " }");
+          console.log("EXIT Google Apps Script doPost()");
+          console.log("%c========================================================", "color: #a855f7; font-weight: bold;");
         }
 
         if (!result.success) {
@@ -75,17 +137,27 @@ export async function apiCall<T>(action: string, argPayload?: any): Promise<T> {
         }
         console.log("Backend Success");
         console.log(`%c[API RESPONSE SUCCESS] Action: ${action}`, 'color: #10b981; font-weight: bold;', result.data);
+        
+        console.log("Return value:", result.data);
+        console.log("EXIT apiClient.apiCall");
         return result.data;
       }
       
       console.log(`%c[API RESPONSE UNEXPECTED FORMAT] Action: ${action}`, 'color: #f59e0b; font-weight: bold;', result);
+      console.log("Return value:", result);
+      console.log("EXIT apiClient.apiCall");
       return result;
     } catch (parseError) {
       console.log(`%c[API RESPONSE TEXT] Action: ${action}`, 'color: #10b981; font-weight: bold;', text);
+      console.log("Return value:", text);
+      console.log("EXIT apiClient.apiCall");
       return text as any;
     }
   } catch (error: any) {
     clearTimeout(timeoutId);
+    console.log("Return value (ERROR):", error.message || error);
+    console.log("EXIT fetch (ERROR)");
+    console.log("EXIT apiClient.apiCall (ERROR)");
     
     // 1. Check if it's a CORS or network connectivity issue (Failed to fetch)
     if (error instanceof TypeError && error.message.includes('Failed to fetch')) {

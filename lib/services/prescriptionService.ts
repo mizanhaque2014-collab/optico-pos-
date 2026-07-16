@@ -126,7 +126,13 @@ async function savePrescriptionImpl(
   arg1: Partial<PrescriptionPascal> | string,
   arg2?: any
 ): Promise<PrescriptionPascal> {
-  console.log("ENTER savePrescription");
+  console.log("ENTER prescriptionService.savePrescription");
+  console.log("Payload:", arg1);
+  const pCustId = typeof arg1 === 'string' ? arg1 : (arg1 as any)?.CustomerID || (arg1 as any)?.customerId || '';
+  const pPresId = typeof arg1 === 'string' ? (arg2?.id || arg2?.PrescriptionID || '') : (arg1 as any)?.PrescriptionID || (arg1 as any)?.prescriptionId || '';
+  console.log("CustomerID:", pCustId);
+  console.log("PrescriptionID:", pPresId);
+  console.log("Action: savePrescription");
   console.log("INPUT: arg1:", arg1, "arg2:", arg2);
   
   let prescription: Partial<PrescriptionPascal>;
@@ -271,8 +277,8 @@ async function savePrescriptionImpl(
     console.warn("[SERVICE DEBUG WARNING] Customer with ID not found in local list to update:", customerId);
   }
 
-  console.log("EXIT savePrescription");
-  console.log("RETURN/OUTPUT:", result);
+  console.log("Return value:", result);
+  console.log("EXIT prescriptionService.savePrescription");
   return result;
 }
 

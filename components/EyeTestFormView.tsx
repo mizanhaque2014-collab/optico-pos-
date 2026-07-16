@@ -222,26 +222,31 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
   };
 
   const handleSavePrescription = async (): Promise<PrescriptionPascal | null> => {
+    const payload = buildPrescriptionPayload();
     console.log("ENTER handleSavePrescription");
+    console.log("Payload:", payload);
+    console.log("CustomerID:", customer.id);
+    console.log("PrescriptionID:", prescriptionId || "NEW_PRESCRIPTION");
+    console.log("Action: savePrescription");
     console.log("INPUT: customer.id =", customer.id, "examDate =", examDate);
 
     // Validation
     if (!customer.id) {
       console.warn("EXIT handleSavePrescription (Validation failed: customerId is mandatory)");
       setMessage("Error: CustomerID is mandatory.");
+      console.log("Return value: null");
       return null;
     }
     if (!examDate) {
       console.warn("EXIT handleSavePrescription (Validation failed: examDate is mandatory)");
       setMessage("Error: ExamDate is mandatory.");
+      console.log("Return value: null");
       return null;
     }
 
     setSaving(true);
     setMessage('');
     try {
-      const payload = buildPrescriptionPayload();
-      
       console.log("Prescription object:", payload);
       console.log("CustomerID:", customer.id);
       
@@ -284,13 +289,14 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
       loadHistoryData(); // Reload history
       setTimeout(() => setMessage(''), 5000);
       
+      console.log("Return value:", saved);
       console.log("EXIT handleSavePrescription");
-      console.log("RETURN/OUTPUT:", saved);
       return saved;
     } catch (e: any) {
       console.error(e);
       setMessage('Failed to save Prescription: ' + (e.message || e.toString()));
-      console.log("EXIT handleSavePrescription (ERROR)");
+      console.log("Return value: null");
+      console.log("EXIT handleSavePrescription");
       return null;
     } finally {
       setSaving(false);
@@ -299,6 +305,10 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
 
   const handleContinueBilling = async () => {
     console.log("ENTER handleContinueToBilling");
+    console.log("Payload:", null);
+    console.log("CustomerID:", customer.id);
+    console.log("PrescriptionID:", prescriptionId || "NEW_PRESCRIPTION");
+    console.log("Action: continueToBilling");
     console.log("INPUT: isFormDirty =", isFormDirty, "prescriptionId =", prescriptionId);
 
     // If form has unsaved changes or is a new unsaved prescription, save it first
@@ -309,7 +319,8 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
       const saved = await handleSavePrescription();
       if (!saved) {
         setMessage('Cannot proceed to billing: failed to save prescription.');
-        console.log("EXIT handleContinueToBilling (FAILED TO SAVE)");
+        console.log("Return value: null");
+        console.log("EXIT handleContinueToBilling");
         return;
       }
       activePrescription = saved;
@@ -325,8 +336,8 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
     setSelectedViewPrescription(activePrescription);
     
     console.log("Navigate To Billing");
+    console.log("Return value:", stdRecord);
     console.log("EXIT handleContinueToBilling");
-    console.log("RETURN/OUTPUT:", stdRecord);
     
     setShowBillingTypeModal(true);
   };
