@@ -195,6 +195,17 @@ async function savePrescriptionImpl(
   try {
     const isNew = !prescription.PrescriptionID || !prescription.PrescriptionID.startsWith('PRE-');
     console.log("[SERVICE DEBUG 6] PrescriptionID:", prescription.PrescriptionID, "isNew:", isNew);
+    
+    const actionName = isNew ? "Create Prescription (createPrescription API)" : "Update Prescription (updatePrescription API)";
+    console.log("----------------- PRESCRIPTION SERVICE: API CALL INITIATION -----------------");
+    console.log("[savePrescription apiCall] Action:", actionName);
+    console.log("[savePrescription apiCall] CustomerID:", prescription.CustomerID);
+    console.log("[savePrescription apiCall] PrescriptionID:", prescription.PrescriptionID || "NEW_PRESCRIPTION");
+    console.log("[savePrescription apiCall] CompanyID:", prescription.CompanyID);
+    console.log("[savePrescription apiCall] BranchID:", prescription.BranchID);
+    console.log("[savePrescription apiCall] Full Payload:", JSON.stringify(prescription, null, 2));
+    console.log("-----------------------------------------------------------------------------");
+
     if (isNew) {
       console.log("[SERVICE DEBUG 7] Executing createPrescription API...");
       const res = await apiCall<any>('createPrescription', { prescription });

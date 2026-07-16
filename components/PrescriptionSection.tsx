@@ -1,3 +1,4 @@
+"use client";
 import React, { useState, useEffect } from 'react';
 import { Customer, Prescription, PrescriptionSource, EyePower, OldGlassPower, EyeTestDetails, DoctorPrescriptionDetails } from '../lib/types';
 import { PlusCircle, Search, Save, History, Activity, Eye, ClipboardList } from 'lucide-react';

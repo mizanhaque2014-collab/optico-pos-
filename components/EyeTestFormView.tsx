@@ -236,6 +236,16 @@ export function EyeTestFormView({ customer, onBack, onContinueToBilling }: Props
     setMessage('');
     try {
       const payload = buildPrescriptionPayload();
+      
+      console.log("================= EYE TEST FORM VIEW: SAVE PRESCRIPTION =================");
+      console.log("[savePrescription action] Action: Save/Update Prescription");
+      console.log("[savePrescription action] CustomerID:", customer.id);
+      console.log("[savePrescription action] PrescriptionID:", payload.PrescriptionID || "NEW_PRESCRIPTION");
+      console.log("[savePrescription action] CompanyID:", payload.CompanyID);
+      console.log("[savePrescription action] BranchID:", payload.BranchID);
+      console.log("[savePrescription action] Full Payload:", JSON.stringify(payload, null, 2));
+      console.log("========================================================================");
+
       const saved = await prescriptionService.savePrescription(payload);
       setPrescriptionId(saved.PrescriptionID);
       setIsFormDirty(false);

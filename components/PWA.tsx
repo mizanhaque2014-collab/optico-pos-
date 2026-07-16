@@ -6,7 +6,10 @@ export default function PWA() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallButton, setShowInstallButton] = useState(false);
 
+  const [isMounted, setIsMounted] = useState(false);
+
   useEffect(() => {
+    setIsMounted(true);
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js').then(
@@ -51,7 +54,7 @@ export default function PWA() {
     setShowInstallButton(false);
   };
 
-  if (!showInstallButton) return null;
+  if (!isMounted || !showInstallButton) return null;
 
   return (
     <button
