@@ -21,6 +21,10 @@ function getPrescriptionsSheet() {
       "BranchID",
       "ExamDate",
       "Source",
+      "DoctorName",
+      "Complaint",
+      "Diagnosis",
+      "Advice",
       "OD_SPH",
       "OD_CYL",
       "OD_AXIS",
@@ -29,7 +33,8 @@ function getPrescriptionsSheet() {
       "OS_AXIS",
       "ADD",
       "PD",
-      "Remarks"
+      "Remarks",
+      "CreatedDate"
     ]);
     SpreadsheetApp.flush();
   }
@@ -47,6 +52,10 @@ function getPrescriptionHeaders(sheet) {
     "BranchID",
     "ExamDate",
     "Source",
+    "DoctorName",
+    "Complaint",
+    "Diagnosis",
+    "Advice",
     "OD_SPH",
     "OD_CYL",
     "OD_AXIS",
@@ -55,7 +64,8 @@ function getPrescriptionHeaders(sheet) {
     "OS_AXIS",
     "ADD",
     "PD",
-    "Remarks"
+    "Remarks",
+    "CreatedDate"
   ];
   if (lastColumn === 0) {
     sheet.appendRow(defaultHeaders);
@@ -63,18 +73,28 @@ function getPrescriptionHeaders(sheet) {
     return defaultHeaders;
   }
   var headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0];
-  var hasSource = false;
-  for (var i = 0; i < headers.length; i++) {
-    if (headers[i].toString().toLowerCase().trim() === 'source') {
-      hasSource = true;
-      break;
+  
+  // Ensure all default headers are present
+  var headersChanged = false;
+  for (var k = 0; k < defaultHeaders.length; k++) {
+    var missing = true;
+    for (var i = 0; i < headers.length; i++) {
+      if (headers[i].toString().toLowerCase().trim() === defaultHeaders[k].toLowerCase().trim()) {
+        missing = false;
+        break;
+      }
+    }
+    if (missing) {
+      sheet.getRange(1, lastColumn + 1).setValue(defaultHeaders[k]);
+      lastColumn++;
+      headersChanged = true;
     }
   }
-  if (!hasSource) {
-    sheet.getRange(1, lastColumn + 1).setValue("Source");
-    lastColumn++;
+  
+  if (headersChanged) {
     headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0];
   }
+  
   return headers;
 }
 
@@ -478,3 +498,4 @@ function searchPrescription(query) {
            (item.Remarks && (item.Remarks || "").toString().trim().toLowerCase().includes(searchStr));
   });
 }
+

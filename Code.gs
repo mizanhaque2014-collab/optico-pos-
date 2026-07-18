@@ -227,8 +227,11 @@ function doPost(e) {
       case 'getBranchById':
         result = getBranchById(payload.branchId || payload.id || e.parameter.branchId || e.parameter.id);
         break;
-      case 'getBranches':
+            case 'getBranches':
         result = getBranches();
+        break;
+      case 'assignUserToBranch':
+        result = assignUserToBranch(payload.username || e.parameter.username, payload.branchName || e.parameter.branchName);
         break;
       case 'saveInventory':
         result = saveInventory(payload.inventoryItem || payload);
@@ -261,7 +264,7 @@ function doPost(e) {
         result = getPayments(payload.customerId || e.parameter.customerId);
         break;
       case 'savePrescription':
-        result = savePrescription(payload.prescription || payload);
+        result = createPrescription(payload.prescription || payload);
         break;
       case 'loadPrescriptions':
         result = getPrescriptionsByCustomer(payload.customerId || e.parameter.customerId);
@@ -293,17 +296,24 @@ function doPost(e) {
       case 'loadEyeTests':
         result = getEyeTests(payload.customerId || e.parameter.customerId);
         break;
-      case 'saveInvoiceItem':
-        result = payload.items || [];
+            case 'saveInvoiceItem':
+        var inv = getInvoices().find(function(i) { return i.id === payload.invoiceId; });
+        if (inv) {
+          inv.items = payload.items;
+          result = saveInvoice(inv);
+        } else {
+          result = {};
+        }
         break;
       case 'loadInvoiceItems':
-        result = [];
+        var inv2 = getInvoices().find(function(i) { return i.id === payload.invoiceId; });
+        result = inv2 ? inv2.items : [];
         break;
       case 'saveSalesOrder':
-        result = payload.salesOrder || {};
+        result = saveInvoice(payload.salesOrder || payload);
         break;
       case 'saveDeliveryCollection':
-        result = payload.invoice || {};
+        result = saveInvoice(payload.invoice || payload);
         break;
       default:
         throw new Error("Unsupported action: " + action);
@@ -1336,3 +1346,33 @@ function saveEyeTest(et) {
 
 // Prescription and User functions are defined in Prescriptions.gs and Users.gs respectively.
 
+
+// Assign user to branch
+function assignUserToBranch(username, branchName) {
+  if (!username || !branchName) throw new Error("Username and Branch Name are required");
+  var users = getUsers();
+  var targetUser = null;
+  for (var i = 0; i < users.length; i++) {
+    var uName = users[i].Username || users[i].username;
+    if (uName && uName.toString().trim().toLowerCase() === username.toString().trim().toLowerCase()) {
+      targetUser = users[i];
+      break;
+    }
+  }
+  if (!targetUser) throw new Error("User not found with username: " + username);
+
+  var branches = getBranches();
+  var targetBranch = null;
+  for (var j = 0; j < branches.length; j++) {
+    var bName = branches[j].branchName || branches[j].BranchName || branches[j]["Branch Name"];
+    if (bName && bName.toString().trim().toLowerCase() === branchName.toString().trim().toLowerCase()) {
+      targetBranch = branches[j];
+      break;
+    }
+  }
+  if (!targetBranch) throw new Error("Branch not found with name: " + branchName);
+
+  targetUser.BranchID = targetBranch.id || targetBranch.BranchID;
+  updateUser(targetUser);
+  return true;
+}
