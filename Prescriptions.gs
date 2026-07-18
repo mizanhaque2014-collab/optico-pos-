@@ -5,6 +5,8 @@
 
 // Helper to get or create the Prescriptions sheet with standard columns
 function getPrescriptionsSheet() {
+  logBackend("ENTER getPrescriptionsSheet");
+
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName("Prescriptions");
   if (!sheet) {
@@ -29,7 +31,9 @@ function getPrescriptionsSheet() {
       "PD",
       "Remarks"
     ]);
+    SpreadsheetApp.flush();
   }
+    logBackend("EXIT getPrescriptionsSheet");
   return sheet;
 }
 
@@ -55,6 +59,7 @@ function getPrescriptionHeaders(sheet) {
   ];
   if (lastColumn === 0) {
     sheet.appendRow(defaultHeaders);
+    SpreadsheetApp.flush();
     return defaultHeaders;
   }
   var headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0];
@@ -75,7 +80,7 @@ function getPrescriptionHeaders(sheet) {
 
 // Map Prescriptions sheet header names to exact PascalCase JavaScript property names
 function mapPrescriptionHeaderToKey(header) {
-  var clean = safeTrim(header).toLowerCase().replace(/[\s_-]/g, '');
+  var clean = (header || "").toString().trim().toLowerCase().replace(/[\s_-]/g, '');
   if (clean === 'prescriptionid' || clean === 'id') return 'PrescriptionID';
   if (clean === 'customerid') return 'CustomerID';
   if (clean === 'companyid') return 'CompanyID';
@@ -104,6 +109,8 @@ function mapPrescriptionHeaderToKey(header) {
 
 // Serialize prescription object fields into spreadsheet row indices
 function prescriptionToRow(p, headers) {
+  logBackend("ENTER prescriptionToRow");
+
   var row = [];
   for (var i = 0; i < headers.length; i++) {
     var key = mapPrescriptionHeaderToKey(headers[i]);
@@ -175,7 +182,9 @@ function generatePrescriptionId() {
 
 // Validate fields
 function validatePrescriptionBackend(p) {
-  logBackend("validatePrescriptionBackend start.", p);
+  logBackend("ENTER validatePrescriptionBackend");
+
+  
   if (!p) {
     throw new Error("No prescription data provided");
   }
@@ -235,13 +244,23 @@ function validatePrescriptionBackend(p) {
  * Endpoint action: createPrescription
  */
 function createPrescription(p) {
-  logBackend("Received payload", p);
+  logBackend("ENTER createPrescription");
+  logBackend("Payload", p);
+  logBackend("CustomerID: " + (p.CustomerID || p.customerId));
+  logBackend("PrescriptionID: " + (p.PrescriptionID || p.prescriptionId || p.id));
+  
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  logBackend("Spreadsheet ID: " + ss.getId());
+  logBackend("Spreadsheet Name: " + ss.getName());
+  logBackend("Spreadsheet URL: " + ss.getUrl());
+
   validatePrescriptionBackend(p);
-  logBackend("Validation passed");
   
   var sheet = getPrescriptionsSheet();
+  logBackend("Sheet Name: " + sheet.getName());
+  
   var headers = getPrescriptionHeaders(sheet);
-  logBackend("Headers of Prescriptions sheet: " + headers.join(", "));
+  logBackend("Headers Found: " + JSON.stringify(headers));
   
   var all = getPrescriptions();
   var idToUse;
@@ -255,34 +274,30 @@ function createPrescription(p) {
   p.PrescriptionID = idToUse;
   p.id = idToUse;
   p.CreatedDate = Date.now();
-  logBackend("Generated new PrescriptionID: " + idToUse);
   
-  logBackend("Preparing row");
   var rowData = prescriptionToRow(p, headers);
-  logBackend("Converting prescription to rowData for appendRow. Columns count: " + rowData.length + ", Row content: " + JSON.stringify(rowData));
+  logBackend("Mapped Row: " + JSON.stringify(rowData));
   
-  logBackend("Appending row");
-  sheet.appendRow(rowData);
-  logBackend("appendRow finished");
-  
-  // STEP 8: Verify getPrescriptionsByCustomer
+  logBackend("ENTER appendRow");
   try {
-    logBackend("Step 8: Verifying immediately using getPrescriptionsByCustomer...");
-    var cid = p.CustomerID || p.customerId;
-    var list = getPrescriptionsByCustomer(cid);
-    logBackend("getPrescriptionsByCustomer returned " + list.length + " rows.");
-    var foundNew = list.some(function(item) {
-      return (item.PrescriptionID || item.id) === idToUse;
-    });
-    logBackend("Prescription row exists in Google Sheets = " + foundNew);
-  } catch (verifyErr) {
-    logBackend("Step 8 Verification error: " + verifyErr.toString());
+    sheet.appendRow(rowData);
+    SpreadsheetApp.flush();
+    logBackend("appendRow Result: Success");
+  } catch (err) {
+    logBackend("appendRow Result: Failed - " + err.toString());
+    throw err;
   }
+  logBackend("EXIT appendRow");
   
-  logBackend("Returning success", p);
+  SpreadsheetApp.flush(); // Force write to sheet immediately
+  var lastRow = sheet.getLastRow();
+  var lastRowValues = sheet.getRange(lastRow, 1, 1, sheet.getLastColumn()).getValues();
+  logBackend("LAST ROW AFTER APPEND: " + lastRow);
+  logBackend("EXACT ROW IN SHEET: " + JSON.stringify(lastRowValues));
+  
+  logBackend("EXIT createPrescription");
   return p;
 }
-
 /**
  * Endpoint action: updatePrescription
  */
@@ -338,6 +353,7 @@ function updatePrescription(p) {
   
   var rowData = prescriptionToRow(merged, headers);
   sheet.getRange(targetRowIndex, 1, 1, headers.length).setValues([rowData]);
+  SpreadsheetApp.flush();
   
   return merged;
 }
@@ -382,6 +398,7 @@ function deletePrescription(id) {
   }
   
   sheet.deleteRow(targetRowIndex);
+  SpreadsheetApp.flush();
   return { PrescriptionID: id };
 }
 
@@ -425,6 +442,8 @@ function getPrescriptionById(id) {
  * Endpoint action: getPrescriptionsByCustomer
  */
 function getPrescriptionsByCustomer(customerId) {
+  logBackend("ENTER getPrescriptionsByCustomer");
+
   if (!customerId) return [];
   var targetId = customerId.toString().trim().toLowerCase();
   var all = getPrescriptions();
@@ -438,6 +457,7 @@ function getPrescriptionsByCustomer(customerId) {
     var db = Number(b.CreatedDate || b.createdDate || 0);
     return db - da;
   });
+    logBackend("EXIT getPrescriptionsByCustomer");
   return matches;
 }
 
@@ -446,15 +466,15 @@ function getPrescriptionsByCustomer(customerId) {
  */
 function searchPrescription(query) {
   if (!query) return [];
-  var searchStr = safeTrim(query).toLowerCase();
+  var searchStr = (query || "").toString().trim().toLowerCase();
   var all = getPrescriptions();
   return all.filter(function(item) {
-    return (item.PrescriptionID && safeTrim(item.PrescriptionID).toLowerCase().includes(searchStr)) ||
-           (item.CustomerID && safeTrim(item.CustomerID).toLowerCase().includes(searchStr)) ||
-           (item.DoctorName && safeTrim(item.DoctorName).toLowerCase().includes(searchStr)) ||
-           (item.Complaint && safeTrim(item.Complaint).toLowerCase().includes(searchStr)) ||
-           (item.Diagnosis && safeTrim(item.Diagnosis).toLowerCase().includes(searchStr)) ||
-           (item.Advice && safeTrim(item.Advice).toLowerCase().includes(searchStr)) ||
-           (item.Remarks && safeTrim(item.Remarks).toLowerCase().includes(searchStr));
+    return (item.PrescriptionID && (item.PrescriptionID || "").toString().trim().toLowerCase().includes(searchStr)) ||
+           (item.CustomerID && (item.CustomerID || "").toString().trim().toLowerCase().includes(searchStr)) ||
+           (item.DoctorName && (item.DoctorName || "").toString().trim().toLowerCase().includes(searchStr)) ||
+           (item.Complaint && (item.Complaint || "").toString().trim().toLowerCase().includes(searchStr)) ||
+           (item.Diagnosis && (item.Diagnosis || "").toString().trim().toLowerCase().includes(searchStr)) ||
+           (item.Advice && (item.Advice || "").toString().trim().toLowerCase().includes(searchStr)) ||
+           (item.Remarks && (item.Remarks || "").toString().trim().toLowerCase().includes(searchStr));
   });
 }

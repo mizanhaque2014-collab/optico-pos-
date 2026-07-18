@@ -108,7 +108,10 @@ function logBackend(msg, data) {
  */
 function doPost(e) {
   backendLogs = [];
-  logBackend("================= START doPost =================");
+  logBackend("ENTER doPost");
+
+  backendLogs = [];
+  
   try {
     var payload = {};
     if (e.postData && e.postData.contents) {
@@ -143,6 +146,7 @@ function doPost(e) {
     
     var result;
     
+    logBackend("ENTER Router switch(action)");
     switch (action) {
       case 'createCustomer':
         result = createCustomer(payload.customer || payload);
@@ -174,12 +178,6 @@ function doPost(e) {
         } else {
           result = createCustomer(customer);
         }
-        break;
-      case 'createCustomer':
-        result = createCustomer(payload.customer || payload);
-        break;
-      case 'updateCustomer':
-        result = updateCustomer(payload.customer || payload);
         break;
       case 'createUser':
         result = createUser(payload.user || payload);
@@ -423,6 +421,7 @@ function getCompaniesSheet() {
   if (sheet.getLastColumn() === 0) {
     // Write default header columns
     sheet.appendRow(["CompanyID", "Company Name", "Owner Name", "Mobile", "Email", "Status", "Created date"]);
+    SpreadsheetApp.flush();
   }
   return sheet;
 }
@@ -433,6 +432,7 @@ function getCompanyHeaders(sheet) {
   if (lastColumn === 0) {
     var headers = ["CompanyID", "Company Name", "Owner Name", "Mobile", "Email", "Status", "Created date"];
     sheet.appendRow(headers);
+    SpreadsheetApp.flush();
     return headers;
   }
   return sheet.getRange(1, 1, 1, lastColumn).getValues()[0];
@@ -440,7 +440,7 @@ function getCompanyHeaders(sheet) {
 
 // Map column header names to exact JavaScript camelCase property names
 function mapCompanyHeaderToKey(header) {
-  var clean = safeTrim(header).toLowerCase().replace(/[\s_-]/g, '');
+  var clean = (header || "").toString().trim().toLowerCase().replace(/[\s_-]/g, '');
   if (clean === 'companyid' || clean === 'id') return 'id';
   if (clean === 'companyname') return 'companyName';
   if (clean === 'ownername') return 'ownerName';
@@ -508,12 +508,12 @@ function createCompany(company) {
   var sheet = getCompaniesSheet();
   var headers = getCompanyHeaders(sheet);
   
-  var nameToCreate = safeTrim(company.companyName).toLowerCase();
+  var nameToCreate = (company.companyName || "").toString().trim().toLowerCase();
   
   // Validation: Check for duplicate company name in the spreadsheet
   var allCompanies = getCompanies();
   var duplicate = allCompanies.find(function(c) {
-    return c.companyName && safeTrim(c.companyName).toLowerCase() === nameToCreate;
+    return c.companyName && (c.companyName || "").toString().trim().toLowerCase() === nameToCreate;
   });
   
   if (duplicate) {
@@ -522,10 +522,10 @@ function createCompany(company) {
 
   // Validation: Check for duplicate mobile number in the spreadsheet
   if (company.mobile) {
-    var mobileToCreate = safeTrim(company.mobile);
+    var mobileToCreate = (company.mobile || "").toString().trim();
     if (mobileToCreate) {
       var duplicateMobile = allCompanies.find(function(c) {
-        return c.mobile && safeTrim(c.mobile) === mobileToCreate;
+        return c.mobile && (c.mobile || "").toString().trim() === mobileToCreate;
       });
       if (duplicateMobile) {
         throw new Error("A company with mobile number '" + company.mobile + "' already exists in the system.");
@@ -552,6 +552,7 @@ function createCompany(company) {
   
   var rowData = companyToRow(company, headers);
   sheet.appendRow(rowData);
+  SpreadsheetApp.flush();
   
   return company;
 }
@@ -596,10 +597,10 @@ function updateCompany(company) {
   
   // Check duplicate companyName if companyName is being changed
   if (company.companyName) {
-    var nameToUpdate = safeTrim(company.companyName).toLowerCase();
+    var nameToUpdate = (company.companyName || "").toString().trim().toLowerCase();
     var allCompanies = getCompanies();
     var duplicate = allCompanies.find(function(c) {
-      return c.id !== company.id && c.companyName && safeTrim(c.companyName).toLowerCase() === nameToUpdate;
+      return c.id !== company.id && c.companyName && (c.companyName || "").toString().trim().toLowerCase() === nameToUpdate;
     });
     if (duplicate) {
       throw new Error("Another company with name '" + company.companyName + "' already exists.");
@@ -608,11 +609,11 @@ function updateCompany(company) {
 
   // Check duplicate mobile if mobile is being changed
   if (company.mobile) {
-    var mobileToUpdate = safeTrim(company.mobile);
+    var mobileToUpdate = (company.mobile || "").toString().trim();
     if (mobileToUpdate) {
       var allCompanies = getCompanies();
       var duplicateMobile = allCompanies.find(function(c) {
-        return c.id !== company.id && c.mobile && safeTrim(c.mobile) === mobileToUpdate;
+        return c.id !== company.id && c.mobile && (c.mobile || "").toString().trim() === mobileToUpdate;
       });
       if (duplicateMobile) {
         throw new Error("Another company with mobile number '" + company.mobile + "' already exists.");
@@ -636,6 +637,7 @@ function updateCompany(company) {
   
   var rowData = companyToRow(mergedCompany, headers);
   sheet.getRange(targetRowIndex, 1, 1, headers.length).setValues([rowData]);
+  SpreadsheetApp.flush();
   
   return mergedCompany;
 }
@@ -679,6 +681,7 @@ function deleteCompany(id) {
   }
   
   sheet.deleteRow(targetRowIndex);
+  SpreadsheetApp.flush();
   return { id: id, deleted: true };
 }
 
@@ -704,14 +707,14 @@ function getCompanyById(id) {
  */
 function searchCompany(query) {
   if (!query) return [];
-  var searchStr = safeTrim(query).toLowerCase();
+  var searchStr = (query || "").toString().trim().toLowerCase();
   var all = getCompanies();
   return all.filter(function(c) {
-    return (c.companyName && safeTrim(c.companyName).toLowerCase().includes(searchStr)) ||
-           (c.ownerName && safeTrim(c.ownerName).toLowerCase().includes(searchStr)) ||
-           (c.email && safeTrim(c.email).toLowerCase().includes(searchStr)) ||
-           (c.mobile && safeTrim(c.mobile).includes(searchStr)) ||
-           (c.id && safeTrim(c.id).toLowerCase().includes(searchStr));
+    return (c.companyName && (c.companyName || "").toString().trim().toLowerCase().includes(searchStr)) ||
+           (c.ownerName && (c.ownerName || "").toString().trim().toLowerCase().includes(searchStr)) ||
+           (c.email && (c.email || "").toString().trim().toLowerCase().includes(searchStr)) ||
+           (c.mobile && (c.mobile || "").toString().trim().includes(searchStr)) ||
+           (c.id && (c.id || "").toString().trim().toLowerCase().includes(searchStr));
   });
 }
 
@@ -728,6 +731,7 @@ function getBranchesSheet() {
   if (sheet.getLastColumn() === 0) {
     // Write default header columns
     sheet.appendRow(["BranchID", "CompanyID", "Branch Name", "Address", "Mobile", "WhatsApp", "Status", "Created date"]);
+    SpreadsheetApp.flush();
   }
   return sheet;
 }
@@ -737,13 +741,14 @@ function getBranchHeaders(sheet) {
   if (lastColumn === 0) {
     var headers = ["BranchID", "CompanyID", "Branch Name", "Address", "Mobile", "WhatsApp", "Status", "Created date"];
     sheet.appendRow(headers);
+    SpreadsheetApp.flush();
     return headers;
   }
   return sheet.getRange(1, 1, 1, lastColumn).getValues()[0];
 }
 
 function mapBranchHeaderToKey(header) {
-  var clean = safeTrim(header).toLowerCase().replace(/[\s_-]/g, '');
+  var clean = (header || "").toString().trim().toLowerCase().replace(/[\s_-]/g, '');
   if (clean === 'branchid' || clean === 'id') return 'id';
   if (clean === 'companyid') return 'companyId';
   if (clean === 'branchname') return 'branchName';
@@ -824,6 +829,7 @@ function createBranch(branch) {
   
   var rowData = branchToRow(branch, headers);
   sheet.appendRow(rowData);
+  SpreadsheetApp.flush();
   
   return branch;
 }
@@ -873,6 +879,7 @@ function updateBranch(branch) {
   
   var rowData = branchToRow(existingBranch, headers);
   sheet.getRange(targetRowIndex, 1, 1, headers.length).setValues([rowData]);
+  SpreadsheetApp.flush();
   
   return existingBranch;
 }
@@ -916,6 +923,7 @@ function deleteBranch(id) {
   }
   
   sheet.deleteRow(targetRowIndex);
+  SpreadsheetApp.flush();
   return { id: id, deleted: true };
 }
 
@@ -945,6 +953,7 @@ function getInventorySheet() {
   }
   if (sheet.getLastColumn() === 0) {
     sheet.appendRow(["id", "category", "brand", "modelNumber", "barcode", "purchasePrice", "sellingPrice", "quantity", "supplierName", "purchaseDate", "remarks", "branch", "lensType", "createdAt"]);
+    SpreadsheetApp.flush();
   }
   return sheet;
 }
@@ -1008,8 +1017,10 @@ function saveInventory(item) {
   
   if (targetRowIndex !== -1) {
     sheet.getRange(targetRowIndex, 1, 1, headers.length).setValues([rowData]);
+    SpreadsheetApp.flush();
   } else {
     sheet.appendRow(rowData);
+    SpreadsheetApp.flush();
   }
   return item;
 }
@@ -1038,6 +1049,7 @@ function deleteInventory(id) {
   for (var i = 0; i < values.length; i++) {
     if (values[i][0].toString() === id.toString()) {
       sheet.deleteRow(i + 2);
+      SpreadsheetApp.flush();
       break;
     }
   }
@@ -1065,6 +1077,7 @@ function getInvoicesSheet() {
   }
   if (sheet.getLastColumn() === 0) {
     sheet.appendRow(["id", "invoiceNumber", "type", "customerId", "prescriptionId", "items", "subTotal", "totalDiscount", "grandTotal", "paymentMode", "paymentDetail", "advanceAmount", "balanceAmount", "status", "createdAt", "updatedAt", "deliveryDate", "finalCollectionPaymentMode", "finalCollectionPaymentDetail"]);
+    SpreadsheetApp.flush();
   }
   return sheet;
 }
@@ -1144,8 +1157,10 @@ function saveInvoice(inv) {
   
   if (targetRowIndex !== -1) {
     sheet.getRange(targetRowIndex, 1, 1, headers.length).setValues([rowData]);
+    SpreadsheetApp.flush();
   } else {
     sheet.appendRow(rowData);
+    SpreadsheetApp.flush();
   }
   return inv;
 }
@@ -1159,6 +1174,7 @@ function getPaymentsSheet() {
   }
   if (sheet.getLastColumn() === 0) {
     sheet.appendRow(["id", "invoiceId", "invoiceNumber", "customerId", "amount", "date", "mode", "remarks"]);
+    SpreadsheetApp.flush();
   }
   return sheet;
 }
@@ -1224,8 +1240,10 @@ function savePayment(pay) {
   
   if (targetRowIndex !== -1) {
     sheet.getRange(targetRowIndex, 1, 1, headers.length).setValues([rowData]);
+    SpreadsheetApp.flush();
   } else {
     sheet.appendRow(rowData);
+    SpreadsheetApp.flush();
   }
   return pay;
 }
@@ -1239,6 +1257,7 @@ function getEyeTestsSheet() {
   }
   if (sheet.getLastColumn() === 0) {
     sheet.appendRow(["id", "companyId", "branchId", "customerId", "eyeTestDate", "optometristName", "sphOd", "cylOd", "axisOd", "sphOs", "cylOs", "axisOs", "addPower", "pdDistance", "pdNear", "segmentHeight", "lensRecommendation", "remarks", "createdAt"]);
+    SpreadsheetApp.flush();
   }
   return sheet;
 }
@@ -1305,9 +1324,11 @@ function saveEyeTest(et) {
   
   if (targetRowIndex !== -1) {
     sheet.getRange(targetRowIndex, 1, 1, headers.length).setValues([rowData]);
+    SpreadsheetApp.flush();
     logBackend("Successfully updated existing EyeTest row at index: " + targetRowIndex);
   } else {
     sheet.appendRow(rowData);
+    SpreadsheetApp.flush();
     logBackend("Successfully appended new row to EyeTests sheet!");
   }
   return et;

@@ -14,6 +14,7 @@ function getCustomersSheet() {
   if (sheet.getLastColumn() === 0) {
     // Write default header columns
     sheet.appendRow(["CustomerID", "CompanyID", "BranchID", "Name", "Mobile", "DOB", "Address", "Gender", "CreatedDate"]);
+    SpreadsheetApp.flush();
   }
   return sheet;
 }
@@ -24,6 +25,7 @@ function getHeaders(sheet) {
   if (lastColumn === 0) {
     var headers = ["CustomerID", "CompanyID", "BranchID", "Name", "Mobile", "DOB", "Address", "Gender", "CreatedDate"];
     sheet.appendRow(headers);
+    SpreadsheetApp.flush();
     return headers;
   }
   return sheet.getRange(1, 1, 1, lastColumn).getValues()[0];
@@ -31,7 +33,7 @@ function getHeaders(sheet) {
 
 // Map Customer sheet header names to exact JavaScript PascalCase property names
 function mapCustomerHeaderToKey(header) {
-  var clean = safeTrim(header).toLowerCase().replace(/[\s_-]/g, '');
+  var clean = (header || "").toString().trim().toLowerCase().replace(/[\s_-]/g, '');
   if (clean === 'customerid' || clean === 'id') return 'CustomerID';
   if (clean === 'companyid') return 'CompanyID';
   if (clean === 'branchid') return 'BranchID';
@@ -167,13 +169,13 @@ function createCustomer(customer) {
   var headers = getHeaders(sheet);
   
   var mobileVal = customer.Mobile || customer.mobile;
-  var mobileToCreate = safeTrim(mobileVal);
+  var mobileToCreate = (mobileVal || "").toString().trim();
   
   // Validation: Check for duplicates in the spreadsheet
   var allCustomers = getCustomers();
   var duplicate = allCustomers.find(function(c) {
     var cMobile = c.Mobile || c.mobile;
-    return cMobile && safeTrim(cMobile).toString() === mobileToCreate;
+    return cMobile && (cMobile || "").toString().trim().toString() === mobileToCreate;
   });
   
   if (duplicate) {
@@ -204,6 +206,7 @@ function createCustomer(customer) {
   
   var rowData = customerToRow(customer, headers);
   sheet.appendRow(rowData);
+  SpreadsheetApp.flush();
   
   return customer;
 }
@@ -262,12 +265,12 @@ function updateCustomer(customer) {
   // Check duplicate mobile if mobile is being changed
   var mobileVal = customer.Mobile || customer.mobile;
   if (mobileVal) {
-    var mobileToUpdate = safeTrim(mobileVal);
+    var mobileToUpdate = (mobileVal || "").toString().trim();
     var allCustomers = getCustomers();
     var duplicate = allCustomers.find(function(c) {
       var cId = c.CustomerID || c.id;
       var cMobile = c.Mobile || c.mobile;
-      return cId !== customerId && cMobile && safeTrim(cMobile).toString() === mobileToUpdate;
+      return cId !== customerId && cMobile && (cMobile || "").toString().trim().toString() === mobileToUpdate;
     });
     if (duplicate) {
       throw new Error("Another customer with mobile number '" + mobileToUpdate + "' already exists.");
@@ -291,6 +294,7 @@ function updateCustomer(customer) {
   
   var rowData = customerToRow(mergedCustomer, headers);
   sheet.getRange(targetRowIndex, 1, 1, headers.length).setValues([rowData]);
+  SpreadsheetApp.flush();
   
   return mergedCustomer;
 }
@@ -335,6 +339,7 @@ function deleteCustomer(id) {
   }
   
   sheet.deleteRow(targetRowIndex);
+  SpreadsheetApp.flush();
   return { id: id, deleted: true };
 }
 
@@ -343,11 +348,11 @@ function deleteCustomer(id) {
  */
 function searchCustomerByMobile(mobile) {
   if (!mobile) return [];
-  var searchStr = safeTrim(mobile);
+  var searchStr = (mobile || "").toString().trim();
   var all = getCustomers();
   return all.filter(function(c) {
     var cMobile = c.Mobile || c.mobile;
-    return cMobile && safeTrim(cMobile).toString().includes(searchStr);
+    return cMobile && (cMobile || "").toString().trim().toString().includes(searchStr);
   });
 }
 
@@ -356,10 +361,10 @@ function searchCustomerByMobile(mobile) {
  */
 function searchCustomerByName(name) {
   if (!name) return [];
-  var searchStr = safeTrim(name).toLowerCase();
+  var searchStr = (name || "").toString().trim().toLowerCase();
   var all = getCustomers();
   return all.filter(function(c) {
     var cName = c.Name || c.name;
-    return cName && safeTrim(cName).toString().toLowerCase().includes(searchStr);
+    return cName && (cName || "").toString().trim().toString().toLowerCase().includes(searchStr);
   });
 }

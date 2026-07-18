@@ -13,6 +13,7 @@ function getUsersSheet() {
   if (sheet.getLastColumn() === 0) {
     // Write default header columns
     sheet.appendRow(["UserID", "CompanyID", "BranchID", "FullName", "Username", "Password", "Role", "Mobile", "Email", "Status", "CreatedDate"]);
+    SpreadsheetApp.flush();
   }
   return sheet;
 }
@@ -23,6 +24,7 @@ function getUserHeaders(sheet) {
   if (lastColumn === 0) {
     var headers = ["UserID", "CompanyID", "BranchID", "FullName", "Username", "Password", "Role", "Mobile", "Email", "Status", "CreatedDate"];
     sheet.appendRow(headers);
+    SpreadsheetApp.flush();
     return headers;
   }
   return sheet.getRange(1, 1, 1, lastColumn).getValues()[0];
@@ -30,7 +32,7 @@ function getUserHeaders(sheet) {
 
 // Map User sheet header names to exact JavaScript property names
 function mapUserHeaderToKey(header) {
-  var clean = safeTrim(header).toLowerCase().replace(/[\s_-]/g, '');
+  var clean = (header || "").toString().trim().toLowerCase().replace(/[\s_-]/g, '');
   if (clean === 'userid' || clean === 'id') return 'UserID';
   if (clean === 'companyid') return 'CompanyID';
   if (clean === 'branchid') return 'BranchID';
@@ -229,6 +231,7 @@ function createUser(user) {
   
   var rowData = userToRow(user, headers);
   sheet.appendRow(rowData);
+  SpreadsheetApp.flush();
   
   return user;
 }
@@ -305,6 +308,7 @@ function updateUser(user) {
   
   var rowData = userToRow(mergedUser, headers);
   sheet.getRange(targetRowIndex, 1, 1, headers.length).setValues([rowData]);
+  SpreadsheetApp.flush();
   
   return mergedUser;
 }
@@ -349,6 +353,7 @@ function deleteUser(id) {
   }
   
   sheet.deleteRow(targetRowIndex);
+  SpreadsheetApp.flush();
   return { id: id, deleted: true };
 }
 
@@ -357,13 +362,13 @@ function deleteUser(id) {
  */
 function searchUser(query) {
   if (!query) return [];
-  var searchStr = safeTrim(query).toLowerCase();
+  var searchStr = (query || "").toString().trim().toLowerCase();
   var all = getUsers();
   return all.filter(function(u) {
-    return (u.FullName && safeTrim(u.FullName).toLowerCase().includes(searchStr)) ||
-           (u.Username && safeTrim(u.Username).toLowerCase().includes(searchStr)) ||
-           (u.Email && safeTrim(u.Email).toLowerCase().includes(searchStr)) ||
-           (u.Mobile && safeTrim(u.Mobile).includes(searchStr)) ||
-           (u.UserID && safeTrim(u.UserID).toLowerCase().includes(searchStr));
+    return (u.FullName && (u.FullName || "").toString().trim().toLowerCase().includes(searchStr)) ||
+           (u.Username && (u.Username || "").toString().trim().toLowerCase().includes(searchStr)) ||
+           (u.Email && (u.Email || "").toString().trim().toLowerCase().includes(searchStr)) ||
+           (u.Mobile && (u.Mobile || "").toString().trim().includes(searchStr)) ||
+           (u.UserID && (u.UserID || "").toString().trim().toLowerCase().includes(searchStr));
   });
 }
