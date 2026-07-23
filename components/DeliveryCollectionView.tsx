@@ -5,6 +5,8 @@ import { useStore } from '@/lib/store';
 import { Invoice, PaymentMode, PaymentDetail } from '@/lib/types';
 import { Search, CheckCircle, ArrowLeft, Receipt, Phone, MapPin, Award, Check } from 'lucide-react';
 import { OpticalInvoiceA5 } from './OpticalInvoiceA5';
+import { SalesOrderDetailCard } from './SalesOrderDetailCard';
+import { PrescriptionViewOnly } from './PrescriptionViewOnly';
 import { shopConfig } from '@/lib/shopConfig';
 
 interface Props {
@@ -316,8 +318,19 @@ export function DeliveryCollectionView({ onBack }: Props) {
             {/* 1. ORDER DETAILS DISPLAY IN A5 FORMAT */}
             <div className="space-y-1.5">
               <h3 className="font-extrabold text-xs text-[#94A3B8] uppercase tracking-widest pl-1">Selected Order Information</h3>
-              <div className="bg-slate-300 p-4 rounded-2xl flex justify-center border border-slate-400/20 shadow-inner">
-                <OpticalInvoiceA5 invoice={selectedInvoice} isPrintPreviewOnly={true} />
+              <div className="">
+                <SalesOrderDetailCard 
+                  inv={selectedInvoice} 
+                  customer={resolvedCustomer || undefined} 
+                  prescription={resolvedPrescription || null} 
+                  onViewPrescription={() => {}} 
+                  onPrintA5={() => {
+                     const printWindow = window.open('', '_blank');
+                     if (printWindow) {
+                        printWindow.document.write('<html><body><script>window.print();</script></body></html>');
+                     }
+                  }} 
+                />
               </div>
             </div>
 

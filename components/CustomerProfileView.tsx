@@ -8,6 +8,7 @@ import { eyeTestService, EyeTestRecord } from '@/lib/services/eyeTestService';
 import { prescriptionService, mapPascalToStandard } from '@/lib/services/prescriptionService';
 import { invoiceService } from '@/lib/services/invoiceService';
 import { InvoiceDetailCard } from './InvoiceDetailCard';
+import { SalesOrderDetailCard } from './SalesOrderDetailCard';
 import { OpticalInvoiceA5 } from './OpticalInvoiceA5';
 import { PrescriptionViewOnly } from './PrescriptionViewOnly';
 import { User, FileText, IndianRupee, Clock, CheckCircle, Activity, ShoppingCart, Calendar, Eye, Stethoscope } from 'lucide-react';
@@ -350,14 +351,17 @@ export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
             ) : (
               <div className="grid grid-cols-1 gap-4">
                 {salesOrders.map(inv => (
-                  <InvoiceDetailCard
+                  <SalesOrderDetailCard
                     key={inv.id}
                     inv={inv}
                     customer={customer}
                     prescription={prescriptions.find(p => p.id === inv.prescriptionId)}
                     onViewPrescription={setViewingPrescription}
-                    onViewInvoice={setViewingInvoice}
                     onPrintA5={setPrintingInvoice}
+                    onEditOrder={() => {}}
+                    onContinueBilling={(inv) => {
+                       if (onNavigateTo) onNavigateTo('delivery_collection', customer, inv);
+                    }}
                   />
                 ))}
               </div>
