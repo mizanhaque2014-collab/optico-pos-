@@ -7,9 +7,6 @@ import { customerService } from '@/lib/services/customerService';
 import { eyeTestService, EyeTestRecord } from '@/lib/services/eyeTestService';
 import { prescriptionService, mapPascalToStandard } from '@/lib/services/prescriptionService';
 import { invoiceService } from '@/lib/services/invoiceService';
-import { InvoiceDetailCard } from './InvoiceDetailCard';
-import { OpticalInvoiceA5 } from './OpticalInvoiceA5';
-import { PrescriptionViewOnly } from './PrescriptionViewOnly';
 import { User, FileText, IndianRupee, Clock, CheckCircle, Activity, ShoppingCart, Calendar, Eye, Stethoscope } from 'lucide-react';
 
 interface Props {
@@ -34,18 +31,6 @@ export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
   // Modal selector states
   const [showBillingModal, setShowBillingModal] = useState(false);
   const [selectedEyeTest, setSelectedEyeTest] = useState<EyeTestRecord | null>(null);
-  const [printingInvoice, setPrintingInvoice] = useState<Invoice | null>(null);
-  const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
-  const [viewingPrescription, setViewingPrescription] = useState<any>(null);
-
-  useEffect(() => {
-    if (printingInvoice) {
-      setTimeout(() => {
-        window.print();
-        setPrintingInvoice(null);
-      }, 200);
-    }
-  }, [printingInvoice]);
 
   useEffect(() => {
     async function loadHistory() {
@@ -108,7 +93,7 @@ export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
                 </span>
               )}
               <p className="text-xs font-bold text-white/40 uppercase tracking-wider">
-                💳 ID: {customer.id} | 📞 {customer.mobile} | ⚧ Gender: N/A | 🎂 DOB: {customer.dob || 'N/A'} | 🏠 {customer.address || 'No Address'} | Joined: {new Date(customer.createdAt).toLocaleDateString()}
+                📞 {customer.mobile} | 🎂 DOB: {customer.dob || 'N/A'} | 🏠 {customer.address || 'No Address'} | Joined: {new Date(customer.createdAt).toLocaleDateString()}
               </p>
             </div>
           </div>
@@ -162,7 +147,7 @@ export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
                 No eye examinations performed yet
               </p>
             ) : (
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {eyeTests.map((et, index) => {
                   const isLatest = index === 0;
                   return (
@@ -321,17 +306,43 @@ export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
                 No direct sale invoices found
               </p>
             ) : (
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {directSaleInvoices.map(inv => (
-                  <InvoiceDetailCard
-                    key={inv.id}
-                    inv={inv}
-                    customer={customer}
-                    prescription={prescriptions.find(p => p.id === inv.prescriptionId)}
-                    onViewPrescription={setViewingPrescription}
-                    onViewInvoice={setViewingInvoice}
-                    onPrintA5={setPrintingInvoice}
-                  />
+                  <div key={inv.id} className="bg-[#0F172A] border border-white/5 p-4 rounded-xl flex flex-col justify-between gap-3">
+                    <div>
+                      <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                        <p className="text-xs font-black text-white tracking-widest">
+                          {inv.invoiceNumber} 
+                          <span className="text-[10px] font-normal text-white/40 ml-2">
+                            {new Date(inv.createdAt).toLocaleDateString()}
+                          </span>
+                        </p>
+                        <span className="text-[9px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded">
+                          {inv.type}
+                        </span>
+                      </div>
+
+                      <div className="space-y-1 mt-2">
+                        {inv.items.map(item => (
+                          <div key={item.id} className="flex justify-between text-[11px] text-white/60">
+                            <span>{item.quantity}x {item.itemType === 'frame' ? item.brand : item.itemType === 'lens' ? item.lensBrand : item.itemName}</span>
+                            <span>₹{item.finalAmount}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-end border-t border-white/5 pt-2 mt-2">
+                       <div>
+                         <p className="text-[9px] text-white/40 font-bold uppercase tracking-wider">Status</p>
+                         <p className={`text-xs font-black uppercase ${inv.status === 'Delivered' ? 'text-emerald-400' : 'text-yellow-400'}`}>{inv.status}</p>
+                       </div>
+                       <div className="text-right">
+                         <p className="text-[9px] text-white/40 font-bold uppercase tracking-wider">Total / Balance</p>
+                         <p className="text-xs font-black text-white">₹{inv.grandTotal} <span className="text-rose-400 font-mono">/ ₹{inv.balanceAmount}</span></p>
+                       </div>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
@@ -348,17 +359,43 @@ export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
                 No pending sales orders found
               </p>
             ) : (
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {salesOrders.map(inv => (
-                  <InvoiceDetailCard
-                    key={inv.id}
-                    inv={inv}
-                    customer={customer}
-                    prescription={prescriptions.find(p => p.id === inv.prescriptionId)}
-                    onViewPrescription={setViewingPrescription}
-                    onViewInvoice={setViewingInvoice}
-                    onPrintA5={setPrintingInvoice}
-                  />
+                  <div key={inv.id} className="bg-[#0F172A] border border-white/5 p-4 rounded-xl flex flex-col justify-between gap-3">
+                    <div>
+                      <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                        <p className="text-xs font-black text-white tracking-widest">
+                          {inv.invoiceNumber} 
+                          <span className="text-[10px] font-normal text-white/40 ml-2">
+                            {new Date(inv.createdAt).toLocaleDateString()}
+                          </span>
+                        </p>
+                        <span className="text-[9px] font-black uppercase tracking-wider bg-purple-500/20 text-purple-400 border border-purple-500/30 px-2 py-0.5 rounded">
+                          {inv.type}
+                        </span>
+                      </div>
+
+                      <div className="space-y-1 mt-2">
+                        {inv.items.map(item => (
+                          <div key={item.id} className="flex justify-between text-[11px] text-white/60">
+                            <span>{item.quantity}x {item.itemType === 'frame' ? item.brand : item.itemType === 'lens' ? item.lensBrand : item.itemName}</span>
+                            <span>₹{item.finalAmount}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-end border-t border-white/5 pt-2 mt-2">
+                       <div>
+                         <p className="text-[9px] text-white/40 font-bold uppercase tracking-wider">Status</p>
+                         <p className={`text-xs font-black uppercase ${inv.status === 'Delivered' ? 'text-emerald-400' : 'text-yellow-400'}`}>{inv.status}</p>
+                       </div>
+                       <div className="text-right">
+                         <p className="text-[9px] text-white/40 font-bold uppercase tracking-wider">Total / Balance</p>
+                         <p className="text-xs font-black text-white">₹{inv.grandTotal} <span className="text-rose-400 font-mono">/ ₹{inv.balanceAmount}</span></p>
+                       </div>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
@@ -368,55 +405,6 @@ export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
       )}
 
       {/* BILLING CHOICE OVERLAY MODAL */}
-            {/* INVOICE VIEW MODAL */}
-      {viewingInvoice && (
-        <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0F172A] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
-            <div className="p-4 border-b border-white/10 flex justify-between items-center bg-[#1E293B]">
-              <h2 className="font-extrabold text-[#94A3B8] tracking-widest text-[10px] uppercase">Invoice Preview</h2>
-              <button onClick={() => setViewingInvoice(null)} className="text-white/40 hover:text-white font-bold text-sm">✖</button>
-            </div>
-            <div className="p-6 overflow-y-auto space-y-6 custom-scrollbar text-sm flex-1 bg-slate-300 flex justify-center items-start">
-              <div className="shadow-lg rounded-md overflow-hidden bg-white">
-                <OpticalInvoiceA5 
-                  customer={customer} 
-                  prescription={prescriptions.find(p => p.id === viewingInvoice.prescriptionId) || null} 
-                  invoice={viewingInvoice}
-                  isPrintPreviewOnly={false}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* PRINT INVOICE RENDERER (Hidden from UI, visible to printer) */}
-      {printingInvoice && (
-        <div className="fixed inset-0 z-[200] bg-white hidden print:block">
-           <OpticalInvoiceA5 
-              customer={customer} 
-              prescription={prescriptions.find(p => p.id === printingInvoice.prescriptionId) || null} 
-              invoice={printingInvoice}
-              isPrintPreviewOnly={true}
-           />
-        </div>
-      )}
-
-      {/* VIEW PRESCRIPTION MODAL */}
-      {viewingPrescription && (
-        <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0F172A] border border-white/10 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
-            <div className="p-4 border-b border-white/10 flex justify-between items-center bg-[#1E293B]">
-              <h2 className="font-extrabold text-[#94A3B8] tracking-widest text-[10px] uppercase">Prescription Details</h2>
-              <button onClick={() => setViewingPrescription(null)} className="text-white/40 hover:text-white font-bold text-sm">✖</button>
-            </div>
-            <div className="p-6 overflow-y-auto space-y-6 custom-scrollbar">
-              <PrescriptionViewOnly prescription={viewingPrescription} />
-            </div>
-          </div>
-        </div>
-      )}
-
       {showBillingModal && selectedEyeTest && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-[#1E293B] border border-white/10 p-6 rounded-2xl max-w-md w-full shadow-2xl space-y-6">
