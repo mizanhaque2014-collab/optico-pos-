@@ -1,0 +1,26 @@
+const mapStandardToPascalInvoice = (invoice: any) => {
+  return {
+    InvoiceID: invoice.id,
+    InvoiceNumber: invoice.invoiceNumber,
+    InvoiceType: invoice.type,
+    CustomerID: invoice.customerId,
+    CompanyID: invoice.companyId || 'COMP-1',
+    BranchID: invoice.branchId || 'BR-1',
+    PrescriptionID: invoice.prescriptionId || '',
+    InvoiceDate: invoice.createdAt ? new Date(invoice.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    GrandTotal: invoice.grandTotal,
+    Discount: invoice.totalDiscount || 0,
+    FinalAmount: invoice.grandTotal,
+    Advance: invoice.advanceAmount || 0,
+    Balance: invoice.balanceAmount || 0,
+    PaymentMode: invoice.paymentMode || 'Cash',
+    CashAmount: invoice.paymentDetail?.cash || 0,
+    CardAmount: invoice.paymentDetail?.card || 0,
+    UPIAmount: invoice.paymentDetail?.upi || 0,
+    CardReference: invoice.paymentDetail?.cardLast4 || invoice.paymentDetail?.referenceNumber || '',
+    UPIReference: invoice.paymentDetail?.upiTransactionId || invoice.paymentDetail?.referenceNumber || '',
+    BillingRemarks: invoice.paymentDetail?.remarks || '',
+    Status: invoice.status,
+    Items: JSON.stringify(invoice.items || []),
+  };
+};

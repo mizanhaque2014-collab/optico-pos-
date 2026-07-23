@@ -1,7 +1,8 @@
-import { apiCall } from '../apiClient';
-import { Invoice } from '../types';
+const fs = require('fs');
 
+let code = fs.readFileSync('lib/services/invoiceService.ts', 'utf8');
 
+const mapperFn = `
 function mapInvoiceToPascalCase(invoice: any) {
   return {
     InvoiceID: invoice.id || invoice.InvoiceID,
@@ -40,7 +41,7 @@ function mapPascalCaseToInvoice(data: any): Invoice {
   
   return {
     id: data.InvoiceID || data.id,
-    invoiceNumber: data.InvoiceNumber || data.InvoiceID || data.invoiceNumber,
+    invoiceNumber: data.InvoiceNumber || data.invoiceNumber,
     type: data.InvoiceType || data.type,
     customerId: data.CustomerID || data.customerId,
     prescriptionId: data.PrescriptionID || data.prescriptionId,
@@ -61,107 +62,42 @@ function mapPascalCaseToInvoice(data: any): Invoice {
     advanceAmount: data.Advance || data.advanceAmount || 0,
     balanceAmount: data.Balance || data.balanceAmount || 0,
     status: data.Status || data.status || 'Delivered',
-    createdAt: data.CreatedDate ? new Date(data.CreatedDate).getTime() : Date.now(),
+    createdAt: data.CreatedAt ? new Date(data.CreatedAt).getTime() : Date.now(),
     updatedAt: data.UpdatedAt ? new Date(data.UpdatedAt).getTime() : Date.now(),
   } as Invoice;
 }
+`;
 
-export const invoiceService = {
-  async createInvoice(invoice: Invoice): Promise<Invoice> {
+code = code.replace(/export const invoiceService = \{/, mapperFn + '\nexport const invoiceService = {');
+
+code = code.replace(/async createInvoice\(invoice: Invoice\): Promise<Invoice> \{\n    const data = await apiCall<Invoice>\('createInvoice', \{ invoice \}\);\n    return data \|\| invoice;\n  \},/g, `async createInvoice(invoice: Invoice): Promise<Invoice> {
     const pascalInvoice = mapInvoiceToPascalCase(invoice);
-    const data = await apiCall<any>('createInvoice', pascalInvoice);
-    return data && data.InvoiceID ? { ...invoice, id: data.InvoiceID, invoiceNumber: data.InvoiceNumber || data.InvoiceID } : invoice;
-  },
+    const data = await apiCall<any>('createInvoice', { invoice: pascalInvoice });
+    return data && data.InvoiceID ? mapPascalCaseToInvoice(data) : invoice;
+  },`);
 
-  async updateInvoice(invoice: Invoice): Promise<Invoice> {
+code = code.replace(/async updateInvoice\(invoice: Invoice\): Promise<Invoice> \{\n    const data = await apiCall<Invoice>\('updateInvoice', \{ invoice \}\);\n    return data \|\| invoice;\n  \},/g, `async updateInvoice(invoice: Invoice): Promise<Invoice> {
     const pascalInvoice = mapInvoiceToPascalCase(invoice);
-    const data = await apiCall<any>('updateInvoice', pascalInvoice);
-    return data && data.InvoiceID ? { ...invoice, id: data.InvoiceID, invoiceNumber: data.InvoiceNumber || data.InvoiceID } : invoice;
-  },
+    const data = await apiCall<any>('updateInvoice', { invoice: pascalInvoice });
+    return data && data.InvoiceID ? mapPascalCaseToInvoice(data) : invoice;
+  },`);
 
-  async deleteInvoice(invoiceId: string): Promise<void> {
-    await apiCall('deleteInvoice', { invoiceId });
-  },
-
-  async getInvoices(): Promise<Invoice[]> {
-    try {
-      const data = await apiCall<any[]>('getInvoices');
+code = code.replace(/const data = await apiCall<Invoice\[\]>\('getInvoices'\);\n      if \(Array\.isArray\(data\)\) \{\n        return data;\n      \}/, `const data = await apiCall<any[]>('getInvoices');
       if (Array.isArray(data)) {
         return data.map(mapPascalCaseToInvoice);
-      }
-    } catch (e) {
-      console.warn('getInvoices API failed, loading from local cache:', e);
-    }
-    return [];
-  },
+      }`);
 
-  async getInvoiceById(invoiceId: string): Promise<Invoice | null> {
-    try {
-      const data = await apiCall<any>('getInvoiceById', { invoiceId });
-      return data ? mapPascalCaseToInvoice(data) : null;
-    } catch (e) {
-      console.warn('getInvoiceById API failed:', e);
-      const list = await this.getInvoices();
-      return list.find(i => i.id === invoiceId) || null;
-    }
-  },
+code = code.replace(/const data = await apiCall<Invoice>\('getInvoiceById', \{ invoiceId \}\);\n      return data;/, `const data = await apiCall<any>('getInvoiceById', { invoiceId });
+      return data ? mapPascalCaseToInvoice(data) : null;`);
 
-  async getInvoicesByCustomer(customerId: string): Promise<Invoice[]> {
-    try {
-      const data = await apiCall<any[]>('getInvoicesByCustomer', { customerId });
+code = code.replace(/const data = await apiCall<Invoice\[\]>\('getInvoicesByCustomer', \{ customerId \}\);\n      if \(Array\.isArray\(data\)\) \{\n        return data;\n      \}/, `const data = await apiCall<any[]>('getInvoicesByCustomer', { customerId });
       if (Array.isArray(data)) {
         return data.map(mapPascalCaseToInvoice);
-      }
-    } catch (e) {
-      console.warn('getInvoicesByCustomer API failed:', e);
-    }
-    const list = await this.getInvoices();
-    return list.filter(i => i.customerId === customerId);
-  },
+      }`);
 
-  async searchInvoices(keyword: string): Promise<Invoice[]> {
-    try {
-      const data = await apiCall<any[]>('searchInvoices', { keyword });
+code = code.replace(/const data = await apiCall<Invoice\[\]>\('searchInvoices', \{ keyword \}\);\n      if \(Array\.isArray\(data\)\) \{\n        return data;\n      \}/, `const data = await apiCall<any[]>('searchInvoices', { keyword });
       if (Array.isArray(data)) {
         return data.map(mapPascalCaseToInvoice);
-      }
-    } catch (e) {
-      console.warn('searchInvoices API failed:', e);
-    }
-    const list = await this.getInvoices();
-    const q = String(keyword ?? "").trim().toLowerCase();
-    if (!q) return list;
-    return list.filter(inv => 
-      inv.invoiceNumber.toLowerCase().includes(q) || 
-      inv.id.toLowerCase().includes(q) ||
-      inv.customerId.toLowerCase().includes(q)
-    );
-  },
+      }`);
 
-  // Retain legacy methods for backward compatibility if needed by other parts of the app
-  async saveInvoice(invoice: Invoice): Promise<void> {
-    try {
-      await this.updateInvoice(invoice);
-    } catch {
-      await this.createInvoice(invoice);
-    }
-  },
-
-  async saveDirectSaleInvoice(invoice: Invoice): Promise<void> {
-    invoice.type = 'Direct Sale';
-    return this.saveInvoice(invoice);
-  },
-
-  async saveSalesOrderInvoice(invoice: Invoice): Promise<void> {
-    invoice.type = 'Sales Order';
-    return this.saveInvoice(invoice);
-  },
-
-  async saveDeliveryCollectionInvoice(invoice: Invoice): Promise<void> {
-    return this.saveInvoice(invoice);
-  },
-
-  async searchInvoice(query: string): Promise<Invoice[]> {
-    return this.searchInvoices(query);
-  }
-};
+fs.writeFileSync('lib/services/invoiceService.ts', code);
