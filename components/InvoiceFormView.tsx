@@ -14,6 +14,7 @@ import { Prescription } from '@/lib/types';
 import { prescriptionService, mapPascalToStandard } from '@/lib/services/prescriptionService';
 import { customerService } from '@/lib/services/customerService';
 import { eyeTestService } from '@/lib/services/eyeTestService';
+import { invoiceService } from '@/lib/services/invoiceService';
 
 interface Props {
   type: InvoiceType;
@@ -463,7 +464,7 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
       updatedAt: Date.now()
     };
 
-    saveInvoice(newInvoice as any);
+    await invoiceService.createInvoice(newInvoice as any);
     setSavedInvoice(newInvoice);
   };
 
@@ -476,7 +477,7 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
               <Receipt size={22} />
             </div>
             <div>
-              <h3 className="font-extrabold text-sm uppercase text-white tracking-widest leading-none mb-1">Invoice Saved!</h3>
+              <h3 className="font-extrabold text-sm uppercase text-white tracking-widest leading-none mb-1">Invoice Saved Successfully</h3>
               <p className="text-white/60 text-[10px] font-bold uppercase">Invoice Number: <span className="font-mono text-emerald-400 font-black">{savedInvoice.invoiceNumber}</span></p>
             </div>
           </div>

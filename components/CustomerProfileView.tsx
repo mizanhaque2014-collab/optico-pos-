@@ -6,6 +6,7 @@ import { useStore } from '@/lib/store';
 import { customerService } from '@/lib/services/customerService';
 import { eyeTestService, EyeTestRecord } from '@/lib/services/eyeTestService';
 import { prescriptionService, mapPascalToStandard } from '@/lib/services/prescriptionService';
+import { invoiceService } from '@/lib/services/invoiceService';
 import { User, FileText, IndianRupee, Clock, CheckCircle, Activity, ShoppingCart, Calendar, Eye, Stethoscope } from 'lucide-react';
 
 interface Props {
@@ -15,8 +16,7 @@ interface Props {
 }
 
 export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
-  const { getInvoices } = useStore();
-  const invoices = getInvoices().filter(i => i.customerId === customer.id).sort((a,b) => b.createdAt - a.createdAt);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   
   // Separate into Invoices (Direct Sale) and Sales Orders
   const directSaleInvoices = invoices.filter(i => i.type === 'Direct Sale');
@@ -34,6 +34,12 @@ export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
 
   useEffect(() => {
     async function loadHistory() {
+      try {
+        const invs = await invoiceService.getInvoicesByCustomer(customer.id);
+        setInvoices(invs.sort((a,b) => b.createdAt - a.createdAt));
+      } catch (e) {
+        console.error("Failed to load invoices:", e);
+      }
       try {
         console.log("[PROFILE DEBUG] Loading full customer history for customerId:", customer.id);
         const history = await customerService.loadCustomerHistory(customer.id);
