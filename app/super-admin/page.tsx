@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 import {
   Building,
   Store,
@@ -499,6 +500,7 @@ export default function SuperAdminPortal() {
   if (!isAuthenticated) {
     // Elegant Dark Login Screen
     return (
+      <ProtectedRoute>
       <div className="min-h-screen bg-[#020617] text-white flex flex-col justify-center items-center px-4 font-sans selection:bg-cyan-500/30">
         <div className="absolute top-6 left-6">
           <button
@@ -588,10 +590,12 @@ export default function SuperAdminPortal() {
           CONFIDENTIAL SYSTEM • AUTHORIZED FOUNDERS ONLY
         </p>
       </div>
+      </ProtectedRoute>
     );
   }
 
   return (
+    <ProtectedRoute>
     <div className="min-h-screen bg-[#020617] text-white font-sans selection:bg-cyan-500/30 flex flex-col h-screen overflow-hidden">
       {/* Super Admin Top Header Bar */}
       <header className="flex items-center justify-between px-6 py-4 bg-[#0F172A] border-b border-white/10 shrink-0">
@@ -1847,5 +1851,6 @@ export default function SuperAdminPortal() {
         </div>
       )}
     </div>
+    </ProtectedRoute>
   );
 }

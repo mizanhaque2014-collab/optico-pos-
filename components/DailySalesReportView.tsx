@@ -1,3 +1,5 @@
+"use client";
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -775,7 +777,7 @@ ${shopConfig.shopName} Audit Officer`;
     }).join('');
 
     const printHtml = `
-      <html-tag>
+      <div>
       <head>
         <title>Professional ${shopConfig.shopName} performance Audit</title>
         <style>
@@ -894,7 +896,7 @@ ${shopConfig.shopName} Audit Officer`;
           window.onload = function() { window.print(); }
         </script>
       </body>
-      </html>
+      </div>
     `;
 
     printWindow.document.open();

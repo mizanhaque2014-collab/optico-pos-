@@ -1,6 +1,7 @@
 "use client";
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { userService, User } from '@/lib/services/userService';
+import { useRouter } from 'next/navigation';
 
 export type Role = 'SUPER_ADMIN' | 'COMPANY_ADMIN' | 'SHOP_USER';
 
@@ -29,6 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     // Check if session exists in storage
@@ -107,6 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     localStorage.removeItem('opt_session');
     sessionStorage.removeItem('opt_session');
+    router.replace('/login');
   };
 
   return (

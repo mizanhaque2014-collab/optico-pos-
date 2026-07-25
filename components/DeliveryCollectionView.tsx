@@ -1,3 +1,5 @@
+"use client";
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -327,7 +329,7 @@ export function DeliveryCollectionView({ onBack }: Props) {
                   onPrintA5={() => {
                      const printWindow = window.open('', '_blank');
                      if (printWindow) {
-                        printWindow.document.write("<html><body><script>window.print();</script></body></html>");
+                        printWindow.document.write("<div><body><script>window.print();</script></body></div>");
                      }
                   }} 
                 />

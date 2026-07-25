@@ -1,3 +1,5 @@
+"use client";
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -598,7 +600,7 @@ export function WhatsAppMarketingView({ onBack }: Props) {
     }).join('');
 
     const htmlContent = `
-      <html>
+      <div>
       <head>
         <title>Customer Net Promoter Score & Feedback Audit</title>
         <style>
@@ -663,7 +665,7 @@ export function WhatsAppMarketingView({ onBack }: Props) {
         </div>
         <script>window.onload = function() { window.print(); }</script>
       </body>
-      </html>
+      </div>
     `;
 
     printWindow.document.open();

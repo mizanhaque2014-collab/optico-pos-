@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from 'react';
 import { Invoice, Customer, Prescription } from '@/lib/types';
 import { shopConfig } from '@/lib/shopConfig';
