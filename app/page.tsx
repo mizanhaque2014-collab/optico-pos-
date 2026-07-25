@@ -2,6 +2,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/lib/AuthContext';
+import { LoginView } from '@/components/LoginView';
 import { DashboardView } from '@/components/DashboardView';
 import { InvoiceFormView } from '@/components/InvoiceFormView';
 import { DeliveryCollectionView } from '@/components/DeliveryCollectionView';
@@ -10,7 +12,7 @@ import { StockInventoryView } from '@/components/StockInventoryView';
 import { DailySalesReportView } from '@/components/DailySalesReportView';
 import { WhatsAppMarketingView } from '@/components/WhatsAppMarketingView';
 import { EyeTestFormView } from '@/components/EyeTestFormView';
-import { ArrowLeft, Settings, Building, Save, Globe } from 'lucide-react';
+import { ArrowLeft, Settings, Building, Save, Globe, LogOut } from 'lucide-react';
 import { runApiDiagnostics } from '@/lib/apiTest';
 import { saveShopProfile } from '@/lib/shopConfig';
 import { saveApiUrl } from '@/lib/config';
@@ -18,6 +20,8 @@ import { saveApiUrl } from '@/lib/config';
 export type ViewState = 'dashboard' | 'sales_order' | 'direct_sale' | 'delivery_collection' | 'customers' | 'stock_inventory' | 'daily_sales_report' | 'whatsapp_marketing' | 'eye_test';
 
 export default function Home() {
+  const { session, isLoading, logout } = useAuth();
+
   const [currentView, setCurrentView] = useState<ViewState>('dashboard');
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [preloadedEyeTest, setPreloadedEyeTest] = useState<any>(null);

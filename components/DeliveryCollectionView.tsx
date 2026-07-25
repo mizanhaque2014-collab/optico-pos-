@@ -327,7 +327,7 @@ export function DeliveryCollectionView({ onBack }: Props) {
                   onPrintA5={() => {
                      const printWindow = window.open('', '_blank');
                      if (printWindow) {
-                        printWindow.document.write('<html><body><script>window.print();</script></body></html>');
+                        printWindow.document.write("<html><body><script>window.print();</script></body></html>");
                      }
                   }} 
                 />
