@@ -1,12 +1,14 @@
-import { Invoice, Prescription, Customer } from '@/lib/types';
-import { Download, Edit, Eye, Play, Printer, Send } from 'lucide-react';
+const fs = require('fs');
 
+const code = `import { Invoice, EyeTestRecord, Customer } from '@/lib/types';
+import { Download, Edit, Eye, Play, Printer, Send } from 'lucide-react';
+import { generateWhatsAppMessage, getWhatsAppUrl } from '@/lib/whatsapp';
 
 interface Props {
   inv: Invoice;
   customer?: Customer;
-  prescription?: Prescription;
-  onViewPrescription?: (et: Prescription) => void;
+  prescription?: EyeTestRecord;
+  onViewPrescription?: (et: EyeTestRecord) => void;
   onPrintA5?: (inv: Invoice) => void;
   onEditOrder?: (inv: Invoice) => void;
   onContinueBilling?: (inv: Invoice) => void;
@@ -55,8 +57,8 @@ export function SalesOrderDetailCard({ inv, customer, prescription, onViewPrescr
   const advanceAmount = Number(inv.advanceAmount) || 0;
 
   const handleShareWhatsApp = () => {
-    const msg = encodeURIComponent(`Order Invoice: ${inv.invoiceNumber}\nTotal: ₹${grandTotal}\nStatus: ${inv.status}`);
-    const url = `https://wa.me/${customer?.mobile || ''}?text=${msg}`;
+    const msg = generateWhatsAppMessage(inv, customer);
+    const url = getWhatsAppUrl(customer?.mobile || '', msg);
     window.open(url, '_blank');
   };
 
@@ -82,7 +84,7 @@ export function SalesOrderDetailCard({ inv, customer, prescription, onViewPrescr
                Status: <span className={
                  inv.status === 'Delivered' ? 'text-emerald-400' :
                  inv.status === 'Ready' ? 'text-blue-400' :
-                 inv.status === 'Ordered' ? 'text-amber-400' : inv.status === 'In Lab' ? 'text-purple-400' : 'text-rose-400'
+                 inv.status === 'Processing' ? 'text-amber-400' : 'text-rose-400'
                }>{inv.status}</span>
              </p>
           </div>
@@ -333,3 +335,6 @@ export function SalesOrderDetailCard({ inv, customer, prescription, onViewPrescr
     </div>
   );
 }
+`;
+
+fs.writeFileSync('components/SalesOrderDetailCard.tsx', code);

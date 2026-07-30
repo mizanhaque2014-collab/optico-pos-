@@ -324,7 +324,7 @@ export function DeliveryCollectionView({ onBack }: Props) {
                 <SalesOrderDetailCard 
                   inv={selectedInvoice} 
                   customer={resolvedCustomer || undefined} 
-                  prescription={resolvedPrescription || null} 
+                  prescription={resolvedPrescription || undefined} 
                   onViewPrescription={() => {}} 
                   onPrintA5={() => {
                      const printWindow = window.open('', '_blank');
