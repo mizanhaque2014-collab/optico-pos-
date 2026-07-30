@@ -178,69 +178,64 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
   const [savedInvoice, setSavedInvoice] = useState<any>(null);
   const [continueToBilling, setContinueToBilling] = useState(!!preloadedEyeTest);
   const [saveSuccessMessage, setSaveSuccessMessage] = useState(false);
-  const [showConfirmation, setShowConfirmation] = useState(false);
+    const [showConfirmation, setShowConfirmation] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState('');
+  const [isInvoiceSaved, setIsInvoiceSaved] = useState(false);
 
   const handleSaveCustomerOnly = async () => {
-    console.log("ENTER handleSaveCustomerOnly");
-    console.log("INPUT: customer =", customer, "prescription =", prescription);
-    
     if (!customer) {
-      console.warn("EXIT handleSaveCustomerOnly (No customer selected)");
       alert('Please select a customer.');
       return;
     }
+    
+    if (isSaving) return;
+    setIsSaving(true);
+    setSaveStatus('Checking records...');
 
     const updatedCustomer = { ...customer };
-    
     if (prescription && prescription.source === 'Eye Test Performed In Shop') {
-      console.log("[DEBUG] Setting customer status to 'Eye Test Only'");
       updatedCustomer.status = 'Eye Test Only';
     } else if (prescription && prescription.source !== 'No Prescription') {
-      console.log("[DEBUG] Setting customer status to 'Prescription Only' because source is:", prescription.source);
       updatedCustomer.status = 'Prescription Only';
-    } else {
-      console.log("[DEBUG] No valid prescription or source is 'No Prescription'");
     }
 
-    // Step 1. Save Customer First
-    console.log("Saving customer...", updatedCustomer);
-    let savedCustomerResult = null;
-    try {
-      savedCustomerResult = await saveCustomer(updatedCustomer);
-      console.log("Save customer response:", savedCustomerResult);
-    } catch (err) {
-      console.warn("Failed to sync customer changes to remote sheet:", err);
-      customerService.updateLocalCache(updatedCustomer);
-      savedCustomerResult = updatedCustomer;
+    const isNewCustomer = !customer.id || customer.id.includes('local') || customer.id.includes('temp');
+    const isNewPrescription = prescription && prescription.source !== 'No Prescription' && (!prescription.id || !prescription.id.startsWith('PRE-'));
+
+    if (!isNewCustomer && !isNewPrescription) {
+       // Both exist, skip saving
+       setIsSaving(false);
+       setContinueToBilling(true);
+       return;
     }
 
-    const finalCustomerId = savedCustomerResult?.id || customer.id;
-    console.log("Resolved finalCustomerId:", finalCustomerId);
-    if (!finalCustomerId) {
-      console.error("finalCustomerId is null or empty! Cannot save prescription.");
-    }
-
-    // Step 2. Save Prescription Second
+    setSaveStatus('Saving Customer and Prescription...');
+    const tasks = [];
+    let finalCustomer = customer;
     let finalPrescription = prescription;
-    console.log("Prescription object:", prescription);
-    console.log("CustomerID:", finalCustomerId);
-    
-    if (prescription && prescription.source !== 'No Prescription') {
-      console.log("Calling savePrescription...");
-      try {
-        const savedP = await prescriptionService.savePrescription(finalCustomerId, prescription);
-        console.log("savePrescription response:", savedP);
-        finalPrescription = mapPascalToStandard(savedP);
-        console.log("Mapped finalPrescription standard:", finalPrescription);
 
-        // Save Eye Test as well!
-        if (prescription.source === 'Eye Test Performed In Shop' || prescription.eyeTestDetails) {
-          try {
-            const eyeTestPayload = {
+    if (isNewCustomer) {
+       tasks.push(
+         saveCustomer(updatedCustomer)
+           .then(res => { finalCustomer = res || updatedCustomer; })
+           .catch(err => { console.warn(err); finalCustomer = updatedCustomer; })
+       );
+    }
+
+    if (isNewPrescription) {
+       tasks.push(
+         prescriptionService.savePrescription(customer.id, prescription)
+           .then(res => { finalPrescription = res ? mapPascalToStandard(res) : prescription; })
+           .catch(err => { console.warn(err); finalPrescription = prescription; })
+       );
+       
+       if (prescription.source === 'Eye Test Performed In Shop' || prescription.eyeTestDetails) {
+          const eyeTestPayload = {
               id: `et-${Date.now()}`,
               companyId: 'COMP-default',
               branchId: 'BR-default',
-              customerId: finalCustomerId,
+              customerId: customer.id,
               eyeTestDate: prescription.eyeTestDetails?.eyeTestDate || new Date().toISOString().split('T')[0],
               optometristName: prescription.eyeTestDetails?.optometristName || 'Optometrist',
               sphOd: prescription.rightEye?.sph || '',
@@ -256,77 +251,23 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
               lensRecommendation: prescription.remarks || '',
               remarks: prescription.remarks || '',
               createdAt: Date.now()
-            };
-            
-            if (typeof window !== 'undefined') {
-              try {
-                const currentUserStr = localStorage.getItem('opt_current_user');
-                if (currentUserStr) {
-                  const currentUser = JSON.parse(currentUserStr);
-                  if (currentUser.companyId) eyeTestPayload.companyId = currentUser.companyId;
-                  if (currentUser.branchId) eyeTestPayload.branchId = currentUser.branchId;
-                }
-              } catch (userErr) {
-                console.warn("Failed to parse current user from local storage:", userErr);
-              }
-            }
-            
-            console.log("Calling saveEyeTest...");
-            await eyeTestService.saveEyeTest(eyeTestPayload);
-            console.log("Eye test saved successfully!");
-          } catch (etErr) {
-            console.warn("Failed to save eye test record inside handleSaveCustomerOnly:", etErr);
-          }
-        }
-      } catch (err) {
-        console.warn("Failed to save prescription:", err);
-      }
-    } else {
-      console.log("Skipped saving prescription. Reason: prescription is null or source is 'No Prescription'");
+          };
+          tasks.push(
+             eyeTestService.saveEyeTest(eyeTestPayload).catch(e => console.warn(e))
+          );
+       }
     }
 
-    // Step 3. Reload Customer
-    console.log("Reloading customer by ID:", finalCustomerId);
-    let reloadedCustomer = savedCustomerResult || updatedCustomer;
-    try {
-      reloadedCustomer = await customerService.getCustomerById(finalCustomerId);
-      console.log("Reloaded customer from DB:", reloadedCustomer);
-    } catch (err) {
-      console.warn("Failed to reload customer:", err);
+    if (tasks.length > 0) {
+       await Promise.all(tasks);
+       setCustomer(finalCustomer);
+       if (finalPrescription) setPrescription(finalPrescription);
+       alert('Customer and Prescription Saved Successfully');
     }
 
-    // Load prescription history and attach to reloaded customer
-    console.log("Loading prescription history for ID:", finalCustomerId);
-    try {
-      const history = await prescriptionService.loadPrescriptionHistory(finalCustomerId);
-      console.log("Prescription history loaded:", history);
-      reloadedCustomer.prescriptions = history.map(mapPascalToStandard);
-    } catch (err) {
-      console.warn("Failed to load prescription history in view:", err);
-      if (finalPrescription) {
-        reloadedCustomer.prescriptions = [finalPrescription];
-      }
-    }
-
-    // Step 4 & 5. Display Customer and Prescription History
-    console.log("Updating component states with reloaded customer and prescription");
-    setCustomer(reloadedCustomer);
-    if (finalPrescription) {
-      setPrescription(finalPrescription);
-    }
-    await getCustomers(); // refresh list in cache/store
-
-    setSaveSuccessMessage(true);
-    setTimeout(() => setSaveSuccessMessage(false), 5000);
-
-    // Step 6. Continue to Billing Automatically
-    console.log("Navigate To Billing");
+    setIsSaving(false);
     setContinueToBilling(true);
-    
-    console.log("EXIT handleSaveCustomerOnly");
-    console.log("RETURN/OUTPUT: success");
   };
-
   const handleInitiateSubmit = () => {
     if (!customer) {
       alert('Please select a customer.');
@@ -336,123 +277,26 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
       alert('Please add at least one item.');
       return;
     }
+    setIsInvoiceSaved(false);
     setShowConfirmation(true);
   };
 
   const handleSubmit = async () => {
-    console.log("================= START handleSubmit =================");
-    console.log("[SUBMIT DEBUG 1] Active customer state:", customer);
-    console.log("[SUBMIT DEBUG 2] Active prescription state:", prescription);
-    
-    if (!customer) {
-      console.warn("[SUBMIT DEBUG EXIT] No customer. Exiting.");
-      return;
-    }
-    
-    // In Direct Sale, advance is full amount
+    if (!customer) return;
+    if (isSaving || isInvoiceSaved) return;
+
+    setIsSaving(true);
+    setSaveStatus('Saving Sales Order...');
+
     const finalAdvance = type === 'Direct Sale' ? grandTotal : advanceAmount;
-    console.log("[SUBMIT DEBUG 3] Calculated finalAdvance:", finalAdvance, "type:", type);
-
-    let finalPrescriptionId = undefined;
-
-    // Resolve customer status
-    const updatedCustomer = { ...customer };
-    updatedCustomer.status = type === 'Sales Order' ? 'Sales Order Customer' : 'Buyer';
-    console.log("[SUBMIT DEBUG 4] Saving updated customer...", updatedCustomer);
-    
-    // Step 1. Save updated customer details to Google Sheets and local cache first
-    let savedCustomerResult = null;
-    try {
-      savedCustomerResult = await saveCustomer(updatedCustomer);
-      console.log("[SUBMIT DEBUG 5] Save customer response:", savedCustomerResult);
-    } catch (err) {
-      console.warn("[SUBMIT DEBUG ERROR] Failed to sync customer details on submit:", err);
-      customerService.updateLocalCache(updatedCustomer);
-      savedCustomerResult = updatedCustomer;
-    }
-
-    const finalCustomerId = savedCustomerResult?.id || customer.id;
-    console.log("[SUBMIT DEBUG 6] Resolved finalCustomerId:", finalCustomerId);
-
-    // Step 2. Save prescription to customer if exists
-    console.log("[SUBMIT DEBUG 7] Checking if prescription should be saved. prescription source:", prescription?.source);
-    if (prescription && prescription.source !== 'No Prescription') {
-      console.log("[SUBMIT DEBUG 8] Prescription source is valid. Calling savePrescription...");
-      try {
-        const savedP = await prescriptionService.savePrescription(finalCustomerId, prescription);
-        console.log("[SUBMIT DEBUG 9] savePrescription response:", savedP);
-        finalPrescriptionId = savedP.PrescriptionID;
-        console.log("[SUBMIT DEBUG 10] Set finalPrescriptionId to:", finalPrescriptionId);
-        
-        // Save Eye Test as well!
-        if (prescription.source === 'Eye Test Performed In Shop' || prescription.eyeTestDetails) {
-          try {
-            const eyeTestPayload = {
-              id: `et-${Date.now()}`,
-              companyId: 'COMP-default',
-              branchId: 'BR-default',
-              customerId: finalCustomerId,
-              eyeTestDate: prescription.eyeTestDetails?.eyeTestDate || new Date().toISOString().split('T')[0],
-              optometristName: prescription.eyeTestDetails?.optometristName || 'Optometrist',
-              sphOd: prescription.rightEye?.sph || '',
-              cylOd: prescription.rightEye?.cyl || '',
-              axisOd: prescription.rightEye?.axis || '',
-              sphOs: prescription.leftEye?.sph || '',
-              cylOs: prescription.leftEye?.cyl || '',
-              axisOs: prescription.leftEye?.axis || '',
-              addPower: prescription.rightEye?.add || prescription.leftEye?.add || '',
-              pdDistance: prescription.pdDistance || '',
-              pdNear: prescription.pdNear || '',
-              segmentHeight: '',
-              lensRecommendation: prescription.remarks || '',
-              remarks: prescription.remarks || '',
-              createdAt: Date.now()
-            };
-            
-            if (typeof window !== 'undefined') {
-              try {
-                const currentUserStr = localStorage.getItem('opt_current_user');
-                if (currentUserStr) {
-                  const currentUser = JSON.parse(currentUserStr);
-                  if (currentUser.companyId) eyeTestPayload.companyId = currentUser.companyId;
-                  if (currentUser.branchId) eyeTestPayload.branchId = currentUser.branchId;
-                }
-              } catch (userErr) {
-                console.warn("Failed to parse current user from local storage:", userErr);
-              }
-            }
-            
-            console.log("[SUBMIT DEBUG] Saving eye test via eyeTestService:", eyeTestPayload);
-            await eyeTestService.saveEyeTest(eyeTestPayload);
-            console.log("[SUBMIT DEBUG] Eye test saved successfully!");
-          } catch (etErr) {
-            console.warn("Failed to save eye test record inside handleSubmit:", etErr);
-          }
-        }
-
-        // Update local cached prescriptions for customer
-        if (!updatedCustomer.prescriptions) updatedCustomer.prescriptions = [];
-        const stdP = mapPascalToStandard(savedP);
-        if (!updatedCustomer.prescriptions.find(p => p.id === stdP.id)) {
-          updatedCustomer.prescriptions.push(stdP);
-        } else {
-          updatedCustomer.prescriptions = updatedCustomer.prescriptions.map(p => p.id === stdP.id ? stdP : p);
-        }
-        customerService.updateLocalCache(updatedCustomer);
-      } catch (err) {
-        console.warn("[SUBMIT DEBUG ERROR] Failed to save prescription on submit:", err);
-        finalPrescriptionId = prescription.id;
-      }
-    } else {
-      console.log("[SUBMIT DEBUG 11] Skipped saving prescription. Reason: prescription is null or source is 'No Prescription'");
-    }
+    const finalBalance = grandTotal - finalAdvance;
 
     const newInvoice = {
       id: crypto.randomUUID(),
       invoiceNumber: generateInvoiceNumber(),
       type,
       customerId: customer.id,
-      prescriptionId: finalPrescriptionId,
+      prescriptionId: prescription?.id,
       items,
       subTotal,
       totalDiscount,
@@ -460,14 +304,23 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
       paymentMode,
       paymentDetail,
       advanceAmount: finalAdvance,
-      balanceAmount: grandTotal - finalAdvance,
+      balanceAmount: finalBalance,
       status: type === 'Direct Sale' ? 'Delivered' : 'Ordered',
       createdAt: Date.now(),
       updatedAt: Date.now()
     };
 
-    await invoiceService.createInvoice(newInvoice as any);
-    setSavedInvoice(newInvoice);
+    try {
+      await invoiceService.createInvoice(newInvoice as any);
+      setIsInvoiceSaved(true);
+      setSavedInvoice(newInvoice);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save Sales Order');
+    } finally {
+      setIsSaving(false);
+      setShowConfirmation(false);
+    }
   };
 
   if (savedInvoice) {
@@ -538,15 +391,33 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
              <div className="flex gap-4">
                <button 
                  onClick={handleSaveCustomerOnly}
-                 className="flex-1 bg-[#1E293B] border border-white/10 hover:bg-[#1E293B]/80 hover:border-blue-500/50 text-white font-bold py-4 text-sm rounded-xl transition-colors shadow-lg uppercase tracking-wider flex items-center justify-center gap-2"
+                 disabled={isSaving}
+                 className={`flex-1 bg-[#1E293B] border border-white/10 ${isSaving ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#1E293B]/80 hover:border-blue-500/50'} text-white font-bold py-4 text-sm rounded-xl transition-colors shadow-lg uppercase tracking-wider flex items-center justify-center gap-2`}
                >
-                 <span>💾</span> Save Customer & Prescription
+                 {isSaving ? (
+                   <>
+                     <span className="animate-spin">⏳</span> {saveStatus || "Saving..."}
+                   </>
+                 ) : (
+                   <>
+                     <span>💾</span> Save Customer & Prescription
+                   </>
+                 )}
                </button>
                <button 
                  onClick={handleSaveCustomerOnly}
-                 className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 text-sm rounded-xl transition-colors shadow-lg shadow-blue-900/20 uppercase tracking-wider flex items-center justify-center gap-2"
+                 disabled={isSaving}
+                 className={`flex-1 bg-blue-600 ${isSaving ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-500'} text-white font-bold py-4 text-sm rounded-xl transition-colors shadow-lg shadow-blue-900/20 uppercase tracking-wider flex items-center justify-center gap-2`}
                >
-                 <span>🧾</span> Continue To Billing
+                 {isSaving ? (
+                   <>
+                     <span className="animate-spin">⏳</span> Continuing...
+                   </>
+                 ) : (
+                   <>
+                     <span>🧾</span> Continue To Billing
+                   </>
+                 )}
                </button>
              </div>
            </div>
@@ -977,7 +848,8 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
            </button>
            <button 
              onClick={handleInitiateSubmit}
-             className="bg-emerald-600 hover:bg-emerald-500 text-white font-black px-6 py-3 text-xs rounded-lg shadow-lg shadow-emerald-900/20 transition-colors uppercase tracking-widest flex items-center justify-center gap-2 shrink-0"
+             disabled={isSaving || isInvoiceSaved}
+             className={`bg-emerald-600 ${isSaving || isInvoiceSaved ? 'opacity-50 cursor-not-allowed' : 'hover:bg-emerald-500'} text-white font-black px-6 py-3 text-xs rounded-lg shadow-lg shadow-emerald-900/20 transition-colors uppercase tracking-widest flex items-center justify-center gap-2 shrink-0`}
            >
              🧾 Generate Invoice
            </button>
@@ -1043,10 +915,23 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
                 <span>✏️</span> Edit Details
               </button>
               <button 
-                onClick={() => { setShowConfirmation(false); handleSubmit(); }}
-                className="flex-[2] bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 text-xs rounded-xl shadow-lg shadow-emerald-900/20 transition-colors uppercase tracking-widest flex items-center justify-center gap-2"
+                onClick={(e) => { e.preventDefault(); if (!isSaving && !isInvoiceSaved) handleSubmit(); }}
+                disabled={isSaving || isInvoiceSaved}
+                className={`flex-[2] bg-emerald-600 ${isSaving || isInvoiceSaved ? 'opacity-50 cursor-not-allowed' : 'hover:bg-emerald-500'} text-white font-black py-3 text-xs rounded-xl shadow-lg shadow-emerald-900/20 transition-colors uppercase tracking-widest flex items-center justify-center gap-2`}
               >
-                <span>✅</span> Confirm & Create Invoice
+                {isSaving ? (
+                  <>
+                    <span className="animate-spin">⏳</span> {saveStatus || "Saving..."}
+                  </>
+                ) : isInvoiceSaved ? (
+                  <>
+                    <span>✅</span> Saved Successfully
+                  </>
+                ) : (
+                  <>
+                    <span>✅</span> Confirm & Create Invoice
+                  </>
+                )}
               </button>
             </div>
           </div>
