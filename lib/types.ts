@@ -97,17 +97,19 @@ export type OrderItem = {
   finalAmount: number;
 };
 
-export type PaymentMode = 'Cash' | 'UPI' | 'Card' | 'Mixed';
+export type PaymentMode = 'Cash' | 'UPI' | 'Card' | 'Mixed' | 'Bank Transfer';
 
 export type PaymentDetail = {
   cash: number;
   upi: number;
   card: number;
+  bank?: number;
   total: number;
   cardType?: string;
   cardLast4?: string;
   upiApp?: string;
   upiTransactionId?: string;
+  transactionId?: string;
   referenceNumber?: string;
   remarks?: string;
 };

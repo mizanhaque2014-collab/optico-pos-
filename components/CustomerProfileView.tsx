@@ -53,15 +53,28 @@ export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
   useEffect(() => {
     async function loadHistory() {
       try {
-        const invs = await invoiceService.getInvoicesByCustomer(customer.id);
-        setInvoices(invs.sort((a,b) => b.createdAt - a.createdAt));
-      } catch (e) {
-        console.error("Failed to load invoices:", e);
-      }
-      try {
         console.log("[PROFILE DEBUG] Loading full customer history for customerId:", customer.id);
-        const history = await customerService.loadCustomerHistory(customer.id);
-        console.log("[PROFILE DEBUG] Full customer history response:", history);
+        
+        // Execute both major API calls simultaneously
+        const [invs, history] = await Promise.all([
+          invoiceService.getInvoicesByCustomer(customer.id).catch(e => {
+            console.error("Failed to load invoices:", e);
+            return [];
+          }),
+          customerService.loadCustomerHistory(customer.id).catch(async (e) => {
+            console.error("Failed to load customer profile history via loadCustomerHistory, running fallbacks:", e);
+            try {
+              const etList = await eyeTestService.loadEyeTestHistory(customer.id);
+              const pList = await prescriptionService.loadPrescriptionHistory(customer.id);
+              return { eyeTests: etList, prescriptions: pList };
+            } catch (fallbackError) {
+              console.error("Profile history fallback loading failed:", fallbackError);
+              return { eyeTests: [], prescriptions: [] };
+            }
+          })
+        ]);
+        
+        setInvoices(invs.sort((a,b) => b.createdAt - a.createdAt));
         
         // Update eye tests and prescriptions with fetched results
         setEyeTests(history.eyeTests || []);
@@ -71,16 +84,7 @@ export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
           return p.PrescriptionID ? mapPascalToStandard(p) : p;
         });
         setPrescriptions(mappedPrescriptions);
-      } catch (e) {
-        console.error("Failed to load customer profile history via loadCustomerHistory, running fallbacks:", e);
-        try {
-          const etList = await eyeTestService.loadEyeTestHistory(customer.id);
-          const pList = await prescriptionService.loadPrescriptionHistory(customer.id);
-          setEyeTests(etList);
-          setPrescriptions(pList.map(mapPascalToStandard));
-        } catch (fallbackError) {
-          console.error("Profile history fallback loading failed:", fallbackError);
-        }
+        
       } finally {
         setLoadingHistory(false);
       }

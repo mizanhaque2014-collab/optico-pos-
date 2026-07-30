@@ -68,15 +68,13 @@ function mapPascalCaseToInvoice(data: any): Invoice {
 
 export const invoiceService = {
   async createInvoice(invoice: Invoice): Promise<Invoice> {
-    const pascalInvoice = mapInvoiceToPascalCase(invoice);
-    const data = await apiCall<any>('saveInvoice', pascalInvoice);
-    return data && data.InvoiceID ? { ...invoice, id: data.InvoiceID, invoiceNumber: data.InvoiceNumber || data.InvoiceID } : invoice;
+    const data = await apiCall<any>('saveInvoice', invoice);
+    return data && data.id ? data : invoice;
   },
 
   async updateInvoice(invoice: Invoice): Promise<Invoice> {
-    const pascalInvoice = mapInvoiceToPascalCase(invoice);
-    const data = await apiCall<any>('saveInvoice', pascalInvoice);
-    return data && data.InvoiceID ? { ...invoice, id: data.InvoiceID, invoiceNumber: data.InvoiceNumber || data.InvoiceID } : invoice;
+    const data = await apiCall<any>('saveInvoice', invoice);
+    return data && data.id ? data : invoice;
   },
 
   async deleteInvoice(invoiceId: string): Promise<void> {

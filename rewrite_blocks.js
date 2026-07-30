@@ -1,43 +1,14 @@
-"use client";
+const fs = require('fs');
+let code = fs.readFileSync('components/SalesOrderDetailCard.tsx', 'utf-8');
 
-import React, { useState } from 'react';
-import { Invoice, Customer, Prescription } from '@/lib/types';
-import { shopConfig } from '@/lib/shopConfig';
-import { FileText, Printer, Download, Send, RefreshCw, Eye, Edit, Play } from 'lucide-react';
+// Find the start of rendering
+const renderStart = code.indexOf('return (');
+const actionButtons = code.indexOf('{/* ACTION BUTTONS */}');
 
-interface Props {
-  inv: Invoice;
-  customer?: Customer;
-  prescription?: Prescription | null;
-  onViewPrescription?: (p: Prescription) => void;
-  onPrintA5?: (inv: Invoice) => void;
-  onEditOrder?: (inv: Invoice) => void;
-  onContinueBilling?: (inv: Invoice) => void;
-}
+const beforeRender = code.substring(0, renderStart);
+const afterButtons = code.substring(actionButtons);
 
-export function SalesOrderDetailCard({ inv, customer, prescription, onViewPrescription, onPrintA5, onEditOrder, onContinueBilling }: Props) {
-  const handleShareWhatsApp = () => {
-    if (!customer) return;
-    let text = `*INVOICE: ${inv.invoiceNumber}*\n*Shop:* ${shopConfig.shopName}\n*Customer:* ${customer.name}\n*Total Bill:* ₹${inv.grandTotal}\n*Paid:* ₹${inv.advanceAmount}\n*Balance:* ₹${inv.balanceAmount}\nThank you for your business!`;
-    const encoded = encodeURIComponent(text);
-    window.open(`https://api.whatsapp.com/send?phone=${customer.mobile}&text=${encoded}`, '_blank');
-  };
-
-  const parsedItems = Array.isArray(inv.items) ? inv.items : (typeof inv.items === 'string' ? JSON.parse(inv.items) : []);
-  const frames = parsedItems.filter((item: any) => (item.itemType?.toLowerCase() === 'frame' || item.type?.toLowerCase() === 'frame') && item.productType !== 'Sunglass');
-  const lenses = parsedItems.filter((item: any) => item.itemType?.toLowerCase() === 'lens' || item.type?.toLowerCase() === 'lens');
-  const sunglasses = parsedItems.filter((item: any) => (item.itemType?.toLowerCase() === 'frame' || item.type?.toLowerCase() === 'frame') && item.productType === 'Sunglass');
-  const accessories = parsedItems.filter((item: any) => item.itemType?.toLowerCase() === 'manual' || item.type?.toLowerCase() === 'manual');
-  
-  const productTotal = parsedItems.reduce((sum: number, item: any) => sum + (Number(item.finalAmount) || 0), 0);
-  const taxAmount = 0; // Tax is 0 based on current requirements
-  const grandTotal = productTotal - (Number(inv.totalDiscount) || 0) + taxAmount;
-  const balanceAmount = grandTotal - (Number(inv.advanceAmount) || 0);
-  const discountAmount = Number(inv.totalDiscount) || 0;
-  const advanceAmount = Number(inv.advanceAmount) || 0;
-
-
-  return (
+const newRender = `return (
     <div className="bg-[#0F172A] border border-white/10 rounded-2xl shadow-2xl flex flex-col gap-6 overflow-hidden text-white w-full">
       {/* 1. CUSTOMER DETAILS */}
       <div className="bg-[#1E293B] p-5 border-b border-white/5">
@@ -74,8 +45,8 @@ export function SalesOrderDetailCard({ inv, customer, prescription, onViewPrescr
                   }
                 }
                 return (
-                  <span key={status} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider border ${colorClass}`}>
-                    {isActive ? `✓ ${status}` : status}
+                  <span key={status} className={\`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider border \${colorClass}\`}>
+                    {isActive ? \`✓ \${status}\` : status}
                   </span>
                 );
              })}
@@ -322,56 +293,6 @@ export function SalesOrderDetailCard({ inv, customer, prescription, onViewPrescr
         </div>
       </div>
       
-      {/* ACTION BUTTONS */}
-      <div className="bg-[#1E293B] p-4 border-t border-white/5 flex flex-wrap gap-2 justify-end">
-         {prescription && onViewPrescription && (
-           <button 
-             onClick={() => onViewPrescription(prescription)}
-             className="px-4 py-2 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 font-bold text-[10px] uppercase tracking-widest rounded-lg border border-yellow-500/20 transition-colors flex items-center gap-2"
-           >
-             <Eye size={14} /> View Prescription
-           </button>
-         )}
-         {onPrintA5 && (
-           <button 
-             onClick={() => onPrintA5(inv)}
-             className="px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 font-bold text-[10px] uppercase tracking-widest rounded-lg border border-blue-500/20 transition-colors flex items-center gap-2"
-           >
-             <Printer size={14} /> Print Sales Order
-           </button>
-         )}
-         {onPrintA5 && (
-           <button 
-             onClick={() => onPrintA5(inv)}
-             className="px-4 py-2 bg-slate-700/50 hover:bg-slate-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-lg border border-white/10 transition-colors flex items-center gap-2"
-           >
-             <Download size={14} /> Download PDF
-           </button>
-         )}
-         <button 
-           onClick={handleShareWhatsApp}
-           className="px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 font-bold text-[10px] uppercase tracking-widest rounded-lg border border-emerald-500/20 transition-colors flex items-center gap-2"
-         >
-           <Send size={14} /> WhatsApp Order
-         </button>
-         {inv.status !== 'Delivered' && inv.status !== 'Cancelled' && onContinueBilling && (
-           <button 
-             onClick={() => onContinueBilling(inv)}
-             className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-black text-[10px] uppercase tracking-widest rounded-lg transition-colors flex items-center gap-2 shadow-lg shadow-purple-900/50"
-           >
-             <Play size={14} /> Continue Billing
-           </button>
-         )}
-         {inv.status !== 'Delivered' && inv.status !== 'Cancelled' && onEditOrder && (
-           <button 
-             onClick={() => onEditOrder(inv)}
-             className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white font-bold text-[10px] uppercase tracking-widest rounded-lg border border-white/10 transition-colors flex items-center gap-2"
-           >
-             <Edit size={14} /> Edit Order
-           </button>
-         )}
-      </div>
+      `;
 
-    </div>
-  );
-}
+fs.writeFileSync('components/SalesOrderDetailCard.tsx', beforeRender + newRender + afterButtons);
