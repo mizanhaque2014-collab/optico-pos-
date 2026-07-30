@@ -139,6 +139,8 @@ export default function Home() {
     sales_order: { id: 'sales_order', label: 'Sales Order', icon: <FileText size={16} />, action: () => navigateTo('sales_order') },
     delivery_collection: { id: 'delivery_collection', label: 'Delivery Collection', icon: <CheckCircle size={16} />, action: () => navigateTo('delivery_collection') },
     payments: { id: 'payments', label: 'Payments', icon: <CreditCard size={16} />, action: () => comingSoonAction('Payments') },
+    daily_sales_report: { id: 'daily_sales_report', label: 'Daily Sales Report', icon: <BarChart3 size={16} />, action: () => navigateTo('daily_sales_report') },
+    whatsapp_marketing: { id: 'whatsapp_marketing', label: 'WhatsApp Marketing', icon: <MessageSquare size={16} />, action: () => navigateTo('whatsapp_marketing') },
   };
 
   if (role === 'SUPER_ADMIN') {
@@ -157,23 +159,20 @@ export default function Home() {
       { id: 'dashboard_analytics', label: 'Dashboard Analytics', icon: <BarChart3 size={16} />, action: () => comingSoonAction('Dashboard Analytics') },
       { id: 'shop_settings', label: 'Shop Settings', icon: <Settings size={16} />, action: () => comingSoonAction('Shop Settings') },
       { id: 'system_settings', label: 'System Settings', icon: <Settings size={16} />, action: () => comingSoonAction('System Settings') },
-      { id: 'license_management', label: 'License Management', icon: <ShieldAlert size={16} />, action: () => comingSoonAction('License Management') },
       { id: 'api_config', label: 'API Configuration', icon: <Key size={16} />, action: () => comingSoonAction('API Configuration') },
-      { id: 'global_search', label: 'Global Search', icon: <Search size={16} />, action: () => comingSoonAction('Global Search') },
+      { id: 'license_management', label: 'License Management', icon: <ShieldAlert size={16} />, action: () => comingSoonAction('License Management') },
     ];
   } else if (role === 'COMPANY_ADMIN') {
     sidebarItems = [
-      commonItems.customers,
-      commonItems.inventory,
-      commonItems.prescriptions,
-      commonItems.direct_sale,
-      commonItems.sales_order,
-      commonItems.delivery_collection,
-      commonItems.payments,
       { id: 'company_reports', label: 'Company Reports', icon: <BarChart3 size={16} />, action: () => comingSoonAction('Company Reports') },
-      { id: 'company_users', label: 'Company Users', icon: <Users size={16} />, action: () => comingSoonAction('Company Users') },
-      { id: 'company_branches', label: 'Company Branches', icon: <Server size={16} />, action: () => comingSoonAction('Company Branches') },
-      { id: 'company_settings', label: 'Company Settings', icon: <Settings size={16} />, action: () => comingSoonAction('Company Settings') },
+      commonItems.whatsapp_marketing,
+      commonItems.daily_sales_report,
+      commonItems.inventory,
+      commonItems.payments,
+      commonItems.customers,
+      commonItems.sales_order,
+      commonItems.direct_sale,
+      commonItems.delivery_collection,
     ];
   } else {
     sidebarItems = [
@@ -181,16 +180,16 @@ export default function Home() {
       commonItems.sales_order,
       commonItems.delivery_collection,
       commonItems.customers,
-      commonItems.prescriptions,
       commonItems.inventory,
-      commonItems.payments,
+      commonItems.daily_sales_report,
+      commonItems.whatsapp_marketing,
     ];
   }
 
   // Security check: if current view is not allowed for SHOP_USER or COMPANY_ADMIN, redirect to dashboard
   
   useEffect(() => {
-    if (role === 'SHOP_USER' && !['dashboard', 'direct_sale', 'sales_order', 'delivery_collection', 'customers', 'stock_inventory', 'eye_test'].includes(currentView)) {
+    if (role === 'SHOP_USER' && !['dashboard', 'direct_sale', 'sales_order', 'delivery_collection', 'customers', 'stock_inventory', 'eye_test', 'daily_sales_report', 'whatsapp_marketing'].includes(currentView)) {
       setCurrentView('dashboard');
     }
     if (role === 'COMPANY_ADMIN' && ['companies', 'branches', 'users', 'system_settings', 'license_management', 'api_config', 'dashboard_analytics', 'global_search'].includes(currentView)) {
