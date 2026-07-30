@@ -56,7 +56,7 @@ export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
         console.log("[PROFILE DEBUG] Loading full customer history for customerId:", customer.id);
         
         // Execute both major API calls simultaneously
-        const [invs, history] = await Promise.all([
+        let [invs, history] = await Promise.all([
           invoiceService.getInvoicesByCustomer(customer.id).catch(e => {
             console.error("Failed to load invoices:", e);
             return [];
@@ -74,6 +74,25 @@ export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
           })
         ]);
         
+        // Load SalesOrderItems for each Sales Order
+        try {
+          const { apiCall } = await import('@/lib/apiClient');
+          await Promise.all(invs.map(async (inv) => {
+            if (inv.type === 'Sales Order' && (!inv.items || inv.items.length === 0)) {
+              try {
+                const items = await apiCall('getSalesOrderItems', { invoiceId: inv.id });
+                if (items && Array.isArray(items) && items.length > 0) {
+                  inv.items = items;
+                }
+              } catch (e) {
+                console.error("Failed to load SalesOrderItems for " + inv.id, e);
+              }
+            }
+          }));
+        } catch (e) {
+           console.error("Error fetching sales order items", e);
+        }
+
         setInvoices(invs.sort((a,b) => b.createdAt - a.createdAt));
         
         // Update eye tests and prescriptions with fetched results
