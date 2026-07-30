@@ -51,14 +51,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Frontend calls existing Users API
       const users = await userService.getUsers();
       // Since it's a frontend-only auth, we simulate validate credentials
-      const matchedUser = users.find(u => 
-        String(u.Username ?? "").trim().toLowerCase() === String(username ?? "").trim().toLowerCase() && 
-        u.Status === 'Active'
-      );
+      const userByUsername = users.find(u => String(u.Username ?? "").trim().toLowerCase() === String(username ?? "").trim().toLowerCase());
       
-      if (!matchedUser) {
+      if (!userByUsername) {
         throw new Error('Invalid Username or Password');
       }
+
+      if (!(String(userByUsername.Status).toUpperCase() === 'ACTIVE')) {
+        throw new Error('User account is not active');
+      }
+
+      const matchedUser = userByUsername;
 
       // Check password if provided and user has a password in DB
       if (password && matchedUser.Password && matchedUser.Password !== password) {
@@ -73,10 +76,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Map existing roles to new roles
       let assignedRole: Role = 'SHOP_USER';
-      if (matchedUser.Role === 'SuperAdmin') {
+      const roleStr = String(matchedUser.Role || '').toUpperCase();
+      if (roleStr.includes('SUPER') || roleStr === 'SUPER_ADMIN') {
          assignedRole = 'SUPER_ADMIN';
-      } else if (matchedUser.Role === 'CompanyAdmin') {
+      } else if (roleStr.includes('COMPANY') || roleStr === 'ADMIN' || roleStr.includes('ADMIN') && !roleStr.includes('SUPER')) {
          assignedRole = 'COMPANY_ADMIN';
+      } else if (roleStr.includes('STAFF') || roleStr.includes('OPERATOR') || roleStr.includes('USER')) {
+         assignedRole = 'SHOP_USER';
       }
 
       const newSession: AuthSession = {

@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { useAuth } from '@/lib/AuthContext';
 import {
   Building,
   Store,
@@ -65,6 +66,14 @@ export default function SuperAdminPortal() {
   const referenceTime = useMemo(() => getTimestamp(), []);
 
   // Authentication State
+  
+  const { session } = useAuth();
+  useEffect(() => {
+    if (session && session.role !== 'SUPER_ADMIN') {
+      router.push('/');
+    }
+  }, [session, router]);
+
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [emailInput, setEmailInput] = useState<string>('');
   const [passwordInput, setPasswordInput] = useState<string>('');

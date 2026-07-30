@@ -601,7 +601,7 @@ export function WhatsAppMarketingView({ onBack }: Props) {
 
     const htmlContent = `
       <div>
-      <head>
+      <div class="head">
         <title>Customer Net Promoter Score & Feedback Audit</title>
         <style>
           body { font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1e293b; padding: 40px; }
@@ -616,8 +616,8 @@ export function WhatsAppMarketingView({ onBack }: Props) {
           td { border-bottom: 1px solid #e2e8f0; padding: 8px; }
           .footer { margin-top: 40px; text-align: center; font-size: 10px; color: #94a3b8; }
         </style>
-      </head>
-      <body>
+      </div>
+      <div class="body">
         <div class="logo-header">
           <div>
             <h1>Customer NPS Survey & Loyalty Ledger</h1>
@@ -664,7 +664,7 @@ export function WhatsAppMarketingView({ onBack }: Props) {
           Business Intelligence Module • Confidantial Management Report • System Ref: NPS-AUDIT
         </div>
         <script>window.onload = function() { window.print(); }</script>
-      </body>
+      </div>
       </div>
     `;
 

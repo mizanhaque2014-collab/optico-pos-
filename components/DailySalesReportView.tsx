@@ -776,9 +776,9 @@ ${shopConfig.shopName} Audit Officer`;
       `;
     }).join('');
 
-    const printHtml = `
+    const printContent = `
       <div>
-      <head>
+      <div class="head">
         <title>Professional ${shopConfig.shopName} performance Audit</title>
         <style>
           body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #1e293b; padding: 40px; }
@@ -795,8 +795,8 @@ ${shopConfig.shopName} Audit Officer`;
           .section-title { font-size: 14px; font-weight: 900; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; margin-top: 25px; text-transform: uppercase; color: #0f172a; }
           .footer { margin-top: 50px; text-align: center; font-size: 10px; color: #94a3b8; }
         </style>
-      </head>
-      <body>
+      </div>
+      <div class="body">
         <div class="header">
           <div>
             <div class="title">Optical POS Business Summary</div>
@@ -895,12 +895,12 @@ ${shopConfig.shopName} Audit Officer`;
         <script>
           window.onload = function() { window.print(); }
         </script>
-      </body>
+      </div>
       </div>
     `;
 
     printWindow.document.open();
-    printWindow.document.write(printHtml);
+    printWindow.document.write(printContent);
     printWindow.document.close();
   };
 

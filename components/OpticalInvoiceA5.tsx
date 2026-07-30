@@ -537,17 +537,17 @@ export function OpticalInvoiceA5({
                 <div className="w-8 h-8 bg-white border border-slate-350 p-0.5 flex flex-wrap justify-between content-between shadow-sm">
                   {/* Visual grid representing a premium QR Code standard */}
                   <div className="w-2.5 h-2.5 bg-slate-950 flex flex-wrap p-[1px]">
-                    <div className="w-full h-full bg-white p-[1px]"><div className="w-full h-full bg-slate-950"></div></div>
+                    <div className="w-full h-full bg-white p-[1px]"><div className="w-full h-full bg-slate-950"></div></div></div>
                   </div>
                   <div className="w-1 h-2.5 bg-slate-950"></div>
                   <div className="w-2.5 h-2.5 bg-slate-950 flex flex-wrap p-[1px]">
-                    <div className="w-full h-full bg-white p-[1px]"><div className="w-full h-full bg-slate-950"></div></div>
+                    <div className="w-full h-full bg-white p-[1px]"><div className="w-full h-full bg-slate-950"></div>
                   </div>
                   <div className="w-1.5 h-1.5 bg-slate-950"></div>
                   <div className="w-2 h-2 bg-slate-950"></div>
                   <div className="w-1.5 h-1 text-[2px]"></div>
                   <div className="w-2.5 h-2.5 bg-slate-950 flex flex-wrap p-[1px]">
-                    <div className="w-full h-full bg-white p-[1px]"><div className="w-full h-full bg-slate-950"></div></div>
+                    <div className="w-full h-full bg-white p-[1px]"><div className="w-full h-full bg-slate-950"></div>
                   </div>
                   <div className="w-2.5 h-1 bg-slate-950"></div>
                   <div className="w-1 h-2 bg-slate-950"></div>
@@ -565,5 +565,6 @@ export function OpticalInvoiceA5({
         </div>
       </div>
     </div>
+  </div>
   );
 }
