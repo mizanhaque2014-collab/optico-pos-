@@ -1,6 +1,6 @@
 import { apiCall } from '../apiClient';
 import { Invoice } from '../types';
-
+import { normalizeInvoice } from '../dataMapping';
 
 function mapInvoiceToPascalCase(invoice: any) {
   return {
@@ -29,58 +29,21 @@ function mapInvoiceToPascalCase(invoice: any) {
   };
 }
 
-function mapPascalCaseToInvoice(data: any): Invoice {
-  // Try parsing items
-  let parsedItems = [];
-  try {
-    parsedItems = typeof data.Items === 'string' ? JSON.parse(data.Items) : data.Items;
-  } catch (e) {
-    parsedItems = [];
-  }
-  
-  return {
-    id: data.InvoiceID || data.id || data.Id || data.ID,
-    invoiceNumber: data.InvoiceNumber || data.invoiceNumber || data.InvoiceID || data.id || data.InvoiceNo,
-    type: data.InvoiceType || data.type || data.Type || data.invoiceType,
-    customerId: data.CustomerID || data.customerId || data.CustomerId,
-    prescriptionId: data.PrescriptionID || data.prescriptionId,
-    items: parsedItems || data.items || [],
-    subTotal: data.SubTotal || data.subTotal || 0,
-    totalDiscount: data.Discount || data.totalDiscount || 0,
-    grandTotal: data.GrandTotal || data.grandTotal || 0,
-    paymentMode: data.PaymentMode || data.paymentMode || 'Cash',
-    paymentDetail: {
-      cash: data.CashAmount || 0,
-      upi: data.UPIAmount || 0,
-      card: data.CardAmount || 0,
-      total: (data.CashAmount || 0) + (data.UPIAmount || 0) + (data.CardAmount || 0),
-      cardLast4: data.CardReference || '',
-      upiTransactionId: data.UPIReference || '',
-      remarks: data.BillingRemarks || ''
-    },
-    advanceAmount: data.Advance || data.advanceAmount || 0,
-    balanceAmount: data.Balance || data.balanceAmount || 0,
-    status: data.Status || data.status || 'Delivered',
-    createdAt: data.CreatedDate ? new Date(data.CreatedDate).getTime() : Date.now(),
-    updatedAt: data.UpdatedAt ? new Date(data.UpdatedAt).getTime() : Date.now(),
-  } as Invoice;
-}
-
 export const invoiceService = {
   async createInvoice(invoice: Invoice): Promise<Invoice> {
     const pascal = mapInvoiceToPascalCase(invoice);
     const payload = { ...invoice, ...pascal };
     try {
       const data = await apiCall<any>('saveInvoice', payload);
-      return data && data.id ? data : invoice;
+      return data && data.id ? normalizeInvoice(data) : invoice;
     } catch (e: any) {
       if (e.message && e.message.includes('Unsupported action')) {
         if (invoice.type === 'Sales Order' || (invoice.type as any) === 'SalesOrder') {
            const fallbackData = await apiCall<any>('saveSalesOrder', { salesOrder: payload });
-           return fallbackData && fallbackData.id ? fallbackData : invoice;
+           return fallbackData && fallbackData.id ? normalizeInvoice(fallbackData) : invoice;
         } else {
            const fallbackData = await apiCall<any>('saveDeliveryCollection', { invoice: payload });
-           return fallbackData && fallbackData.id ? fallbackData : invoice;
+           return fallbackData && fallbackData.id ? normalizeInvoice(fallbackData) : invoice;
         }
       }
       throw e;
@@ -92,15 +55,15 @@ export const invoiceService = {
     const payload = { ...invoice, ...pascal };
     try {
       const data = await apiCall<any>('saveInvoice', payload);
-      return data && data.id ? data : invoice;
+      return data && data.id ? normalizeInvoice(data) : invoice;
     } catch (e: any) {
       if (e.message && e.message.includes('Unsupported action')) {
         if (invoice.type === 'Sales Order' || (invoice.type as any) === 'SalesOrder') {
            const fallbackData = await apiCall<any>('saveSalesOrder', { salesOrder: payload });
-           return fallbackData && fallbackData.id ? fallbackData : invoice;
+           return fallbackData && fallbackData.id ? normalizeInvoice(fallbackData) : invoice;
         } else {
            const fallbackData = await apiCall<any>('saveDeliveryCollection', { invoice: payload });
-           return fallbackData && fallbackData.id ? fallbackData : invoice;
+           return fallbackData && fallbackData.id ? normalizeInvoice(fallbackData) : invoice;
         }
       }
       throw e;
@@ -115,7 +78,7 @@ export const invoiceService = {
     try {
       const data = await apiCall<any[]>('getInvoices');
       if (Array.isArray(data)) {
-        return data.map(mapPascalCaseToInvoice);
+        return data.map(normalizeInvoice);
       }
     } catch (e) {
       console.warn('getInvoices API failed, loading from local cache:', e);
@@ -126,7 +89,7 @@ export const invoiceService = {
   async getInvoiceById(invoiceId: string): Promise<Invoice | null> {
     try {
       const data = await apiCall<any>('getInvoiceById', { invoiceId });
-      return data ? mapPascalCaseToInvoice(data) : null;
+      return data ? normalizeInvoice(data) : null;
     } catch (e) {
       console.warn('getInvoiceById API failed:', e);
       const list = await this.getInvoices();
@@ -138,7 +101,7 @@ export const invoiceService = {
     try {
       const data = await apiCall<any[]>('getInvoicesByCustomer', { customerId });
       if (Array.isArray(data) && data.length > 0) {
-        return data.map(mapPascalCaseToInvoice);
+        return data.map(normalizeInvoice);
       }
     } catch (e) {
       console.warn('getInvoicesByCustomer API failed:', e);
@@ -152,7 +115,7 @@ export const invoiceService = {
     try {
       const data = await apiCall<any[]>('searchInvoices', { keyword });
       if (Array.isArray(data)) {
-        return data.map(mapPascalCaseToInvoice);
+        return data.map(normalizeInvoice);
       }
     } catch (e) {
       console.warn('searchInvoices API failed:', e);

@@ -1,78 +1,10 @@
 import { apiCall } from '../apiClient';
 import { Customer } from '../types';
+import { normalizeCustomer, normalizePrescription, normalizeEyeTest, normalizeInvoice } from '../dataMapping';
 
 const STORAGE_KEY = 'opt_customers';
 
-export function sanitizeCustomer(c: any): Customer {
-  if (!c) {
-    return {
-      id: '',
-      name: '',
-      mobile: '',
-      dob: '',
-      address: '',
-      status: 'Buyer',
-      prescriptions: [],
-      createdAt: Date.now()
-    };
-  }
-
-  // 1. Resolve ID
-  const id = String(c.id || c.CustomerID || c.customerid || c.customerId || '');
-
-  // 2. Resolve Name
-  const name = String(c.name || c.CustomerName || c.customername || c.customerName || '');
-
-  // 3. Resolve Mobile
-  const mobile = String(c.mobile || c.Mobile || c.mobilenumber || c.mobileNumber || '');
-
-  // 4. Resolve DOB
-  const dob = c.dob || c.DOB || c.dateofbirth || c.dateOfBirth || '';
-
-  // 5. Resolve Address
-  const address = c.address || c.Address || '';
-
-  // 6. Resolve Status
-  const status = c.status || c.Status || 'Buyer';
-
-  // 7. Resolve Prescriptions
-  let prescriptions: any[] = [];
-  const rawPrescriptions = c.prescriptions || c.Prescriptions;
-  if (rawPrescriptions) {
-    if (typeof rawPrescriptions === 'string') {
-      try {
-        prescriptions = JSON.parse(rawPrescriptions);
-      } catch (e) {
-        console.warn("Failed to parse prescriptions JSON in customer:", id, e);
-      }
-    } else if (Array.isArray(rawPrescriptions)) {
-      prescriptions = rawPrescriptions;
-    }
-  }
-
-  // 8. Resolve CreatedAt
-  let createdAt = Date.now();
-  const rawCreatedAt = c.createdAt || c.createdat || c.createdate || c.CreatedDate || c.createddate || c.createdAtDate;
-  if (rawCreatedAt) {
-    const parsedDate = new Date(rawCreatedAt);
-    if (!isNaN(parsedDate.getTime())) {
-      createdAt = parsedDate.getTime();
-    } else if (typeof rawCreatedAt === 'number' && rawCreatedAt > 0) {
-      createdAt = rawCreatedAt;
-    }
-  }
-
-  return {
-    id,
-    name,
-    mobile,
-    dob,
-    address,
-    status,
-    prescriptions,
-    createdAt
-  };
-}
+export const sanitizeCustomer = normalizeCustomer;
 
 export const customerService = {
   // New Endpoint: Create customer
@@ -251,9 +183,9 @@ export const customerService = {
       if (res && res.customer) {
         return {
           customer: sanitizeCustomer(res.customer),
-          prescriptions: Array.isArray(res.prescriptions) ? res.prescriptions : [],
-          eyeTests: Array.isArray(res.eyeTests) ? res.eyeTests : [],
-          invoices: Array.isArray(res.invoices) ? res.invoices : [],
+          prescriptions: Array.isArray(res.prescriptions) ? res.prescriptions.map(normalizePrescription) : [],
+          eyeTests: Array.isArray(res.eyeTests) ? res.eyeTests.map(normalizeEyeTest) : [],
+          invoices: Array.isArray(res.invoices) ? res.invoices.map(normalizeInvoice) : [],
           payments: Array.isArray(res.payments) ? res.payments : [],
         };
       }

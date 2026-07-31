@@ -1,4 +1,5 @@
 import { apiCall } from '../apiClient';
+import { normalizeEyeTest } from '../dataMapping';
 
 export interface EyeTestRecord {
   id: string;
@@ -32,12 +33,13 @@ export const eyeTestService = {
     console.log("ENTER saveEyeTest");
     console.log("INPUT: eyeTest =", eyeTest);
     try {
-      const res = await apiCall<EyeTestRecord>('saveEyeTest', { eyeTestDetails: eyeTest });
+      const res = await apiCall<any>('saveEyeTest', { eyeTestDetails: eyeTest });
       if (res && res.id) {
-        this.saveLocalEyeTest(res);
+        const normalized = normalizeEyeTest(res);
+        this.saveLocalEyeTest(normalized);
         console.log("EXIT saveEyeTest");
-        console.log("RETURN/OUTPUT:", res);
-        return res;
+        console.log("RETURN/OUTPUT:", normalized);
+        return normalized;
       }
     } catch (e) {
       console.warn('saveEyeTest API failed, saving locally:', e);
@@ -56,10 +58,10 @@ export const eyeTestService = {
 
   async loadEyeTestHistory(customerId: string): Promise<EyeTestRecord[]> {
     try {
-      const res = await apiCall<EyeTestRecord[]>('loadEyeTests', { customerId });
+      const res = await apiCall<any[]>('loadEyeTests', { customerId });
       if (Array.isArray(res)) {
         // Filter and map to standard record properties just in case
-        return res.sort((a, b) => b.createdAt - a.createdAt);
+        return res.map(normalizeEyeTest).sort((a: any, b: any) => b.createdAt - a.createdAt);
       }
     } catch (e) {
       console.warn('loadEyeTests API failed, getting from local storage:', e);

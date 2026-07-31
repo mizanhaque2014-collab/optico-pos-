@@ -77,47 +77,10 @@ export function mapRawToPascal(p: any): PrescriptionPascal {
 }
 
 // Convert from PascalCase (API/DB representation) to Standard (Frontend state representation)
+import { normalizePrescription } from '../dataMapping';
+
 export function mapPascalToStandard(p: PrescriptionPascal | any): any {
-  const o = mapRawToPascal(p);
-  return {
-    id: o.PrescriptionID,
-    source: o.Source || 'Eye Test Performed In Shop',
-    sphOd: o.OD_Distance_SPH,
-    cylOd: o.OD_Distance_CYL,
-    axisOd: o.OD_Distance_AXIS,
-    sphOs: o.OS_Distance_SPH,
-    cylOs: o.OS_Distance_CYL,
-    axisOs: o.OS_Distance_AXIS,
-    addPower: o.AddPower,
-    pdDistance: o.PD_Distance,
-    pdNear: o.PD_Near,
-    remarks: o.Remarks,
-    optometristName: o.DoctorName,
-    eyeTestDate: o.ExamDate,
-    complaint: o.Complaint,
-    diagnosis: o.Diagnosis,
-    advice: o.Advice,
-    createdAt: o.CreatedDate || Date.now(),
-    
-    // Nested structure for compatibility with standard types
-    rightEye: {
-      sph: o.OD_Distance_SPH,
-      cyl: o.OD_Distance_CYL,
-      axis: o.OD_Distance_AXIS,
-      add: o.AddPower,
-    },
-    leftEye: {
-      sph: o.OS_Distance_SPH,
-      cyl: o.OS_Distance_CYL,
-      axis: o.OS_Distance_AXIS,
-      add: o.AddPower,
-    },
-    eyeTestDetails: {
-      optometristName: o.DoctorName,
-      eyeTestDate: o.ExamDate,
-      remarks: o.Remarks,
-    }
-  };
+  return normalizePrescription(p);
 }
 
 // Standalone overloaded function for object-literal assignment

@@ -1,5 +1,6 @@
 import { apiCall } from '../apiClient';
 import { StockItem } from '../types';
+import { normalizeStockItem } from '../dataMapping';
 
 const STORAGE_KEY = 'opt_stock_inventory';
 
@@ -30,12 +31,13 @@ export const inventoryService = {
 
   async getInventory(): Promise<StockItem[]> {
     try {
-      const data = await apiCall<StockItem[]>('getInventory');
+      const data = await apiCall<any[]>('getInventory');
       if (Array.isArray(data)) {
+        const normalized = data.map(normalizeStockItem);
         if (typeof window !== 'undefined') {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
         }
-        return data;
+        return normalized;
       }
     } catch (e) {
       console.warn('getInventory API failed, loading from local cache:', e);
@@ -43,7 +45,7 @@ export const inventoryService = {
 
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? JSON.parse(stored) : [];
+      return stored ? JSON.parse(stored).map(normalizeStockItem) : [];
     }
     return [];
   },
