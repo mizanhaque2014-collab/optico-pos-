@@ -1099,6 +1099,77 @@ function saveInventory(item) {
     sheet.appendRow(rowData);
     SpreadsheetApp.flush();
   }
+  
+  // Also save items to SalesOrderItems sheet to prevent data loss
+  var itemsToSave = inv.items || inv.Items;
+  if (typeof itemsToSave === 'string') {
+    try { itemsToSave = JSON.parse(itemsToSave); } catch(e) { itemsToSave = []; }
+  }
+  if (itemsToSave && itemsToSave.length > 0) {
+    var itemsSheet = getSalesOrderItemsSheet();
+    var itemsHeaders = itemsSheet.getRange(1, 1, 1, itemsSheet.getLastColumn()).getValues()[0];
+    
+    // Delete existing for this invoice
+    var itemsLastRow = itemsSheet.getLastRow();
+    if (itemsLastRow > 1) {
+      var dataRange = itemsSheet.getRange(2, 1, itemsLastRow - 1, itemsHeaders.length);
+      var data = dataRange.getValues();
+      var rowsToDelete = [];
+      for (var i = data.length - 1; i >= 0; i--) {
+        if (data[i][1] === inv.id || data[i][1] === inv.InvoiceID) {
+          rowsToDelete.push(i + 2);
+        }
+      }
+      rowsToDelete.forEach(function(rowNum) {
+        itemsSheet.deleteRow(rowNum);
+      });
+    }
+    
+    var createdDate = inv.createdAt || inv.CreatedDate || Date.now();
+    itemsToSave.forEach(function(item) {
+      var itemRowData = [];
+      for (var k = 0; k < itemsHeaders.length; k++) {
+        var key = itemsHeaders[k];
+        if (key === 'CreatedDate') {
+          itemRowData.push(createdDate);
+        } else if (key === 'InvoiceID' || key === 'SalesOrderID') {
+          itemRowData.push(inv.id || inv.InvoiceID);
+        } else if (key === 'Category') {
+          itemRowData.push(item.category || item.type || item.itemType || '');
+        } else if (key === 'ProductSource') {
+          itemRowData.push(item.productSource || (item.inventoryId ? 'Inventory' : 'Manual'));
+        } else if (key === 'ProductID' || key === 'InventoryID') {
+          itemRowData.push(item.id || item.inventoryId || '');
+        } else if (key === 'Qty') {
+          itemRowData.push(item.quantity || item.qty || item.Qty || 0);
+        } else if (key === 'UnitPrice') {
+          itemRowData.push(item.sellingPrice || item.unitPrice || item.UnitPrice || 0);
+        } else if (key === 'Total') {
+          itemRowData.push(item.finalAmount || item.total || item.Total || 0);
+        } else if (key === 'Model') {
+          itemRowData.push(item.modelNumber || item.model || item.Model || '');
+        } else if (key === 'Description') {
+          itemRowData.push(item.description || item.productType || item.lensCategory || item.Description || '');
+        } else if (key === 'LensBrand') {
+          itemRowData.push(item.lensBrand || item.brand || item.Brand || '');
+        } else if (key === 'LensType') {
+          itemRowData.push(item.lensCategory || item.lensType || item.LensType || '');
+        } else if (key === 'CustomerID') {
+          itemRowData.push(inv.customerId || inv.CustomerID || '');
+        } else if (key === 'CompanyID') {
+          itemRowData.push(inv.companyId || inv.CompanyID || '');
+        } else if (key === 'BranchID') {
+          itemRowData.push(inv.branchId || inv.BranchID || '');
+        } else {
+          var val = item[key] || item[key.charAt(0).toLowerCase() + key.slice(1)];
+          if (val === undefined || val === null) val = "";
+          itemRowData.push(val);
+        }
+      }
+      itemsSheet.appendRow(itemRowData);
+    });
+    SpreadsheetApp.flush();
+  }
   return item;
 }
 
@@ -1206,6 +1277,23 @@ function getInvoices() {
   var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
   var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
   var invoices = [];
+  // Pre-load items from SalesOrderItems sheet
+  var itemsSheet = getSalesOrderItemsSheet();
+  var itemsLastRow = itemsSheet.getLastRow();
+  var allItems = [];
+  var itemsHeaders = [];
+  if (itemsLastRow > 1) {
+    itemsHeaders = itemsSheet.getRange(1, 1, 1, itemsSheet.getLastColumn()).getValues()[0];
+    var itemsData = itemsSheet.getRange(2, 1, itemsLastRow - 1, itemsHeaders.length).getValues();
+    for (var m = 0; m < itemsData.length; m++) {
+      var obj = {};
+      for (var n = 0; n < itemsHeaders.length; n++) {
+        obj[itemsHeaders[n]] = itemsData[m][n];
+      }
+      allItems.push(obj);
+    }
+  }
+
   for (var i = 0; i < values.length; i++) {
     var row = values[i];
     var inv = {};
@@ -1229,6 +1317,30 @@ function getInvoices() {
       }
       inv[key] = val;
     }
+    
+    // Attach items from SalesOrderItems if not present in the 'items' column
+    if (!inv.items || inv.items.length === 0) {
+      var invId = inv.id || inv.InvoiceID || inv.invoiceNumber;
+      inv.items = allItems.filter(function(item) {
+        return item.InvoiceID === invId || item.SalesOrderID === invId || item.InvoiceID === inv.id;
+      }).map(function(item) {
+        // Map back to camelCase properties typical for frontend
+        var mappedItem = {};
+        for(var k in item) {
+           var newKey = k.charAt(0).toLowerCase() + k.slice(1);
+           if (k === 'ProductID' || k === 'InventoryID') newKey = 'id';
+           else if (k === 'Category') newKey = 'itemType';
+           else if (k === 'Qty') newKey = 'quantity';
+           else if (k === 'UnitPrice') newKey = 'sellingPrice';
+           else if (k === 'Total') newKey = 'finalAmount';
+           else if (k === 'Model') newKey = 'modelNumber';
+           else if (k === 'LensType') newKey = 'lensCategory';
+           mappedItem[newKey] = item[k];
+        }
+        return mappedItem;
+      });
+    }
+    
     invoices.push(inv);
   }
   return invoices;

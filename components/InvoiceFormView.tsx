@@ -313,21 +313,6 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
     try {
       await invoiceService.createInvoice(newInvoice as any);
       
-      if (type === 'Sales Order') {
-        const payload = {
-          invoiceId: newInvoice.id,
-          items: newInvoice.items
-        };
-        const { apiCall } = await import('@/lib/apiClient');
-        await apiCall('saveSalesOrderItems', payload);
-        
-        // Read back to verify
-        const savedItems = await apiCall('getSalesOrderItems', { invoiceId: newInvoice.id });
-        if (!savedItems || !Array.isArray(savedItems) || savedItems.length === 0) {
-          throw new Error('Sales Order Items were not saved.');
-        }
-      }
-
       setIsInvoiceSaved(true);
       setSavedInvoice(newInvoice);
     } catch (err: any) {
