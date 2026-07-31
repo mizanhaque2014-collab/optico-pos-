@@ -298,17 +298,11 @@ function doPost(e) {
         break;
             
       case 'createInvoice':
-      case 'saveInvoice':
-        result = saveInvoice(payload.invoice || payload);
-        break;
       case 'updateInvoice':
         result = saveInvoice(payload.invoice || payload);
         break;
       case 'deleteInvoice':
         result = deleteInvoice(payload.invoiceId || payload.InvoiceID || payload.id || e.parameter.invoiceId || e.parameter.id);
-        break;
-      case 'getInvoices':
-        result = getInvoices();
         break;
       case 'getInvoiceById':
         result = getInvoiceById(payload.invoiceId || payload.InvoiceID || payload.id || e.parameter.invoiceId || e.parameter.id);
@@ -318,15 +312,6 @@ function doPost(e) {
         break;
       case 'searchInvoices':
         result = searchInvoices(payload.keyword || payload.search || payload.query || e.parameter.keyword || e.parameter.query);
-        break;
-      case 'getPrescriptionsByCustomer':
-        result = getPrescriptionsByCustomer(payload.customerId || payload.CustomerID || e.parameter.customerId);
-        break;
-      case 'getPrescriptionById':
-        result = getPrescriptionById(payload.prescriptionId || payload.PrescriptionID || payload.id || e.parameter.prescriptionId || e.parameter.id);
-        break;
-      case 'deletePrescription':
-        result = deletePrescription(payload.prescriptionId || payload.PrescriptionID || payload.id || e.parameter.prescriptionId || e.parameter.id);
         break;
 
       case 'saveInvoiceItem':
@@ -447,63 +432,6 @@ function doGet(e) {
     var result;
     
     switch (action) {
-      case 'searchCustomerByMobile':
-        result = searchCustomerByMobile(e.parameter.mobile);
-        break;
-      case 'searchCustomerByName':
-        result = searchCustomerByName(e.parameter.name);
-        break;
-      case 'getCustomerById':
-        result = getCustomerById(e.parameter.customerId || e.parameter.id);
-        break;
-      case 'loadCustomerHistory':
-        result = loadCustomerHistory(e.parameter.customerId || e.parameter.id);
-        break;
-      case 'getCustomers':
-        result = getCustomers();
-        break;
-      case 'getUserById':
-        result = getUserById(e.parameter.userId || e.parameter.id);
-        break;
-      case 'searchUser':
-        result = searchUser(e.parameter.query);
-        break;
-      case 'getUsers':
-        result = getUsers();
-        break;
-      case 'getCompanyById':
-        result = getCompanyById(e.parameter.companyId || e.parameter.id);
-        break;
-      case 'searchCompany':
-        result = searchCompany(e.parameter.query);
-        break;
-      case 'getCompanies':
-        result = getCompanies();
-        break;
-      case 'getBranchById':
-        result = getBranchById(e.parameter.branchId || e.parameter.id);
-        break;
-      case 'getBranches':
-        result = getBranches();
-        break;
-      case 'getPrescriptions':
-        result = getPrescriptions();
-        break;
-      case 'getPrescriptionById':
-        result = getPrescriptionById(e.parameter.prescriptionId || e.parameter.id);
-        break;
-      case 'getPrescriptionsByCustomer':
-        result = getPrescriptionsByCustomer(e.parameter.customerId);
-        break;
-      case 'searchPrescription':
-        result = searchPrescription(e.parameter.query);
-        break;
-      case 'getInventory':
-        result = getInventory();
-        break;
-      case 'searchInventory':
-        result = searchInventory(e.parameter.query);
-        break;
       default:
         throw new Error("Unsupported GET action: " + action);
     }
