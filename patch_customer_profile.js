@@ -1,57 +1,14 @@
 const fs = require('fs');
 let code = fs.readFileSync('components/CustomerProfileView.tsx', 'utf8');
 
-// We need to fetch items for Sales Orders
-const injection = `
-        // Execute both major API calls simultaneously
-        const [invs, history] = await Promise.all([
-          invoiceService.getInvoicesByCustomer(customer.id).catch(e => {
-            console.error("Failed to load invoices:", e);
-            return [];
-          }),
-          customerService.loadCustomerHistory(customer.id).catch(async (e) => {
-`;
+code = code.replace(
+  "const directSaleInvoices = invoices.filter(i => i.type === 'Direct Sale');",
+  "const directSaleInvoices = invoices.filter(i => i.type === 'Direct Sale' || i.type === 'DirectSale');"
+);
 
-const replacement = `
-        // Execute both major API calls simultaneously
-        let [invs, history] = await Promise.all([
-          invoiceService.getInvoicesByCustomer(customer.id).catch(e => {
-            console.error("Failed to load invoices:", e);
-            return [];
-          }),
-          customerService.loadCustomerHistory(customer.id).catch(async (e) => {
-`;
-
-if (code.includes(injection)) {
-  code = code.replace(injection, replacement);
-  
-  const fetchItemsInjection = `
-        setInvoices(invs.sort((a,b) => b.createdAt - a.createdAt));
-`;
-
-  const fetchItemsReplacement = `
-        // Load SalesOrderItems for each Sales Order
-        try {
-          const { apiCall } = await import('@/lib/apiClient');
-          await Promise.all(invs.map(async (inv) => {
-            if (inv.type === 'Sales Order' && (!inv.items || inv.items.length === 0)) {
-              try {
-                const items = await apiCall('getSalesOrderItems', { invoiceId: inv.id });
-                if (items && Array.isArray(items) && items.length > 0) {
-                  inv.items = items;
-                }
-              } catch (e) {
-                console.error("Failed to load SalesOrderItems for " + inv.id, e);
-              }
-            }
-          }));
-        } catch (e) {
-           console.error("Error fetching sales order items", e);
-        }
-
-        setInvoices(invs.sort((a,b) => b.createdAt - a.createdAt));
-`;
-  code = code.replace(fetchItemsInjection, fetchItemsReplacement);
-}
+code = code.replace(
+  "const salesOrders = invoices.filter(i => i.type === 'Sales Order');",
+  "const salesOrders = invoices.filter(i => i.type === 'Sales Order' || i.type === 'SalesOrder');"
+);
 
 fs.writeFileSync('components/CustomerProfileView.tsx', code);

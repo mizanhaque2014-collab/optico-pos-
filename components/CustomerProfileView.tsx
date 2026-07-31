@@ -25,8 +25,8 @@ export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   
   // Separate into Invoices (Direct Sale) and Sales Orders
-  const directSaleInvoices = invoices.filter(i => i.type === 'Direct Sale');
-  const salesOrders = invoices.filter(i => i.type === 'Sales Order');
+  const directSaleInvoices = invoices.filter(i => i.type === 'Direct Sale' || i.type === ('DirectSale' as any));
+  const salesOrders = invoices.filter(i => i.type === 'Sales Order' || i.type === ('SalesOrder' as any));
 
   const totalSpent = invoices.reduce((sum, inv) => sum + inv.grandTotal, 0);
 

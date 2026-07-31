@@ -39,10 +39,10 @@ function mapPascalCaseToInvoice(data: any): Invoice {
   }
   
   return {
-    id: data.InvoiceID || data.id,
-    invoiceNumber: data.InvoiceNumber || data.InvoiceID || data.invoiceNumber,
-    type: data.InvoiceType || data.type,
-    customerId: data.CustomerID || data.customerId,
+    id: data.InvoiceID || data.id || data.Id || data.ID,
+    invoiceNumber: data.InvoiceNumber || data.invoiceNumber || data.InvoiceID || data.id || data.InvoiceNo,
+    type: data.InvoiceType || data.type || data.Type || data.invoiceType,
+    customerId: data.CustomerID || data.customerId || data.CustomerId,
     prescriptionId: data.PrescriptionID || data.prescriptionId,
     items: parsedItems || data.items || [],
     subTotal: data.SubTotal || data.subTotal || 0,
@@ -68,13 +68,43 @@ function mapPascalCaseToInvoice(data: any): Invoice {
 
 export const invoiceService = {
   async createInvoice(invoice: Invoice): Promise<Invoice> {
-    const data = await apiCall<any>('saveInvoice', invoice);
-    return data && data.id ? data : invoice;
+    const pascal = mapInvoiceToPascalCase(invoice);
+    const payload = { ...invoice, ...pascal };
+    try {
+      const data = await apiCall<any>('saveInvoice', payload);
+      return data && data.id ? data : invoice;
+    } catch (e: any) {
+      if (e.message && e.message.includes('Unsupported action')) {
+        if (invoice.type === 'Sales Order' || (invoice.type as any) === 'SalesOrder') {
+           const fallbackData = await apiCall<any>('saveSalesOrder', { salesOrder: payload });
+           return fallbackData && fallbackData.id ? fallbackData : invoice;
+        } else {
+           const fallbackData = await apiCall<any>('saveDeliveryCollection', { invoice: payload });
+           return fallbackData && fallbackData.id ? fallbackData : invoice;
+        }
+      }
+      throw e;
+    }
   },
 
   async updateInvoice(invoice: Invoice): Promise<Invoice> {
-    const data = await apiCall<any>('saveInvoice', invoice);
-    return data && data.id ? data : invoice;
+    const pascal = mapInvoiceToPascalCase(invoice);
+    const payload = { ...invoice, ...pascal };
+    try {
+      const data = await apiCall<any>('saveInvoice', payload);
+      return data && data.id ? data : invoice;
+    } catch (e: any) {
+      if (e.message && e.message.includes('Unsupported action')) {
+        if (invoice.type === 'Sales Order' || (invoice.type as any) === 'SalesOrder') {
+           const fallbackData = await apiCall<any>('saveSalesOrder', { salesOrder: payload });
+           return fallbackData && fallbackData.id ? fallbackData : invoice;
+        } else {
+           const fallbackData = await apiCall<any>('saveDeliveryCollection', { invoice: payload });
+           return fallbackData && fallbackData.id ? fallbackData : invoice;
+        }
+      }
+      throw e;
+    }
   },
 
   async deleteInvoice(invoiceId: string): Promise<void> {
@@ -107,14 +137,15 @@ export const invoiceService = {
   async getInvoicesByCustomer(customerId: string): Promise<Invoice[]> {
     try {
       const data = await apiCall<any[]>('getInvoicesByCustomer', { customerId });
-      if (Array.isArray(data)) {
+      if (Array.isArray(data) && data.length > 0) {
         return data.map(mapPascalCaseToInvoice);
       }
     } catch (e) {
       console.warn('getInvoicesByCustomer API failed:', e);
     }
+    // Fallback: If empty or unsupported, fetch all and filter locally
     const list = await this.getInvoices();
-    return list.filter(i => i.customerId === customerId);
+    return list.filter(i => i.customerId === customerId || (i as any).CustomerId === customerId || (i as any).CustomerID === customerId);
   },
 
   async searchInvoices(keyword: string): Promise<Invoice[]> {
