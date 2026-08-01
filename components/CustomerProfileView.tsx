@@ -64,7 +64,12 @@ export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
         console.log("[PROFILE DEBUG] Loading full customer history for customerId:", customer.id);
         
         // Execute both major API calls simultaneously
-        const history = await customerService.loadCustomerHistory(customer.id).catch(async (e) => {
+        let [invs, history] = await Promise.all([
+          invoiceService.getInvoicesByCustomer(customer.id).catch(e => {
+            console.error("Failed to load invoices:", e);
+            return [];
+          }),
+          customerService.loadCustomerHistory(customer.id).catch(async (e) => {
             console.error("Failed to load customer profile history via loadCustomerHistory, running fallbacks:", e);
             try {
               const etList = await eyeTestService.loadEyeTestHistory(customer.id);
@@ -74,9 +79,10 @@ export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
               console.error("Profile history fallback loading failed:", fallbackError);
               return { eyeTests: [], prescriptions: [], invoices: [] };
             }
-        });
+          })
+        ]);
         
-        let finalInvoices = history.invoices || [];
+        let finalInvoices = (invs && invs.length > 0) ? invs : (history.invoices || []);
         console.log("Current Customer FULL Object", customer);
         if (customer.id) {
             finalInvoices = finalInvoices.filter((i: any) => i.customerId === customer.id || (i as any).CustomerID === customer.id || (i as any).customerID === customer.id || (i as any).CustomerId === customer.id);
