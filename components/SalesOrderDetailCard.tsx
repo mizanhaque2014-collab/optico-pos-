@@ -96,27 +96,51 @@ export function SalesOrderDetailCard({ inv, customer, prescription, onViewPrescr
             <div className="col-span-1 bg-[#1E293B] border border-white/5 p-4 rounded-xl flex flex-col justify-between">
                <h4 className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-3">Linked Prescription</h4>
                <div className="space-y-2">
-                 <div className="flex gap-2 items-center">
-                    <span className="text-[10px] font-bold text-white/60 uppercase w-6">OD</span>
-                    <div className="flex-1 bg-white/5 border border-white/10 rounded-lg p-2 text-center">
-                      <span className="block text-[9px] text-white/40 uppercase font-bold tracking-wider mb-1">SPH</span>
-                      <span className="font-mono text-white text-xs">{prescription.rightEye?.sph || '-'}</span>
+                 <div className="flex gap-1 items-center">
+                    <span className="text-[10px] font-bold text-white/60 uppercase w-4">OD</span>
+                    <div className="flex-1 bg-white/5 border border-white/10 rounded-lg p-1 text-center">
+                      <span className="block text-[8px] text-white/40 uppercase font-bold tracking-wider mb-0.5">SPH</span>
+                      <span className="font-mono text-white text-[10px]">{prescription.rightEye?.sph || '-'}</span>
                     </div>
-                    <div className="flex-1 bg-white/5 border border-white/10 rounded-lg p-2 text-center">
-                      <span className="block text-[9px] text-white/40 uppercase font-bold tracking-wider mb-1">CYL</span>
-                      <span className="font-mono text-white text-xs">{prescription.rightEye?.cyl || '-'}</span>
+                    <div className="flex-1 bg-white/5 border border-white/10 rounded-lg p-1 text-center">
+                      <span className="block text-[8px] text-white/40 uppercase font-bold tracking-wider mb-0.5">CYL</span>
+                      <span className="font-mono text-white text-[10px]">{prescription.rightEye?.cyl || '-'}</span>
+                    </div>
+                    <div className="flex-1 bg-white/5 border border-white/10 rounded-lg p-1 text-center">
+                      <span className="block text-[8px] text-white/40 uppercase font-bold tracking-wider mb-0.5">AXIS</span>
+                      <span className="font-mono text-white text-[10px]">{prescription.rightEye?.axis || '-'}</span>
+                    </div>
+                    <div className="flex-1 bg-white/5 border border-white/10 rounded-lg p-1 text-center">
+                      <span className="block text-[8px] text-white/40 uppercase font-bold tracking-wider mb-0.5">ADD</span>
+                      <span className="font-mono text-white text-[10px]">{prescription.rightEye?.add || '-'}</span>
                     </div>
                  </div>
-                 <div className="flex gap-2 items-center">
-                    <span className="text-[10px] font-bold text-white/60 uppercase w-6">OS</span>
-                    <div className="flex-1 bg-white/5 border border-white/10 rounded-lg p-2 text-center">
-                      <span className="block text-[9px] text-white/40 uppercase font-bold tracking-wider mb-1">SPH</span>
-                      <span className="font-mono text-white text-xs">{prescription.leftEye?.sph || '-'}</span>
+                 <div className="flex gap-1 items-center">
+                    <span className="text-[10px] font-bold text-white/60 uppercase w-4">OS</span>
+                    <div className="flex-1 bg-white/5 border border-white/10 rounded-lg p-1 text-center">
+                      <span className="block text-[8px] text-white/40 uppercase font-bold tracking-wider mb-0.5">SPH</span>
+                      <span className="font-mono text-white text-[10px]">{prescription.leftEye?.sph || '-'}</span>
                     </div>
-                    <div className="flex-1 bg-white/5 border border-white/10 rounded-lg p-2 text-center">
-                      <span className="block text-[9px] text-white/40 uppercase font-bold tracking-wider mb-1">CYL</span>
-                      <span className="font-mono text-white text-xs">{prescription.leftEye?.cyl || '-'}</span>
+                    <div className="flex-1 bg-white/5 border border-white/10 rounded-lg p-1 text-center">
+                      <span className="block text-[8px] text-white/40 uppercase font-bold tracking-wider mb-0.5">CYL</span>
+                      <span className="font-mono text-white text-[10px]">{prescription.leftEye?.cyl || '-'}</span>
                     </div>
+                    <div className="flex-1 bg-white/5 border border-white/10 rounded-lg p-1 text-center">
+                      <span className="block text-[8px] text-white/40 uppercase font-bold tracking-wider mb-0.5">AXIS</span>
+                      <span className="font-mono text-white text-[10px]">{prescription.leftEye?.axis || '-'}</span>
+                    </div>
+                    <div className="flex-1 bg-white/5 border border-white/10 rounded-lg p-1 text-center">
+                      <span className="block text-[8px] text-white/40 uppercase font-bold tracking-wider mb-0.5">ADD</span>
+                      <span className="font-mono text-white text-[10px]">{prescription.leftEye?.add || '-'}</span>
+                    </div>
+                 </div>
+                 <div className="flex gap-2 justify-center mt-2 pt-2 border-t border-white/5">
+                   {(prescription.pdDistance) && (
+                     <div className="text-[9px] text-white/60"><span className="text-white/40">PD:</span> {prescription.pdDistance}</div>
+                   )}
+                   {prescription.pdNear && (
+                     <div className="text-[9px] text-white/60"><span className="text-white/40">Near PD:</span> {prescription.pdNear}</div>
+                   )}
                  </div>
                </div>
             </div>
