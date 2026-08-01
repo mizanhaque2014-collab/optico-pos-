@@ -5,6 +5,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Customer, Invoice, OrderItem, Prescription, PaymentMode, PaymentDetail } from '@/lib/types';
 import { useStore } from '@/lib/store';
+import { formatInvoiceNumber } from '@/lib/utils';
 import { shopConfig } from '@/lib/shopConfig';
 import { generateWhatsAppInvoiceText } from '@/lib/whatsappUtils';
 import { Receipt, Phone, MapPin, Award, FileText, Send, Printer, Download, CreditCard, CheckCircle } from 'lucide-react';
@@ -71,7 +72,7 @@ export function OpticalInvoiceA5({
   const finalBalance = invoice?.balanceAmount || 0;
   const finalPaymentMode = invoice?.paymentMode || 'Cash';
   const finalPaymentDetail = invoice?.paymentDetail || { cash: 0, upi: 0, card: 0, total: 0 };
-  const invoiceNum = invoice?.invoiceNumber || 'INV-DRAFT';
+  const invoiceNum = formatInvoiceNumber(invoice?.invoiceNumber) || 'INV-DRAFT';
 
   const invoiceDate = invoice?.createdAt 
     ? new Date(invoice.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })

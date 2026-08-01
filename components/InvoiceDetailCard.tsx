@@ -4,6 +4,7 @@
 
 import React, { useState } from 'react';
 import { Invoice, Customer, Prescription } from '@/lib/types';
+import { formatInvoiceNumber } from '@/lib/utils';
 import { shopConfig } from '@/lib/shopConfig';
 import { generateWhatsAppInvoiceText } from '@/lib/whatsappUtils';
 import { FileText, Printer, Download, Send, RefreshCw, Eye } from 'lucide-react';
@@ -29,7 +30,7 @@ export function InvoiceDetailCard({ inv, customer, prescription, onViewPrescript
       {/* Header */}
       <div className="flex justify-between items-start border-b border-white/5 pb-3">
         <div>
-          <h4 className="text-sm font-black text-white uppercase tracking-widest">{inv.invoiceNumber}</h4>
+          <h4 className="text-sm font-black text-white uppercase tracking-widest">{formatInvoiceNumber(inv.invoiceNumber)}</h4>
           <p className="text-[10px] text-white/50 font-bold uppercase mt-1">Date: {new Date(inv.createdAt).toLocaleDateString()}</p>
         </div>
         <div className="text-right">

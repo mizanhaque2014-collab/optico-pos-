@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useStore } from '@/lib/store';
+import { formatInvoiceNumber } from '@/lib/utils';
 import { Invoice, Customer, OrderStatus, PaymentMode, InvoiceType, OrderItem } from '@/lib/types';
 import { 
   ArrowLeft, Calendar, FileText, Search, Filter, RefreshCw, Printer, 
@@ -498,7 +499,7 @@ export function DailySalesReportView({ onBack }: Props) {
       totalPaidAmount,
       pendingAmount,
       lastPurchaseDate: lastInvoice ? new Date(lastInvoice.createdAt).toLocaleDateString() : 'N/A',
-      lastInvoiceNumber: lastInvoice ? lastInvoice.invoiceNumber : 'N/A',
+      lastInvoiceNumber: lastInvoice ? formatInvoiceNumber(lastInvoice.invoiceNumber) : 'N/A',
       history: custInvoices
     };
   }, [selectedReportCustomer, invoices]);
@@ -639,7 +640,7 @@ export function DailySalesReportView({ onBack }: Props) {
       }
 
       return [
-        inv.invoiceNumber,
+        formatInvoiceNumber(inv.invoiceNumber),
         new Date(inv.createdAt).toLocaleDateString(),
         cust ? cust.name : 'Unknown',
         cust ? cust.mobile : 'N/A',
@@ -746,7 +747,7 @@ ${shopConfig.shopName} Audit Officer`;
 
       return `
         <tr>
-          <td>${inv.invoiceNumber}</td>
+          <td>${formatInvoiceNumber(inv.invoiceNumber)}</td>
           <td>${new Date(inv.createdAt).toLocaleDateString()}</td>
           <td>${cust ? cust.name : 'Guest'}</td>
           <td>${cust ? cust.mobile : 'N/A'}</td>
@@ -765,7 +766,7 @@ ${shopConfig.shopName} Audit Officer`;
       const cust = customers.find(c => c.id === item.customerId);
       return `
         <tr>
-          <td>${item.invoiceNumber}</td>
+          <td>${formatInvoiceNumber(item.invoiceNumber)}</td>
           <td>${cust ? cust.name : 'Unknown'}</td>
           <td>${new Date(item.createdAt).toLocaleDateString()}</td>
           <td>₹${item.grandTotal}</td>
@@ -1287,7 +1288,7 @@ ${shopConfig.shopName} Audit Officer`;
 
                       return (
                         <tr key={inv.id} className="hover:bg-white/[0.01] transition-colors leading-tight">
-                          <td className="px-4 py-2.5 font-bold font-mono text-cyan-400">{inv.invoiceNumber}</td>
+                          <td className="px-4 py-2.5 font-bold font-mono text-cyan-400">{formatInvoiceNumber(inv.invoiceNumber)}</td>
                           <td className="px-4 py-2.5 font-mono text-slate-400">{new Date(inv.createdAt).toLocaleDateString()}</td>
                           <td className="px-4 py-2.5 font-semibold text-white">{cust ? cust.name : 'Walk-in Guest'}</td>
                           <td className="px-4 py-2.5 font-mono text-slate-400">{cust ? cust.mobile : '—'}</td>
@@ -1364,7 +1365,7 @@ ${shopConfig.shopName} Audit Officer`;
                       <div key={item.id} className="p-3 bg-black/25 rounded-xl border border-white/5 text-xs flex justify-between items-center">
                         <div>
                           <div className="flex items-center gap-1.5 font-bold text-white mb-1">
-                            <span className="font-mono text-cyan-400">{item.invoiceNumber}</span>
+                            <span className="font-mono text-cyan-400">{formatInvoiceNumber(item.invoiceNumber)}</span>
                             <span>•</span>
                             <span>{cust ? cust.name : 'Client'}</span>
                           </div>
@@ -1409,7 +1410,7 @@ ${shopConfig.shopName} Audit Officer`;
                       <div key={inv.id} className="p-3 bg-black/25 rounded-xl border border-white/5 text-xs flex justify-between items-center">
                         <div>
                           <div className="flex items-center gap-2 font-black text-white mb-0.5">
-                            <span className="font-mono text-cyan-400">{inv.invoiceNumber}</span>
+                            <span className="font-mono text-cyan-400">{formatInvoiceNumber(inv.invoiceNumber)}</span>
                             <span>•</span>
                             <span>{cust ? cust.name : 'Unknown Contact'}</span>
                           </div>
@@ -1598,7 +1599,7 @@ ${shopConfig.shopName} Audit Officer`;
                           return (
                             <div key={inv.id} className="p-2 bg-black/25 rounded-md border border-white/[0.04] text-[10px] space-y-1">
                               <div className="flex justify-between items-center text-[9px] border-b border-white/[0.03] pb-1">
-                                <span className="font-mono text-cyan-400 font-bold">{inv.invoiceNumber}</span>
+                                <span className="font-mono text-cyan-400 font-bold">{formatInvoiceNumber(inv.invoiceNumber)}</span>
                                 <span className="text-white/40">{new Date(inv.createdAt).toLocaleDateString()}</span>
                               </div>
                               <div className="grid grid-cols-3 gap-1 text-[9px] text-white/50">

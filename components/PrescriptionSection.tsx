@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import { formatInvoiceNumber } from '@/lib/utils';
 import { Customer, Prescription, PrescriptionSource, EyePower, OldGlassPower, EyeTestDetails, DoctorPrescriptionDetails } from '../lib/types';
 import { PlusCircle, Search, Save, History, Activity, Eye, ClipboardList } from 'lucide-react';
 import { useStore } from '../lib/store';
@@ -193,7 +194,7 @@ export default function PrescriptionSection({ customer, prescription, onChange }
               <h4 className="text-xs font-black text-white/60 uppercase tracking-widest mb-3 border-b border-white/5 pb-2">Last Purchase Details</h4>
               <div className="text-[10px] font-bold text-white/40 uppercase tracking-wider mb-2 flex justify-between">
                 <span>{new Date(lastPurchase.createdAt).toLocaleDateString()}</span>
-                <span>{lastPurchase.invoiceNumber}</span>
+                <span>{formatInvoiceNumber(lastPurchase.invoiceNumber)}</span>
               </div>
               <ul className="space-y-1 mb-3">
                 {lastPurchase.items.map((item: any, i: number) => (

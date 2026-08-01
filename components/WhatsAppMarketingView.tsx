@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useStore } from '@/lib/store';
+import { formatInvoiceNumber } from '@/lib/utils';
 import { Customer, Invoice, Prescription, OrderItem } from '@/lib/types';
 import { 
   ArrowLeft, Search, Filter, MessageSquare, Send, Calendar, Cake, Flame,
@@ -1792,7 +1793,7 @@ export function WhatsAppMarketingView({ onBack }: Props) {
                     {invoices.filter(i => i.customerId === activeCustomerPopup.id).map(inv => (
                       <div key={inv.id} className="p-3 bg-[#080d1a] rounded-xl border border-white/5 space-y-1.5">
                         <div className="flex justify-between items-center text-[10px]">
-                          <strong>Invoice: {inv.invoiceNumber} ({inv.type})</strong>
+                          <strong>Invoice: {formatInvoiceNumber(inv.invoiceNumber)} ({inv.type})</strong>
                           <span className="text-cyan-400 font-bold">{new Date(inv.createdAt).toLocaleDateString()}</span>
                         </div>
 

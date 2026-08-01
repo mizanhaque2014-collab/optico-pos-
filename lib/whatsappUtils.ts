@@ -1,5 +1,6 @@
 import { Invoice, Customer, Prescription, OrderItem } from '@/lib/types';
 import { shopConfig } from '@/lib/shopConfig';
+import { formatInvoiceNumber } from '@/lib/utils';
 
 export function generateWhatsAppInvoiceText(
   inv: Invoice, 
@@ -7,7 +8,7 @@ export function generateWhatsAppInvoiceText(
   prescription: Prescription | null | undefined, 
   parsedItems: OrderItem[]
 ) {
-  let text = `*INVOICE:* ${inv.invoiceNumber}\n*Shop:* ${shopConfig.shopName}\n*Customer:* ${customer.name}\n`;
+  let text = `*INVOICE:* ${formatInvoiceNumber(inv.invoiceNumber)}\n*Shop:* ${shopConfig.shopName}\n*Customer:* ${customer.name}\n`;
 
   // Prescription Details
   if (prescription) {

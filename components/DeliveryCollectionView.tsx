@@ -9,6 +9,7 @@ import { Search, CheckCircle, ArrowLeft, Receipt, Phone, MapPin, Award, Check } 
 import { OpticalInvoiceA5 } from './OpticalInvoiceA5';
 import { SalesOrderDetailCard } from './SalesOrderDetailCard';
 import { PrescriptionViewOnly } from './PrescriptionViewOnly';
+import { formatInvoiceNumber } from '@/lib/utils';
 import { shopConfig } from '@/lib/shopConfig';
 import { generateWhatsAppInvoiceText } from '@/lib/whatsappUtils';
 
@@ -200,7 +201,7 @@ export function DeliveryCollectionView({ onBack }: Props) {
                 ✅ Delivery Completed Successfully
               </h2>
               <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider">
-                Invoice: <span className="font-mono text-emerald-400 font-extrabold text-xs">{completedInvoice.invoiceNumber}</span>
+                Invoice: <span className="font-mono text-emerald-400 font-extrabold text-xs">{formatInvoiceNumber(completedInvoice.invoiceNumber)}</span>
               </p>
             </div>
           </div>
@@ -301,7 +302,7 @@ export function DeliveryCollectionView({ onBack }: Props) {
                       className="w-full text-left bg-[#1E293B] border border-white/5 hover:border-purple-500 hover:bg-[#1E293B]/80 p-5 rounded-2xl flex justify-between items-center transition-all group shadow-sm hover:shadow-lg"
                     >
                       <div className="space-y-1">
-                        <p className="font-mono font-black text-base text-white tracking-widest text-[#94A3B8] group-hover:text-purple-400 transition-colors uppercase">{order.invoiceNumber}</p>
+                        <p className="font-mono font-black text-base text-white tracking-widest text-[#94A3B8] group-hover:text-purple-400 transition-colors uppercase">{formatInvoiceNumber(order.invoiceNumber)}</p>
                         <p className="text-white/80 font-bold text-xs uppercase tracking-wide">{cust?.name || 'Walk-in Customer'}</p>
                         <p className="text-[9px] text-white/40 font-bold uppercase tracking-wider">Mobile: {cust?.mobile || 'N/A'} • Date: {new Date(order.createdAt).toLocaleDateString('en-IN')}</p>
                       </div>

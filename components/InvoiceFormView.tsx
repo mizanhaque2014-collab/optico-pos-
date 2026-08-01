@@ -3,6 +3,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { formatInvoiceNumber } from '@/lib/utils';
 import { Customer, InvoiceType, OrderItem, PaymentDetail, PaymentMode } from '@/lib/types';
 import { useStore } from '@/lib/store';
 import { CustomerSelect } from './CustomerSelect';
@@ -334,7 +335,7 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
             </div>
             <div>
               <h3 className="font-extrabold text-sm uppercase text-white tracking-widest leading-none mb-1">Invoice Saved Successfully</h3>
-              <p className="text-white/60 text-[10px] font-bold uppercase">Invoice Number: <span className="font-mono text-emerald-400 font-black">{savedInvoice.invoiceNumber}</span></p>
+              <p className="text-white/60 text-[10px] font-bold uppercase">Invoice Number: <span className="font-mono text-emerald-400 font-black">{formatInvoiceNumber(savedInvoice.invoiceNumber)}</span></p>
             </div>
           </div>
           <button 

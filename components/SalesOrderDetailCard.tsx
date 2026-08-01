@@ -1,4 +1,5 @@
 import { Invoice, Prescription, Customer } from '@/lib/types';
+import { formatInvoiceNumber } from '@/lib/utils';
 import { generateWhatsAppInvoiceText } from '@/lib/whatsappUtils';
 import { Download, Edit, Eye, Play, Printer, Send } from 'lucide-react';
 
@@ -78,7 +79,7 @@ export function SalesOrderDetailCard({ inv, customer, prescription, onViewPrescr
              <div className="bg-cyan-500/10 border border-cyan-500/20 px-3 py-1.5 rounded-lg mb-2">
                 <span className="text-cyan-400 font-bold tracking-widest uppercase text-xs">{inv.type}</span>
              </div>
-             <p className="font-mono text-sm font-bold">{inv.invoiceNumber}</p>
+             <p className="font-mono text-sm font-bold">{formatInvoiceNumber(inv.invoiceNumber)}</p>
              <p className="text-xs text-white/40">{new Date(inv.createdAt).toLocaleString('en-IN')}</p>
              <p className="text-[10px] font-black uppercase tracking-widest mt-2 px-2 py-1 rounded-full bg-white/5 border border-white/10 text-white/60">
                Status: <span className={

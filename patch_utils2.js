@@ -1,11 +1,8 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+const fs = require('fs');
+const path = './lib/utils.ts';
+let code = fs.readFileSync(path, 'utf8');
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
-}
-
-export function formatInvoiceNumber(invoiceNum?: string): string {
+code = code.replace(/export function formatInvoiceNumber[\s\S]*?\n\}\n/m, `export function formatInvoiceNumber(invoiceNum?: string): string {
   if (!invoiceNum) return '';
   if (invoiceNum.length > 20 && invoiceNum.includes('-')) {
     return invoiceNum.split('-')[0].substring(0, 6).toUpperCase();
@@ -17,4 +14,5 @@ export function formatInvoiceNumber(invoiceNum?: string): string {
     return invoiceNum.substring(0, 6).toUpperCase();
   }
   return invoiceNum.toUpperCase();
-}
+}\n`);
+fs.writeFileSync(path, code);
