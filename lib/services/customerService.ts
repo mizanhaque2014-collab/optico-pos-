@@ -4,6 +4,13 @@ import { normalizeCustomer, normalizePrescription, normalizeEyeTest, normalizeIn
 
 const STORAGE_KEY = 'opt_customers';
 
+const historyCache = new Map<string, { timestamp: number, data: any }>();
+export const clearCustomerHistoryCache = (customerId?: string) => {
+  if (customerId) historyCache.delete(customerId);
+  else historyCache.clear();
+};
+
+
 export const sanitizeCustomer = normalizeCustomer;
 
 export const customerService = {
@@ -182,16 +189,24 @@ export const customerService = {
     invoices: any[];
     payments: any[];
   }> {
+    if (historyCache.has(customerId)) {
+      const cached = historyCache.get(customerId);
+      if (cached && Date.now() - cached.timestamp < 300000) {
+        return cached.data;
+      }
+    }
     try {
       const res = await apiCall<any>('loadCustomerHistory', { customerId });
       if (res && res.customer) {
-        return {
+        const data = {
           customer: sanitizeCustomer(res.customer),
           prescriptions: Array.isArray(res.prescriptions) ? res.prescriptions.map(normalizePrescription) : [],
           eyeTests: Array.isArray(res.eyeTests) ? res.eyeTests.map(normalizeEyeTest) : [],
           invoices: Array.isArray(res.invoices) ? res.invoices.map(normalizeInvoice) : [],
           payments: Array.isArray(res.payments) ? res.payments : [],
         };
+        historyCache.set(customerId, { timestamp: Date.now(), data });
+        return data;
       }
     } catch (e) {
       console.warn('loadCustomerHistory API failed, resolving via parallel fallbacks:', e);

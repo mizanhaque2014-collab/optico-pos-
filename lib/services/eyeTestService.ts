@@ -1,3 +1,4 @@
+import { clearCustomerHistoryCache } from './customerService';
 import { apiCall } from '../apiClient';
 import { normalizeEyeTest } from '../dataMapping';
 
@@ -32,7 +33,7 @@ export const eyeTestService = {
   async saveEyeTest(eyeTest: EyeTestRecord): Promise<EyeTestRecord> {
     console.log("ENTER saveEyeTest");
     console.log("INPUT: eyeTest =", eyeTest);
-    try {
+    try { clearCustomerHistoryCache();  
       const res = await apiCall<any>('saveEyeTest', { eyeTestDetails: eyeTest });
       if (res && res.id) {
         const normalized = normalizeEyeTest(res);
@@ -57,7 +58,7 @@ export const eyeTestService = {
   },
 
   async loadEyeTestHistory(customerId: string): Promise<EyeTestRecord[]> {
-    try {
+    try { clearCustomerHistoryCache();  
       const res = await apiCall<any[]>('loadEyeTests', { customerId });
       if (Array.isArray(res)) {
         // Filter and map to standard record properties just in case
@@ -74,7 +75,7 @@ export const eyeTestService = {
   // Helper local storage accessors
   getLocalEyeTests(): EyeTestRecord[] {
     if (typeof window === 'undefined') return [];
-    try {
+    try { clearCustomerHistoryCache();  
       const data = localStorage.getItem('opt_eyetests');
       return data ? JSON.parse(data) : [];
     } catch {
@@ -84,7 +85,7 @@ export const eyeTestService = {
 
   saveLocalEyeTest(et: EyeTestRecord) {
     if (typeof window === 'undefined') return;
-    try {
+    try { clearCustomerHistoryCache();  
       const all = this.getLocalEyeTests();
       const idx = all.findIndex(item => item.id === et.id);
       if (idx >= 0) {

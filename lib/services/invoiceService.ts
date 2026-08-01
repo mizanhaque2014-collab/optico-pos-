@@ -1,3 +1,4 @@
+import { clearCustomerHistoryCache } from './customerService';
 import { apiCall } from '../apiClient';
 import { Invoice } from '../types';
 import { normalizeInvoice } from '../dataMapping';
@@ -35,14 +36,14 @@ export const invoiceService = {
     const payload = { ...invoice, ...pascal };
 
     if (typeof window !== 'undefined' && invoice.items && invoice.items.length > 0) {
-       try {
+       try { clearCustomerHistoryCache();  
          const cached = JSON.parse(window.localStorage.getItem('opt_invoices_items') || '{}');
          cached[invoice.id || pascal.InvoiceID] = invoice.items;
          window.localStorage.setItem('opt_invoices_items', JSON.stringify(cached));
        } catch (e) {}
     }
 
-    try {
+    try { clearCustomerHistoryCache();  
       const data = await apiCall<any>('saveInvoice', payload);
       return data && data.id ? normalizeInvoice(data) : invoice;
     } catch (e: any) {
@@ -64,14 +65,14 @@ export const invoiceService = {
     const payload = { ...invoice, ...pascal };
 
     if (typeof window !== 'undefined' && invoice.items && invoice.items.length > 0) {
-       try {
+       try { clearCustomerHistoryCache();  
          const cached = JSON.parse(window.localStorage.getItem('opt_invoices_items') || '{}');
          cached[invoice.id || pascal.InvoiceID] = invoice.items;
          window.localStorage.setItem('opt_invoices_items', JSON.stringify(cached));
        } catch (e) {}
     }
 
-    try {
+    try { clearCustomerHistoryCache();  
       const data = await apiCall<any>('saveInvoice', payload);
       return data && data.id ? normalizeInvoice(data) : invoice;
     } catch (e: any) {
@@ -93,7 +94,7 @@ export const invoiceService = {
   },
 
   async getInvoices(): Promise<Invoice[]> {
-    try {
+    try { clearCustomerHistoryCache();  
       const data = await apiCall<any[]>('getInvoices');
       if (Array.isArray(data)) {
         return data.map(normalizeInvoice);
@@ -105,7 +106,7 @@ export const invoiceService = {
   },
 
   async getInvoiceById(invoiceId: string): Promise<Invoice | null> {
-    try {
+    try { clearCustomerHistoryCache();  
       const data = await apiCall<any>('getInvoiceById', { invoiceId });
       return data ? normalizeInvoice(data) : null;
     } catch (e) {
@@ -116,7 +117,7 @@ export const invoiceService = {
   },
 
   async getInvoicesByCustomer(customerId: string): Promise<Invoice[]> {
-    try {
+    try { clearCustomerHistoryCache();  
       const data = await apiCall<any[]>('getInvoicesByCustomer', { customerId });
       if (Array.isArray(data) && data.length > 0) {
         return data.map(normalizeInvoice);
@@ -130,7 +131,7 @@ export const invoiceService = {
   },
 
   async searchInvoices(keyword: string): Promise<Invoice[]> {
-    try {
+    try { clearCustomerHistoryCache();  
       const data = await apiCall<any[]>('searchInvoices', { keyword });
       if (Array.isArray(data)) {
         return data.map(normalizeInvoice);
@@ -150,7 +151,7 @@ export const invoiceService = {
 
   // Retain legacy methods for backward compatibility if needed by other parts of the app
   async saveInvoice(invoice: Invoice): Promise<void> {
-    try {
+    try { clearCustomerHistoryCache();  
       await this.updateInvoice(invoice);
     } catch {
       await this.createInvoice(invoice);
