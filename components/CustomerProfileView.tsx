@@ -22,15 +22,7 @@ interface Props {
 }
 
 export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
-  const store = useStore();
-  const [invoices, setInvoices] = useState<Invoice[]>(() => {
-    try {
-      const localInvoices = store.getInvoices().filter((i: any) => i.customerId === customer.id || (i as any).CustomerID === customer.id);
-      return localInvoices.sort((a: any, b: any) => b.createdAt - a.createdAt);
-    } catch(e) {
-      return [];
-    }
-  });
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   
   // Separate into Invoices (Direct Sale) and Sales Orders
   const directSaleInvoices = invoices.filter(i => i.type === 'Direct Sale' || i.type === ('DirectSale' as any));
@@ -64,12 +56,7 @@ export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
         console.log("[PROFILE DEBUG] Loading full customer history for customerId:", customer.id);
         
         // Execute both major API calls simultaneously
-        let [invs, history] = await Promise.all([
-          invoiceService.getInvoicesByCustomer(customer.id).catch(e => {
-            console.error("Failed to load invoices:", e);
-            return [];
-          }),
-          customerService.loadCustomerHistory(customer.id).catch(async (e) => {
+        const history = await customerService.loadCustomerHistory(customer.id).catch(async (e) => {
             console.error("Failed to load customer profile history via loadCustomerHistory, running fallbacks:", e);
             try {
               const etList = await eyeTestService.loadEyeTestHistory(customer.id);
@@ -79,10 +66,9 @@ export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
               console.error("Profile history fallback loading failed:", fallbackError);
               return { eyeTests: [], prescriptions: [], invoices: [] };
             }
-          })
-        ]);
+        });
         
-        let finalInvoices = (invs && invs.length > 0) ? invs : (history.invoices || []);
+        let finalInvoices = history.invoices || [];
         console.log("Current Customer FULL Object", customer);
         if (customer.id) {
             finalInvoices = finalInvoices.filter((i: any) => i.customerId === customer.id || (i as any).CustomerID === customer.id || (i as any).customerID === customer.id || (i as any).CustomerId === customer.id);
@@ -170,7 +156,12 @@ export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
         </div>
       </div>
 
-      <div className="space-y-6">
+      {loadingHistory ? (
+        <div className="text-center py-12 text-xs font-bold uppercase tracking-widest text-white/40">
+          Loading Examination & Purchase Histories...
+        </div>
+      ) : (
+        <div className="space-y-6">
 
           {/* 2. EYE TEST HISTORY */}
           <div className="bg-[#1E293B] border border-white/10 p-6 rounded-2xl shadow-xl">
@@ -180,7 +171,7 @@ export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
             
             {eyeTests.length === 0 ? (
               <p className="text-xs text-white/40 font-bold uppercase tracking-wider text-center py-6 bg-[#0F172A]/40 rounded-xl border border-white/5">
-                {loadingHistory ? "Loading eye examinations..." : "No eye examinations performed yet"}
+                No eye examinations performed yet
               </p>
             ) : (
               <div className="grid grid-cols-1 gap-4">
@@ -389,6 +380,7 @@ export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
           </div>
 
         </div>
+      )}
 
       {/* BILLING CHOICE OVERLAY MODAL */}
             {/* INVOICE VIEW MODAL */}
