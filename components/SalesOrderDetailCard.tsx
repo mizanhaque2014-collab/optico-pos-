@@ -47,12 +47,12 @@ export function SalesOrderDetailCard({ inv, customer, prescription, onViewPrescr
   const sunglasses = parsedItems.filter(isSunglass);
   const accessories = parsedItems.filter(isAccessory);
 
-  const productTotal = parsedItems.reduce((sum: number, item: any) => sum + (Number(item.finalAmount) || 0), 0);
+  const productTotal = Number(inv.subTotal) || parsedItems.reduce((sum: number, item: any) => sum + ((Number(item.sellingPrice) * Number(item.quantity)) || 0), 0);
   const taxAmount = 0; // Tax is 0 based on current requirements
-  const grandTotal = productTotal - (Number(inv.totalDiscount) || 0) + taxAmount;
-  const balanceAmount = grandTotal - (Number(inv.advanceAmount) || 0);
   const discountAmount = Number(inv.totalDiscount) || 0;
+  const grandTotal = Number(inv.grandTotal) || (productTotal - discountAmount + taxAmount);
   const advanceAmount = Number(inv.advanceAmount) || 0;
+  const balanceAmount = Number(inv.balanceAmount) || (grandTotal - advanceAmount);
 
   const handleShareWhatsApp = () => {
     const msg = encodeURIComponent(`Order Invoice: ${inv.invoiceNumber}\nTotal: ₹${grandTotal}\nStatus: ${inv.status}`);

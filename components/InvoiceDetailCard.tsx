@@ -125,11 +125,11 @@ export function InvoiceDetailCard({ inv, customer, prescription, onViewPrescript
             <div className="border-r border-white/5 pr-4">
               <p className="text-[9px] text-white/40 uppercase font-bold tracking-wider mb-2">Bill Summary</p>
               <div className="space-y-1 text-xs text-white/70">
-                 <div className="flex justify-between"><span>Grand Total:</span> <span className="text-white font-bold">₹{inv.grandTotal}</span></div>
+                 <div className="flex justify-between"><span>Product Total:</span> <span className="text-white font-bold">₹{inv.subTotal || (Number(inv.grandTotal) + Number(inv.totalDiscount))}</span></div>
                  <div className="flex justify-between"><span>Discount:</span> <span className="text-rose-400 font-bold">-₹{inv.totalDiscount}</span></div>
-                 <div className="flex justify-between"><span>Advance:</span> <span className="text-emerald-400 font-bold">₹{inv.advanceAmount}</span></div>
-                 <div className="flex justify-between mt-2 pt-2 border-t border-white/5 text-rose-400"><span>Balance:</span> <span className="font-bold text-sm">₹{inv.balanceAmount}</span></div>
-                 <div className="flex justify-between mt-1 text-emerald-400"><span>Final Amount:</span> <span className="font-bold text-sm">₹{inv.grandTotal - inv.totalDiscount}</span></div>
+                 <div className="flex justify-between mt-1 pt-1 border-t border-white/5 text-emerald-400"><span>Grand Total:</span> <span className="font-bold text-sm">₹{inv.grandTotal}</span></div>
+                 <div className="flex justify-between mt-2 pt-2 border-t border-white/5 text-white"><span>Advance:</span> <span className="text-emerald-400 font-bold">₹{inv.advanceAmount}</span></div>
+                 <div className="flex justify-between mt-1 text-rose-400"><span>Balance:</span> <span className="font-bold text-sm">₹{inv.balanceAmount}</span></div>
               </div>
             </div>
             <div className="pl-2">
