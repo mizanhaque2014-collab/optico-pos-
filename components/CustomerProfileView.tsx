@@ -66,18 +66,25 @@ export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
             try {
               const etList = await eyeTestService.loadEyeTestHistory(customer.id);
               const pList = await prescriptionService.loadPrescriptionHistory(customer.id);
-              return { eyeTests: etList, prescriptions: pList };
+              return { eyeTests: etList, prescriptions: pList, invoices: [] };
             } catch (fallbackError) {
               console.error("Profile history fallback loading failed:", fallbackError);
-              return { eyeTests: [], prescriptions: [] };
+              return { eyeTests: [], prescriptions: [], invoices: [] };
             }
           })
         ]);
         
+        let finalInvoices = (invs && invs.length > 0) ? invs : (history.invoices || []);
+        
+        console.log("Invoices From Backend getInvoicesByCustomer", invs);
+        console.log("Invoices From Backend loadCustomerHistory", history.invoices);
+        console.log("Current Customer ID", customer.id);
+        console.log("Final Invoices", finalInvoices);
+
         // Load SalesOrderItems for each Sales Order
         try {
           const { apiCall } = await import('@/lib/apiClient');
-          await Promise.all(invs.map(async (inv) => {
+          await Promise.all(finalInvoices.map(async (inv: any) => {
             if (inv.type === 'Sales Order' && (!inv.items || inv.items.length === 0)) {
               try {
                 const items = await apiCall('getSalesOrderItems', { invoiceId: inv.id });
@@ -93,7 +100,7 @@ export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
            console.error("Error fetching sales order items", e);
         }
 
-        setInvoices(invs.sort((a,b) => b.createdAt - a.createdAt));
+        setInvoices(finalInvoices.sort((a: any,b: any) => b.createdAt - a.createdAt));
         
         // Update eye tests and prescriptions with fetched results
         setEyeTests(history.eyeTests || []);

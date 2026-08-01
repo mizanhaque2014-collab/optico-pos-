@@ -105,6 +105,14 @@ export function normalizeInvoice(inv: any): Invoice {
 
   const invoiceNumber = String(inv.InvoiceNumber || inv.invoiceNumber || inv.InvoiceID || inv.id || inv.InvoiceNo || '');
   
+  const resolveDate = (val: any) => {
+    if (!val) return Date.now();
+    const n = Number(val);
+    if (!isNaN(n)) return n;
+    const d = new Date(val).getTime();
+    return isNaN(d) ? Date.now() : d;
+  };
+
   return {
     id: String(inv.InvoiceID || inv.id || inv.Id || inv.ID || ''),
     invoiceNumber: invoiceNumber,
@@ -128,8 +136,8 @@ export function normalizeInvoice(inv: any): Invoice {
     advanceAmount: Number(inv.Advance || inv.advanceAmount || inv.advance || 0),
     balanceAmount: Number(inv.Balance || inv.balanceAmount || inv.balance || 0),
     status: inv.Status || inv.status || 'Delivered',
-    createdAt: Number(inv.CreatedDate || inv.createdAt || inv.CreatedAt || Date.now()),
-    updatedAt: Number(inv.UpdatedAt || inv.updatedAt || Date.now())
+    createdAt: resolveDate(inv.CreatedDate || inv.createdAt || inv.CreatedAt),
+    updatedAt: resolveDate(inv.UpdatedAt || inv.updatedAt)
   };
 }
 
