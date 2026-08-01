@@ -393,7 +393,7 @@ export function OpticalInvoiceA5({
               <tbody className="divide-y divide-slate-100">
                 {invoiceItems.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-3 text-center text-slate-400 uppercase font-bold">No Items Drafted</td>
+                    <td colSpan={6} className="py-3 text-center text-slate-400 uppercase font-bold">{finalGrandTotal > 0 ? "Itemized details unavailable from backend for older records" : "No Items Drafted"}</td>
                   </tr>
                 ) : (
                   invoiceItems.map((item, idx) => (

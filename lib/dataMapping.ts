@@ -94,8 +94,24 @@ export function normalizeInvoice(inv: any): Invoice {
   let parsedItems = [];
   try {
     parsedItems = typeof inv.Items === 'string' ? JSON.parse(inv.Items) : (inv.Items || inv.items || []);
+    if ((!parsedItems || parsedItems.length === 0) && typeof window !== 'undefined') {
+       try {
+         const cached = JSON.parse(window.localStorage.getItem('opt_invoices_items') || '{}');
+         if (cached[inv.id || inv.InvoiceID]) {
+             parsedItems = cached[inv.id || inv.InvoiceID];
+         }
+       } catch (e) {}
+    }
   } catch (e) {
     parsedItems = [];
+    if (typeof window !== 'undefined') {
+       try {
+         const cached = JSON.parse(window.localStorage.getItem('opt_invoices_items') || '{}');
+         if (cached[inv.id || inv.InvoiceID]) {
+             parsedItems = cached[inv.id || inv.InvoiceID];
+         }
+       } catch (err) {}
+    }
   }
   if (typeof parsedItems === 'string') {
      try { parsedItems = JSON.parse(parsedItems); } catch(e) {}

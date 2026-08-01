@@ -33,6 +33,15 @@ export const invoiceService = {
   async createInvoice(invoice: Invoice): Promise<Invoice> {
     const pascal = mapInvoiceToPascalCase(invoice);
     const payload = { ...invoice, ...pascal };
+
+    if (typeof window !== 'undefined' && invoice.items && invoice.items.length > 0) {
+       try {
+         const cached = JSON.parse(window.localStorage.getItem('opt_invoices_items') || '{}');
+         cached[invoice.id || pascal.InvoiceID] = invoice.items;
+         window.localStorage.setItem('opt_invoices_items', JSON.stringify(cached));
+       } catch (e) {}
+    }
+
     try {
       const data = await apiCall<any>('saveInvoice', payload);
       return data && data.id ? normalizeInvoice(data) : invoice;
@@ -53,6 +62,15 @@ export const invoiceService = {
   async updateInvoice(invoice: Invoice): Promise<Invoice> {
     const pascal = mapInvoiceToPascalCase(invoice);
     const payload = { ...invoice, ...pascal };
+
+    if (typeof window !== 'undefined' && invoice.items && invoice.items.length > 0) {
+       try {
+         const cached = JSON.parse(window.localStorage.getItem('opt_invoices_items') || '{}');
+         cached[invoice.id || pascal.InvoiceID] = invoice.items;
+         window.localStorage.setItem('opt_invoices_items', JSON.stringify(cached));
+       } catch (e) {}
+    }
+
     try {
       const data = await apiCall<any>('saveInvoice', payload);
       return data && data.id ? normalizeInvoice(data) : invoice;
