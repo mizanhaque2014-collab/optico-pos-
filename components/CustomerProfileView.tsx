@@ -56,12 +56,7 @@ export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
         console.log("[PROFILE DEBUG] Loading full customer history for customerId:", customer.id);
         
         // Execute both major API calls simultaneously
-        let [invs, history] = await Promise.all([
-          invoiceService.getInvoicesByCustomer(customer.id).catch(e => {
-            console.error("Failed to load invoices:", e);
-            return [];
-          }),
-          customerService.loadCustomerHistory(customer.id).catch(async (e) => {
+        const history = await customerService.loadCustomerHistory(customer.id).catch(async (e) => {
             console.error("Failed to load customer profile history via loadCustomerHistory, running fallbacks:", e);
             try {
               const etList = await eyeTestService.loadEyeTestHistory(customer.id);
@@ -71,38 +66,18 @@ export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
               console.error("Profile history fallback loading failed:", fallbackError);
               return { eyeTests: [], prescriptions: [], invoices: [] };
             }
-          })
-        ]);
+        });
         
-        let finalInvoices = (invs && invs.length > 0) ? invs : (history.invoices || []);
+        let finalInvoices = history.invoices || [];
         console.log("Current Customer FULL Object", customer);
         if (customer.id) {
             finalInvoices = finalInvoices.filter((i: any) => i.customerId === customer.id || (i as any).CustomerID === customer.id || (i as any).customerID === customer.id || (i as any).CustomerId === customer.id);
         }
         
-        console.log("Invoices From Backend getInvoicesByCustomer", invs);
+        
         console.log("Invoices From Backend loadCustomerHistory", history.invoices);
         console.log("Current Customer ID", customer.id);
         console.log("Final Invoices", finalInvoices);
-
-        // Load SalesOrderItems for each Sales Order
-        try {
-          const { apiCall } = await import('@/lib/apiClient');
-          await Promise.all(finalInvoices.map(async (inv: any) => {
-            if (inv.type === 'Sales Order' && (!inv.items || inv.items.length === 0)) {
-              try {
-                const items = await apiCall('getSalesOrderItems', { invoiceId: inv.id });
-                if (items && Array.isArray(items) && items.length > 0) {
-                  inv.items = items;
-                }
-              } catch (e) {
-                console.error("Failed to load SalesOrderItems for " + inv.id, e);
-              }
-            }
-          }));
-        } catch (e) {
-           console.error("Error fetching sales order items", e);
-        }
 
         setInvoices(finalInvoices.sort((a: any,b: any) => b.createdAt - a.createdAt));
         

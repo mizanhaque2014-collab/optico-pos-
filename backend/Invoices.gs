@@ -27,7 +27,7 @@ function saveInvoice(inv) {
   }
   
   if (!inv.InvoiceNumber) {
-    inv.InvoiceNumber = "INV-" + Date.now();
+    inv.InvoiceNumber = Math.floor(100000 + Math.random() * 900000).toString();
   }
   if (!inv.InvoiceID) {
     inv.InvoiceID = inv.id || "INVID-" + Date.now();
