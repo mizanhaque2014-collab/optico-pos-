@@ -5,6 +5,7 @@
 import React, { useState } from 'react';
 import { Invoice, Customer, Prescription } from '@/lib/types';
 import { shopConfig } from '@/lib/shopConfig';
+import { generateWhatsAppInvoiceText } from '@/lib/whatsappUtils';
 import { FileText, Printer, Download, Send, RefreshCw, Eye } from 'lucide-react';
 
 interface Props {
@@ -18,13 +19,7 @@ interface Props {
 
 export function InvoiceDetailCard({ inv, customer, prescription, onViewPrescription, onViewInvoice, onPrintA5 }: Props) {
   const handleShareWhatsApp = () => {
-    let text = `*INVOICE: ${inv.invoiceNumber}*\n*Shop:* ${shopConfig.shopName}\n*Customer:* ${customer.name}\n*Total Bill:* ₹${inv.grandTotal}\n*Paid:* ₹${inv.advanceAmount}\n*Balance:* ₹${inv.balanceAmount}\nThank you for your business!`;
-    
-    if (inv.status === 'Delivered' && inv.type === 'Sales Order') {
-      const collected = inv.finalCollectionPaymentDetail?.total || (inv.grandTotal - inv.advanceAmount);
-      text = `*DELIVERY INVOICE: ${inv.invoiceNumber}*\n*Shop:* ${shopConfig.shopName}\n*Customer:* ${customer.name}\n*Total Bill:* ₹${inv.grandTotal}\n*Advance Paid:* ₹${inv.advanceAmount}\n*Balance Collected:* ₹${collected}\n*Remaining Balance:* ₹0 (PAID)\n*Delivery Date:* ${inv.deliveryDate ? new Date(inv.deliveryDate).toLocaleString('en-IN') : 'N/A'}\n*Prescription:* ${prescription ? `OD: SPH ${prescription.rightEye?.sph || '-'} CYL ${prescription.rightEye?.cyl || '-'}, OS: SPH ${prescription.leftEye?.sph || '-'} CYL ${prescription.leftEye?.cyl || '-'}` : 'N/A'}\nThank you for your business!`;
-    }
-    
+    const text = generateWhatsAppInvoiceText(inv, customer, prescription, inv.items || []);
     const encoded = encodeURIComponent(text);
     window.open(`https://api.whatsapp.com/send?phone=${customer.mobile}&text=${encoded}`, '_blank');
   };

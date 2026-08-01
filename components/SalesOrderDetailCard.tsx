@@ -1,4 +1,5 @@
 import { Invoice, Prescription, Customer } from '@/lib/types';
+import { generateWhatsAppInvoiceText } from '@/lib/whatsappUtils';
 import { Download, Edit, Eye, Play, Printer, Send } from 'lucide-react';
 
 
@@ -55,9 +56,10 @@ export function SalesOrderDetailCard({ inv, customer, prescription, onViewPrescr
   const balanceAmount = Number(inv.balanceAmount) || (grandTotal - advanceAmount);
 
   const handleShareWhatsApp = () => {
-    const msg = encodeURIComponent(`Order Invoice: ${inv.invoiceNumber}\nTotal: ₹${grandTotal}\nStatus: ${inv.status}`);
-    const url = `https://wa.me/${customer?.mobile || ''}?text=${msg}`;
-    window.open(url, '_blank');
+    if (!customer) return;
+    const text = generateWhatsAppInvoiceText(inv, customer, prescription, parsedItems);
+    const encoded = encodeURIComponent(text);
+    window.open(`https://api.whatsapp.com/send?phone=${customer.mobile}&text=${encoded}`, '_blank');
   };
 
   return (
