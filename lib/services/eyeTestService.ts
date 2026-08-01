@@ -1,4 +1,3 @@
-import { clearCustomerHistoryCache } from './customerService';
 import { apiCall } from '../apiClient';
 import { normalizeEyeTest } from '../dataMapping';
 
@@ -33,8 +32,7 @@ export const eyeTestService = {
   async saveEyeTest(eyeTest: EyeTestRecord): Promise<EyeTestRecord> {
     console.log("ENTER saveEyeTest");
     console.log("INPUT: eyeTest =", eyeTest);
-    try { clearCustomerHistoryCache();  
-      const res = await apiCall<any>('saveEyeTest', { eyeTestDetails: eyeTest });
+    try {const res = await apiCall<any>('saveEyeTest', { eyeTestDetails: eyeTest });
       if (res && res.id) {
         const normalized = normalizeEyeTest(res);
         this.saveLocalEyeTest(normalized);
@@ -58,8 +56,7 @@ export const eyeTestService = {
   },
 
   async loadEyeTestHistory(customerId: string): Promise<EyeTestRecord[]> {
-    try { clearCustomerHistoryCache();  
-      const res = await apiCall<any[]>('loadEyeTests', { customerId });
+    try {const res = await apiCall<any[]>('loadEyeTests', { customerId });
       if (Array.isArray(res)) {
         // Filter and map to standard record properties just in case
         return res.map(normalizeEyeTest).sort((a: any, b: any) => b.createdAt - a.createdAt);
@@ -75,8 +72,7 @@ export const eyeTestService = {
   // Helper local storage accessors
   getLocalEyeTests(): EyeTestRecord[] {
     if (typeof window === 'undefined') return [];
-    try { clearCustomerHistoryCache();  
-      const data = localStorage.getItem('opt_eyetests');
+    try {const data = localStorage.getItem('opt_eyetests');
       return data ? JSON.parse(data) : [];
     } catch {
       return [];
@@ -85,8 +81,7 @@ export const eyeTestService = {
 
   saveLocalEyeTest(et: EyeTestRecord) {
     if (typeof window === 'undefined') return;
-    try { clearCustomerHistoryCache();  
-      const all = this.getLocalEyeTests();
+    try {const all = this.getLocalEyeTests();
       const idx = all.findIndex(item => item.id === et.id);
       if (idx >= 0) {
         all[idx] = et;

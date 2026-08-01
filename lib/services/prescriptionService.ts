@@ -1,4 +1,3 @@
-import { clearCustomerHistoryCache } from './customerService';
 import { apiCall } from '../apiClient';
 import { customerService } from './customerService';
 
@@ -105,8 +104,7 @@ async function savePrescriptionImpl(
   let currentCompanyId = '';
   let currentBranchId = '';
   if (typeof window !== 'undefined') {
-    try { clearCustomerHistoryCache();  
-      const stored = localStorage.getItem('opt_current_user');
+    try {const stored = localStorage.getItem('opt_current_user');
       if (stored) {
         const parsed = JSON.parse(stored);
         currentCompanyId = parsed.companyId || parsed.CompanyID || '';
@@ -163,8 +161,7 @@ async function savePrescriptionImpl(
   console.log("[SERVICE DEBUG 5] Resolved company ID & branch ID:", prescription.CompanyID, prescription.BranchID);
 
   let result: PrescriptionPascal;
-  try { clearCustomerHistoryCache();  
-    const isNew = !prescription.PrescriptionID || !prescription.PrescriptionID.startsWith('PRE-');
+  try {const isNew = !prescription.PrescriptionID || !prescription.PrescriptionID.startsWith('PRE-');
     console.log("[SERVICE DEBUG 6] PrescriptionID:", prescription.PrescriptionID, "isNew:", isNew);
     
     const actionName = isNew ? "Create Prescription (createPrescription API)" : "Update Prescription (updatePrescription API)";
@@ -253,8 +250,7 @@ export const prescriptionService = {
 
   // Load prescription history from API with local cache fallback
   async loadPrescriptionHistory(customerId: string): Promise<PrescriptionPascal[]> {
-    try { clearCustomerHistoryCache();  
-      const res = await apiCall<any>('getPrescriptionsByCustomer', { customerId });
+    try {const res = await apiCall<any>('getPrescriptionsByCustomer', { customerId });
       const data = res.data || res;
       if (Array.isArray(data)) {
         return data.map(mapRawToPascal);
@@ -303,8 +299,7 @@ export const prescriptionService = {
 
   // Delete prescription
   async deletePrescription(prescriptionId: string): Promise<void> {
-    try { clearCustomerHistoryCache();  
-      await apiCall('deletePrescription', { prescriptionId });
+    try {await apiCall('deletePrescription', { prescriptionId });
     } catch (e) {
       console.warn('deletePrescription API failed:', e);
     }
