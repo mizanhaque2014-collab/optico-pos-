@@ -10,6 +10,7 @@ import { OpticalInvoiceA5 } from './OpticalInvoiceA5';
 import { SalesOrderDetailCard } from './SalesOrderDetailCard';
 import { PrescriptionViewOnly } from './PrescriptionViewOnly';
 import { shopConfig } from '@/lib/shopConfig';
+import { generateWhatsAppInvoiceText } from '@/lib/whatsappUtils';
 
 interface Props {
   onBack: () => void;
@@ -212,7 +213,7 @@ export function DeliveryCollectionView({ onBack }: Props) {
             </button>
             <button 
               onClick={() => {
-                const text = `*DELIVERY INVOICE: ${completedInvoice.invoiceNumber}*\n*Shop:* ${shopConfig.shopName}\n*Customer:* ${resolvedCustomer?.name || 'Customer'}\n*Total Bill:* ₹${completedInvoice.grandTotal}\n*Advance Paid:* ₹${completedInvoice.advanceAmount}\n*Balance Collected:* ₹${completedInvoice.finalCollectionPaymentDetail?.total || (completedInvoice.grandTotal - completedInvoice.advanceAmount)}\n*Remaining Balance:* ₹0 (PAID)\n*Delivery Date:* ${new Date(completedInvoice.deliveryDate || Date.now()).toLocaleString('en-IN')}\nThank you!`;
+                const text = generateWhatsAppInvoiceText(completedInvoice, resolvedCustomer || { name: 'Customer' }, resolvedPrescription, completedInvoice.items || []);
                 const encoded = encodeURIComponent(text);
                 window.open(`https://api.whatsapp.com/send?phone=${resolvedCustomer?.mobile}&text=${encoded}`, '_blank');
               }}
