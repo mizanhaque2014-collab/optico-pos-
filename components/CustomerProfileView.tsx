@@ -75,6 +75,10 @@ export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
         ]);
         
         let finalInvoices = (invs && invs.length > 0) ? invs : (history.invoices || []);
+        console.log("Current Customer FULL Object", customer);
+        if (customer.id) {
+            finalInvoices = finalInvoices.filter((i: any) => i.customerId === customer.id || (i as any).CustomerID === customer.id || (i as any).customerID === customer.id || (i as any).CustomerId === customer.id);
+        }
         
         console.log("Invoices From Backend getInvoicesByCustomer", invs);
         console.log("Invoices From Backend loadCustomerHistory", history.invoices);

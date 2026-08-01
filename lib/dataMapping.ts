@@ -3,7 +3,7 @@ import { Customer, EyeTestDetails, Invoice, OrderItem, Prescription, InventoryIt
 export function normalizeCustomer(c: any): Customer {
   if (!c) return {} as Customer;
   return {
-    id: String(c.id || c.CustomerID || c.customerid || c.customerId || ''),
+    id: String(c.id || c.CustomerID || c.customerID || c.CustomerId || c.customerid || c.customerId || ''),
     name: String(c.name || c.Name || c.CustomerName || c.customerName || ''),
     mobile: String(c.mobile || c.Mobile || c.mobilenumber || c.mobileNumber || ''),
     dob: c.dob || c.DOB || c.dateofbirth || c.dateOfBirth || '',

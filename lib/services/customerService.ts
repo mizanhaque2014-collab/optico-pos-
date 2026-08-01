@@ -9,6 +9,10 @@ export const sanitizeCustomer = normalizeCustomer;
 export const customerService = {
   // New Endpoint: Create customer
   async createCustomer(customer: Omit<Customer, 'id' | 'createdAt'> & { id?: string; createdAt?: number }): Promise<Customer> {
+    if (!customer.id || customer.id.includes('local') || customer.id.includes('temp')) {
+      customer.id = 'CUST-' + Date.now() + Math.floor(Math.random() * 1000);
+      (customer as any).CustomerID = customer.id;
+    }
     try {
       const res = await apiCall<any>('createCustomer', { customer });
       
@@ -103,7 +107,7 @@ export const customerService = {
   async saveCustomer(customer: Customer): Promise<Customer> {
     console.log("CUSTOMER SAVE START", customer);
     try {
-      if (!customer.id) {
+      if (!customer.id || customer.id.includes('local') || customer.id.includes('temp')) {
         return await this.createCustomer(customer);
       } else {
         return await this.updateCustomer(customer);
