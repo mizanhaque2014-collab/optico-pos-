@@ -22,7 +22,15 @@ interface Props {
 }
 
 export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const store = useStore();
+  const [invoices, setInvoices] = useState<Invoice[]>(() => {
+    try {
+      const localInvoices = store.getInvoices().filter((i: any) => i.customerId === customer.id || (i as any).CustomerID === customer.id);
+      return localInvoices.sort((a: any, b: any) => b.createdAt - a.createdAt);
+    } catch(e) {
+      return [];
+    }
+  });
   
   // Separate into Invoices (Direct Sale) and Sales Orders
   const directSaleInvoices = invoices.filter(i => i.type === 'Direct Sale' || i.type === ('DirectSale' as any));
@@ -156,12 +164,7 @@ export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
         </div>
       </div>
 
-      {loadingHistory ? (
-        <div className="text-center py-12 text-xs font-bold uppercase tracking-widest text-white/40">
-          Loading Examination & Purchase Histories...
-        </div>
-      ) : (
-        <div className="space-y-6">
+      <div className="space-y-6">
 
           {/* 2. EYE TEST HISTORY */}
           <div className="bg-[#1E293B] border border-white/10 p-6 rounded-2xl shadow-xl">
@@ -171,7 +174,7 @@ export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
             
             {eyeTests.length === 0 ? (
               <p className="text-xs text-white/40 font-bold uppercase tracking-wider text-center py-6 bg-[#0F172A]/40 rounded-xl border border-white/5">
-                No eye examinations performed yet
+                {loadingHistory ? "Loading eye examinations..." : "No eye examinations performed yet"}
               </p>
             ) : (
               <div className="grid grid-cols-1 gap-4">
@@ -380,7 +383,6 @@ export function CustomerProfileView({ customer, onBack, onNavigateTo }: Props) {
           </div>
 
         </div>
-      )}
 
       {/* BILLING CHOICE OVERLAY MODAL */}
             {/* INVOICE VIEW MODAL */}
