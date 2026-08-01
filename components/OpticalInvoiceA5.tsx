@@ -148,19 +148,23 @@ export function OpticalInvoiceA5({
         @media print {
           html, body {
             background-color: #ffffff !important;
-            color: #000000 !important;
             margin: 0 !important;
             padding: 0 !important;
+            height: 100vh !important;
+            overflow: hidden !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          /* Hide app wrappers, navigation panel, page headers, or sidebar entirely */
-          body > *, header, footer, nav, aside, button, .no-print, .actions-container, .modal-backdrop {
+          body * {
+            visibility: hidden;
+          }
+          .no-print, header, footer, nav, aside, button, .actions-container, .modal-backdrop {
             display: none !important;
           }
-          /* Only display our specific printable canvas */
+          #a5-print-wrapper, #a5-print-wrapper * {
+            visibility: visible;
+          }
           #a5-print-wrapper {
-            display: block !important;
             position: absolute !important;
             left: 0 !important;
             top: 0 !important;
@@ -168,12 +172,10 @@ export function OpticalInvoiceA5({
             height: 210mm !important;
             margin: 0 !important;
             padding: 5mm !important;
-            box-sizing: border-box !important;
             background: #ffffff !important;
             color: #000000 !important;
             z-index: 9999999 !important;
           }
-          /* Ensure crisp black typography and clean borders */
           .text-print-black {
             color: #000000 !important;
           }
