@@ -191,7 +191,7 @@ export function StockInventoryView({ onBack }: Props) {
   };
 
   // 1. Save Manual Entry
-  const handleSaveManualProduct = (e: React.FormEvent) => {
+  const handleSaveManualProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProduct.brand || !newProduct.modelNumber) {
       alert('Brand and Model Number are required.');
@@ -218,8 +218,9 @@ export function StockInventoryView({ onBack }: Props) {
       itemToAdd.lensType = newProduct.lensType;
     }
 
-    store.saveStockItem(itemToAdd);
+    await store.saveStockItem(itemToAdd);
     setFormSuccess(`Successfully saved manual product "${newProduct.brand} ${newProduct.modelNumber}" to stock.`);
+    loadData();
     
     // Reset product input
     setNewProduct({
@@ -286,7 +287,7 @@ export function StockInventoryView({ onBack }: Props) {
   };
 
   // 3. Excel TSV Bulk Import
-  const handleExcelImport = () => {
+  const handleExcelImport = async () => {
     if (!String(bulkExcelText ?? "").trim()) {
       alert('Please paste some rows from your Excel sheet.');
       return;
@@ -331,7 +332,7 @@ export function StockInventoryView({ onBack }: Props) {
     });
 
     if (importedItems.length > 0) {
-      store.saveStockItemsBulk(importedItems);
+      await store.saveStockItemsBulk(importedItems);
       setBulkImportSuccess(`Success! Uploaded ${importedCount} items securely into local inventory.`);
       setBulkExcelText('');
       loadData();
@@ -354,7 +355,7 @@ export function StockInventoryView({ onBack }: Props) {
   };
 
   // 4. Admin Stock Adjustments
-  const handleSaveAdjustment = (e: React.FormEvent) => {
+  const handleSaveAdjustment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedAdjProduct) {
       alert('Please select a stock product to adjust.');
@@ -380,7 +381,7 @@ export function StockInventoryView({ onBack }: Props) {
       adjustedBy: 'ADMIN'
     };
 
-    store.saveStockAdjustment(adjustmentRecord);
+    await store.saveStockAdjustment(adjustmentRecord);
     setAdjSuccess(`Stock adjustment saved successfully. Product count updated.`);
     
     // Reset adjustment fields
@@ -393,7 +394,7 @@ export function StockInventoryView({ onBack }: Props) {
   };
 
   // 5. Admin Branch Transfers
-  const handleSaveTransfer = (e: React.FormEvent) => {
+  const handleSaveTransfer = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedTransferProduct) {
       alert('Please select a product to transfer.');
@@ -428,7 +429,7 @@ export function StockInventoryView({ onBack }: Props) {
       transferredBy: 'ADMIN'
     };
 
-    store.saveBranchTransfer(transferRecord);
+    await store.saveBranchTransfer(transferRecord);
     setTransferSuccess(`Transferred ${transferQty} units of ${product.brand} to ${transferToBranch} successfully.`);
     
     setSelectedTransferProduct('');
