@@ -1,4 +1,6 @@
-// ==========================================
+const fs = require('fs');
+const path = './backend/Inventory.gs';
+const code = `// ==========================================
 // INVENTORY.GS
 // ==========================================
 
@@ -52,3 +54,6 @@ function deleteInventory(id) {
   var idField = hasStockID ? "StockID" : "InventoryID";
   return deleteRecord(CONFIG.SHEETS.INVENTORY, idField, id);
 }
+`;
+
+fs.writeFileSync(path, code);

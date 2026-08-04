@@ -6,8 +6,14 @@ const STORAGE_KEY = 'opt_stock_inventory';
 
 export const inventoryService = {
   async saveInventoryItem(item: StockItem): Promise<void> {
+    const payloadItem = {
+      ...item,
+      StockID: item.id,
+      InventoryID: item.id,
+      Model: item.modelNumber
+    };
     try {
-      await apiCall('saveInventory', { inventoryItem: item });
+      await apiCall('saveInventory', { inventoryItem: payloadItem });
     } catch (e) {
       console.warn('saveInventory API failed, falling back to local:', e);
     }

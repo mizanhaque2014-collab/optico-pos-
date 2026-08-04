@@ -160,7 +160,7 @@ export function normalizeInvoice(inv: any): Invoice {
 export function normalizeStockItem(item: any): any {
   if (!item) return {};
   return {
-    id: String(item.id || item.InventoryID || item.inventoryId || item.inventoryid || item.StockID || item.stockId || ''),
+    id: String(item.id || item.InventoryID || item.inventoryId || item.inventoryid || item.StockID || item.stockId || 's-rec-' + (item.barcode || item.Barcode || '') + '-' + (item.modelNumber || item.Model || 'unkn')),
     category: String(item.category || item.Category || 'Other Products'),
     brand: String(item.brand || item.Brand || ''),
     modelNumber: String(item.modelNumber || item.ModelNumber || item.model || item.Model || ''),
