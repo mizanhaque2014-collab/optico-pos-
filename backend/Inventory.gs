@@ -2,7 +2,7 @@
 // INVENTORY.GS
 // ==========================================
 
-var INV_HEADERS = ["InventoryID", "CompanyID", "BranchID", "Category", "Brand", "Model", "Color", "Size", "Quantity", "PurchasePrice", "SellingPrice", "CreatedAt", "Barcode"];
+var INV_HEADERS = ["StockID", "CompanyID", "BranchID", "Category", "Brand", "Model", "Quantity", "Barcode", "PurchasePrice", "SellingPrice", "CreatedAt"];
 
 function syncInventoryHeaders() {
   var sheet = getSheetByNameOrCreate(CONFIG.SHEETS.INVENTORY, INV_HEADERS);
@@ -55,15 +55,15 @@ function saveInventory(item) {
     item[idField] = item.id;
   }
   
-  if (item.modelNumber && typeof item.Model === 'undefined') item.Model = item.modelNumber;
-  if (item.barcode && typeof item.Barcode === 'undefined') item.Barcode = item.barcode;
-  if (item.purchasePrice && typeof item.PurchasePrice === 'undefined') item.PurchasePrice = item.purchasePrice;
-  if (item.sellingPrice && typeof item.SellingPrice === 'undefined') item.SellingPrice = item.sellingPrice;
-  if (item.supplierName && typeof item.SupplierName === 'undefined') item.SupplierName = item.supplierName;
-  if (item.purchaseDate && typeof item.PurchaseDate === 'undefined') item.PurchaseDate = item.purchaseDate;
-  if (item.remarks && typeof item.Remarks === 'undefined') item.Remarks = item.remarks;
-  if (item.branch && typeof item.BranchID === 'undefined') item.BranchID = item.branch;
-  if (item.quantity && typeof item.Quantity === 'undefined') item.Quantity = item.quantity;
+  if (typeof item.modelNumber !== 'undefined' && typeof item.Model === 'undefined') item.Model = item.modelNumber;
+  if (typeof item.barcode !== 'undefined' && typeof item.Barcode === 'undefined') item.Barcode = item.barcode;
+  if (typeof item.purchasePrice !== 'undefined' && typeof item.PurchasePrice === 'undefined') item.PurchasePrice = item.purchasePrice;
+  if (typeof item.sellingPrice !== 'undefined' && typeof item.SellingPrice === 'undefined') item.SellingPrice = item.sellingPrice;
+  if (typeof item.supplierName !== 'undefined' && typeof item.SupplierName === 'undefined') item.SupplierName = item.supplierName;
+  if (typeof item.purchaseDate !== 'undefined' && typeof item.PurchaseDate === 'undefined') item.PurchaseDate = item.purchaseDate;
+  if (typeof item.remarks !== 'undefined' && typeof item.Remarks === 'undefined') item.Remarks = item.remarks;
+  if (typeof item.branch !== 'undefined' && typeof item.BranchID === 'undefined') item.BranchID = item.branch;
+  if (typeof item.quantity !== 'undefined' && typeof item.Quantity === 'undefined') item.Quantity = item.quantity;
   
   return saveRecord(CONFIG.SHEETS.INVENTORY, idField, item, "INVITEM"); 
 }
