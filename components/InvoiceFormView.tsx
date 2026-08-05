@@ -176,6 +176,42 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
     setItems(items.filter(i => i.id !== id));
   };
 
+  const handleUpdateItem = (id: string, field: 'quantity' | 'discount', value: number) => {
+    setItems(items.map(item => {
+      if (item.id === id) {
+        const updated = { ...item, [field]: value };
+        updated.finalAmount = (updated.sellingPrice * updated.quantity) - (updated.discount || 0);
+        return updated;
+      }
+      return item;
+    }));
+  };
+
+  const addInventoryItemToInvoice = (p: any) => {
+    let itemType = 'manual';
+    if (p.category === 'Optical Frame' || p.category === 'Sunglass' || p.category === 'Reading Glass') itemType = 'frame';
+    else if (p.category === 'Optical Lenses') itemType = 'lens';
+
+    const newItem = {
+      id: crypto.randomUUID(),
+      itemType: itemType,
+      productType: (p.category || 'Other'),
+      brand: p.brand || '',
+      modelNumber: p.modelNumber || '',
+      lensBrand: itemType === 'lens' ? p.brand : undefined,
+      lensCategory: itemType === 'lens' ? p.category : undefined,
+      itemName: itemType === 'manual' ? `${p.brand} ${p.modelNumber}` : undefined,
+      color: p.color || '',
+      barcode: p.barcode || '', // The requested field
+      quantity: 1,
+      sellingPrice: p.sellingPrice || 0,
+      discount: 0,
+      finalAmount: p.sellingPrice || 0
+    };
+    handleAddItem(newItem as any);
+    setStockQuery(''); // Clear search
+  };
+
   const [savedInvoice, setSavedInvoice] = useState<any>(null);
   const [continueToBilling, setContinueToBilling] = useState(!!preloadedEyeTest);
   const [saveSuccessMessage, setSaveSuccessMessage] = useState(false);
@@ -506,7 +542,7 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
                             : '🟢 In Stock';
 
                         return (
-                          <div key={p.id} className="flex items-center justify-between py-2.5 text-xs">
+                          <div key={p.id} className="flex items-center justify-between py-2.5 text-xs hover:bg-white/5 cursor-pointer transition-colors px-2 rounded-lg" onClick={() => p.quantity > 0 && addInventoryItemToInvoice(p)}>
                             <div>
                               <div className="flex items-center gap-2">
                                 <span className="font-extrabold text-white text-sm">{p.brand}</span>
@@ -580,9 +616,25 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
                                item.itemName}
                             </td>
                             <td className="px-4 py-3 text-white/60 capitalize font-medium">{item.itemType}</td>
-                            <td className="px-4 py-3 text-center text-white/80 font-bold">{item.quantity}</td>
+                            <td className="px-4 py-3 text-center text-white/80 font-bold">
+  <input 
+    type="number" 
+    value={item.quantity} 
+    onChange={(e) => handleUpdateItem(item.id, 'quantity', Number(e.target.value))}
+    className="w-16 bg-black/35 border border-white/10 rounded px-2 py-1 text-xs text-center text-white focus:outline-none focus:border-cyan-500" 
+    min="1"
+  />
+</td>
                             <td className="px-4 py-3 text-right text-white/80 font-bold">₹{item.sellingPrice}</td>
-                            <td className="px-4 py-3 text-right text-rose-400 font-bold">{item.discount > 0 ? `-₹${item.discount}` : '-'}</td>
+                            <td className="px-4 py-3 text-right text-rose-400 font-bold">
+  <input 
+    type="number" 
+    value={item.discount} 
+    onChange={(e) => handleUpdateItem(item.id, 'discount', Number(e.target.value))}
+    className="w-16 bg-black/35 border border-white/10 rounded px-2 py-1 text-xs text-right text-white focus:outline-none focus:border-cyan-500"
+    min="0"
+  />
+</td>
                             <td className="px-4 py-3 text-right text-emerald-400 font-black">₹{item.finalAmount}</td>
                           </tr>
                         ))}

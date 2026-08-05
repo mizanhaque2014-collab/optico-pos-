@@ -186,12 +186,10 @@ To fix CORS, please redeploy the Google Apps Script in Extensions -> Apps Script
     
     // 2. Check if it's a 404 Endpoint / Deployment mismatch error
     if (error.message && error.message.includes('404')) {
-      console.warn(`%c[API 404 NOT FOUND / DEPLOYMENT WARNING] Action: ${action}
-Possible Causes:
-- Endpoint mismatch: The URL inside 'lib/config.ts' is incorrect, has typos, or is expired.
-- Not Deployed: The Google Apps Script has not been deployed as a "Web app".
-- Action Not Supported: The action "${action}" is not handled by the deployed Apps Script (e.g. getInventory is a frontend-only local action but was sent to backend).`, 'color: #ef4444; font-weight: bold;');
-      throw error;
+      console.warn(`%c[API 404 NOT FOUND / DEPLOYMENT WARNING] Action: ${action}\nPossible Causes:\n- Endpoint mismatch: The URL inside 'lib/config.ts' is incorrect, has typos, or is expired.\n- Not Deployed: The Google Apps Script has not been deployed as a "Web app".\n- Action Not Supported: The action "${action}" is not handled by the deployed Apps Script.`, 'color: #ef4444; font-weight: bold;');
+      // If it's a 404, we shouldn't throw an unhandled exception that breaks the app. We should gracefully fallback.
+      // throw error; // Commented out to prevent breaking the app routing on 404s
+      return { success: false, error: '404 Not Found' } as any;
     }
     
     // 3. Other errors (e.g. Request/Response format errors, syntax issues)

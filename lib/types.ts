@@ -79,6 +79,7 @@ export type OrderItem = {
   productType?: ProductType;
   brand?: string;
   modelNumber?: string;
+  barcode?: string;
   color?: string;
   
   // Lens fields
