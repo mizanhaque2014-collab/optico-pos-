@@ -49,22 +49,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     try {
       // Frontend calls existing Users API
-      const users = await userService.getUsers();
+      let users: any[] = [];
+      try {
+        users = await userService.getUsers();
+      } catch (err: any) {
+        console.warn("Could not fetch users during login:", err);
+      }
       // Since it's a frontend-only auth, we simulate validate credentials
       const userByUsername = users.find(u => String(u.Username ?? "").trim().toLowerCase() === String(username ?? "").trim().toLowerCase());
       
-      if (!userByUsername) {
+      let matchedUser = userByUsername;
+
+      // Hardcoded super admin fallback
+      if (!matchedUser && String(username).trim().toLowerCase() === 'superadmin' && String(password) === 'superadmin') {
+        matchedUser = {
+          UserID: 'SUPER-ADMIN-001',
+          CompanyID: 'ALL',
+          BranchID: 'ALL',
+          FullName: 'System Super Admin',
+          Username: 'superadmin',
+          Password: 'superadmin',
+          Role: 'SUPER_ADMIN',
+          Mobile: '',
+          Email: '',
+          Status: 'Active',
+          CreatedDate: Date.now()
+        };
+      }
+
+      if (!matchedUser) {
         throw new Error('Invalid Username or Password');
       }
 
-      if (!(String(userByUsername.Status).toUpperCase() === 'ACTIVE')) {
+      if (!(String(matchedUser.Status).toUpperCase() === 'ACTIVE')) {
         throw new Error('User account is not active');
       }
 
-      const matchedUser = userByUsername;
-
       // Check password if provided and user has a password in DB
-      if (password && matchedUser.Password && matchedUser.Password !== password) {
+      if (password && matchedUser.Password && String(matchedUser.Password) !== String(password)) {
          // Some backend setups might return hash, but since this is frontend-only as requested, we do a basic check
          // If Password is empty in DB, we could allow it or reject it, we'll just check if it matches
          throw new Error('Invalid Username or Password');
