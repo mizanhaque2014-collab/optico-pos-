@@ -145,9 +145,9 @@ export default function Home() {
 
   if (role === 'SUPER_ADMIN') {
     sidebarItems = [
-      { id: 'companies', label: 'Companies', icon: <Building size={16} />, action: () => comingSoonAction('Companies') },
-      { id: 'branches', label: 'Branches', icon: <Server size={16} />, action: () => comingSoonAction('Branches') },
-      { id: 'users', label: 'Users', icon: <Users size={16} />, action: () => comingSoonAction('Users') },
+      { id: 'companies', label: 'Companies', icon: <Building size={16} />, action: () => window.location.href = '/super-admin?tab=companies' },
+      { id: 'branches', label: 'Branches', icon: <Server size={16} />, action: () => window.location.href = '/super-admin?tab=branches' },
+      { id: 'users', label: 'Users', icon: <Users size={16} />, action: () => window.location.href = '/super-admin?tab=users' },
       commonItems.customers,
       commonItems.inventory,
       commonItems.prescriptions,
@@ -155,12 +155,12 @@ export default function Home() {
       commonItems.sales_order,
       commonItems.delivery_collection,
       commonItems.payments,
-      { id: 'reports', label: 'Reports', icon: <BarChart3 size={16} />, action: () => comingSoonAction('Reports') },
-      { id: 'dashboard_analytics', label: 'Dashboard Analytics', icon: <BarChart3 size={16} />, action: () => comingSoonAction('Dashboard Analytics') },
-      { id: 'shop_settings', label: 'Shop Settings', icon: <Settings size={16} />, action: () => comingSoonAction('Shop Settings') },
-      { id: 'system_settings', label: 'System Settings', icon: <Settings size={16} />, action: () => comingSoonAction('System Settings') },
-      { id: 'api_config', label: 'API Configuration', icon: <Key size={16} />, action: () => comingSoonAction('API Configuration') },
-      { id: 'license_management', label: 'License Management', icon: <ShieldAlert size={16} />, action: () => comingSoonAction('License Management') },
+      { id: 'reports', label: 'Reports', icon: <BarChart3 size={16} />, action: () => window.location.href = '/super-admin?tab=analytics' },
+      { id: 'dashboard_analytics', label: 'Dashboard Analytics', icon: <BarChart3 size={16} />, action: () => window.location.href = '/super-admin?tab=analytics' },
+      { id: 'shop_settings', label: 'Shop Settings', icon: <Settings size={16} />, action: () => window.location.href = '/super-admin?tab=settings' },
+      { id: 'system_settings', label: 'System Settings', icon: <Settings size={16} />, action: () => window.location.href = '/super-admin?tab=settings' },
+      { id: 'api_config', label: 'API Configuration', icon: <Key size={16} />, action: () => window.location.href = '/super-admin?tab=api_status' },
+      { id: 'license_management', label: 'License Management', icon: <ShieldAlert size={16} />, action: () => window.location.href = '/super-admin?tab=security' },
     ];
   } else if (role === 'COMPANY_ADMIN') {
     sidebarItems = [

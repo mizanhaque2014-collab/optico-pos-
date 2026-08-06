@@ -1,8 +1,8 @@
 "use client";
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, Suspense, useEffect, useCallback, useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useAuth } from '@/lib/AuthContext';
 import {
@@ -61,7 +61,7 @@ type TabType =
   | 'security'
   | 'sales';
 
-export default function SuperAdminPortal() {
+function SuperAdminContent() {
   const router = useRouter();
   const referenceTime = useMemo(() => getTimestamp(), []);
 
@@ -81,7 +81,15 @@ export default function SuperAdminPortal() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Active Menu Tab
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabType>('companies');
+  
+  useEffect(() => {
+    const tabParam = searchParams.get('tab') as TabType;
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
 
   // Loaded Data States
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -1861,5 +1869,14 @@ export default function SuperAdminPortal() {
       )}
     </div>
     </ProtectedRoute>
+  );
+}
+
+
+export default function SuperAdminPortal() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#020617] text-white">Loading...</div>}>
+      <SuperAdminContent />
+    </Suspense>
   );
 }
