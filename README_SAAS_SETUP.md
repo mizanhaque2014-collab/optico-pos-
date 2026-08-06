@@ -19,23 +19,41 @@ This guide explains how to set up the Optico POS system for a new company using 
 9. Click **Deploy**. (You may need to authorize the permissions).
 10. Copy the generated **Web app URL** (this is your new APPS_SCRIPT_API_URL).
 
-## Step 2: Connect the Frontend to the New Company
+## Step 2: Connect the Frontend to the New Company (The Setup Screen)
 
 1. Open your Optico POS application in the browser.
-2. Click the **Gear Icon** (Shop Settings) in the top right corner of the dashboard.
-3. Under **Shop Identity Details**, enter the new company's name and details.
-4. In the **APPS_SCRIPT_API_URL** field, paste the Web app URL you copied in Step 1.
+2. Open the **Shop Profile & SaaS Config** screen.
+3. In the **APPS_SCRIPT_API_URL** field, paste the Web app URL you copied in Step 1.
+4. Under **Shop Identity Details**, enter the new company's name and details.
 5. Click **Save Profile**. 
 6. The app will refresh and is now connected exclusively to the new company's Google Sheet database.
 
-## Step 3: Configure Multiple Branches
+## Step 3: Create the First Admin Account (Bootstrap)
 
-Once the app is connected to the new backend:
+Because this is a brand new database, it has no users! You need to manually create the first admin account directly in the Google Sheet.
 
-1. Navigate to the **Super Admin** dashboard by going to the URL: `your-app-url.com/super-admin`.
-2. Select the **Branch Management** tab from the left sidebar.
-3. Click **Add Branch**.
-4. Enter the details for the 5 branches (e.g., Main Branch, City Center Branch, etc.) one by one and save them.
-5. Next, go to the **User Management** tab.
-6. When creating user accounts for staff members, assign each user to their specific branch using the dropdown menu.
-7. Now, when staff members log in, their sales, inventory, and reports will be tagged to their assigned branch.
+1. Go back to the **Google Sheet** (on the new client's account).
+2. Look at the bottom tabs. You should see a sheet named **`Users`**. (If you don't see it, refresh the POS app in your browser once, and the sheets will auto-generate).
+3. Open the **`Users`** sheet and type the following in Row 2 (under the headers):
+   - **UserID**: `USR-001`
+   - **CompanyID**: `COMP-001`
+   - **BranchID**: `ALL`
+   - **FullName**: (Client's Name)
+   - **Username**: `admin`
+   - **Password**: `123456`
+   - **Role**: `COMPANY_ADMIN`
+   - **Status**: `ACTIVE`
+4. The client can now go to the POS app and log in using `admin` and `123456`.
+
+## Step 4: Configure Multiple Branches & Staff
+
+Once the client admin is logged in, they can create the rest of their setup directly inside the app:
+
+1. Navigate to the **Super Admin / Settings** dashboard inside the app.
+2. Select the **Branch Management** tab.
+3. Click **Add Branch** and create the 5 branches.
+4. Select the **User Management** tab.
+5. Click **Add User** to create accounts for the staff.
+   - Assign each user to their specific branch using the dropdown menu.
+   - Set their role to **SHOP_USER**.
+6. Give the staff their newly created usernames and passwords. When they log in, their sales and inventory will be automatically tagged to their assigned branch!
