@@ -1617,8 +1617,8 @@ function SuperAdminContent() {
                   className="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-white"
                 >
                   {companies.map(comp => (
-                    <option key={comp.id} value={comp.id}>
-                      {comp.companyName} ({comp.id})
+                    <option key={comp.companyId || comp.id} value={comp.companyId || comp.id}>
+                      {comp.companyName} ({comp.companyId || comp.id})
                     </option>
                   ))}
                 </select>
@@ -1727,8 +1727,8 @@ function SuperAdminContent() {
                   >
                     <option value="">Select Company Tenant</option>
                     {companies.map(comp => (
-                      <option key={comp.id} value={comp.id}>
-                        {comp.companyName} ({comp.id})
+                      <option key={comp.companyId || comp.id} value={comp.companyId || comp.id}>
+                        {comp.companyName} ({comp.companyId || comp.id})
                       </option>
                     ))}
                   </select>

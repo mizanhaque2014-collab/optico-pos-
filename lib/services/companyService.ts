@@ -1,9 +1,13 @@
 import { apiCall } from '../apiClient';
 import { API_URL } from '../config';
+import { normalizeCompany } from '../dataMapping';
 
 export interface Company {
   id: string;
+  companyId?: string;
+  CompanyID?: string;
   companyName: string;
+  CompanyName?: string;
   ownerName: string;
   mobile: string;
   email: string;
@@ -13,6 +17,7 @@ export interface Company {
   subscriptionStartDate: string;
   subscriptionEndDate: string;
   status: 'Active' | 'Inactive';
+  Status?: string;
   createdDate: number;
   updatedDate: number;
 }
@@ -60,17 +65,7 @@ export const companyService = {
     const data = await apiCall<any[]>('getCompanies');
     if (Array.isArray(data)) {
       this.logResponse('getCompanies', data);
-      return data.map(c => {
-        const idVal = c.companyId || c.id;
-        const createdVal = c.createdDate ? new Date(c.createdDate).getTime() : Date.now();
-        const updatedVal = c.updatedDate ? new Date(c.updatedDate).getTime() : createdVal;
-        return {
-          ...c,
-          id: idVal,
-          createdDate: isNaN(createdVal) ? Date.now() : createdVal,
-          updatedDate: isNaN(updatedVal) ? Date.now() : updatedVal,
-        };
-      });
+      return data.map(normalizeCompany);
     }
     return [];
   },
@@ -147,14 +142,21 @@ export const companyService = {
       const res = await apiCall<any>('createCompany', { company: newCompany });
       if (res) {
         this.logResponse('createCompany', res);
-        const idVal = res.companyId || res.id || newCompany.id;
-        const createdVal = res.createdDate ? new Date(res.createdDate).getTime() : Date.now();
-        const updatedVal = res.updatedDate ? new Date(res.updatedDate).getTime() : createdVal;
+        const idVal = res.CompanyID || res.companyId || res.id || newCompany.id;
+        const createdVal = (res.CreatedDate || res.createdDate) ? new Date(res.CreatedDate || res.createdDate).getTime() : Date.now();
+        const updatedVal = (res.UpdatedDate || res.updatedDate) ? new Date(res.UpdatedDate || res.updatedDate).getTime() : createdVal;
         return {
           ...res,
+          ...newCompany,
           id: idVal,
+          companyId: idVal,
+          CompanyID: idVal,
+          companyName: newCompany.companyName,
+          CompanyName: newCompany.companyName,
+          status: newCompany.status,
+          Status: newCompany.status,
           createdDate: isNaN(createdVal) ? Date.now() : createdVal,
-          updatedVal: isNaN(updatedVal) ? Date.now() : updatedVal
+          updatedDate: isNaN(updatedVal) ? Date.now() : updatedVal
         };
       }
       throw new Error("Apps Script response does not contain a valid company ID");
@@ -210,12 +212,19 @@ export const companyService = {
       const res = await apiCall<any>('updateCompany', { company: updatedCompany });
       if (res) {
         this.logResponse('updateCompany', res);
-        const idVal = res.companyId || res.id || updatedCompany.id;
-        const createdVal = res.createdDate ? new Date(res.createdDate).getTime() : Date.now();
-        const updatedVal = res.updatedDate ? new Date(res.updatedDate).getTime() : createdVal;
+        const idVal = res.CompanyID || res.companyId || res.id || updatedCompany.id;
+        const createdVal = (res.CreatedDate || res.createdDate) ? new Date(res.CreatedDate || res.createdDate).getTime() : Date.now();
+        const updatedVal = (res.UpdatedDate || res.updatedDate) ? new Date(res.UpdatedDate || res.updatedDate).getTime() : createdVal;
         return {
           ...res,
+          ...updatedCompany,
           id: idVal,
+          companyId: idVal,
+          CompanyID: idVal,
+          companyName: updatedCompany.companyName,
+          CompanyName: updatedCompany.companyName,
+          status: updatedCompany.status,
+          Status: updatedCompany.status,
           createdDate: isNaN(createdVal) ? Date.now() : createdVal,
           updatedDate: isNaN(updatedVal) ? Date.now() : updatedVal
         };
