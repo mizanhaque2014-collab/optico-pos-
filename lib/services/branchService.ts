@@ -10,12 +10,17 @@ export interface BranchInfo {
 
 export interface Branch {
   id: string;
+  branchId?: string;
+  BranchID?: string;
   companyId: string;
+  CompanyID?: string;
   branchName: string;
+  BranchName?: string;
   address: string;
   mobile: string;
   whatsAppNumber: string;
   status: 'Active' | 'Inactive';
+  Status?: string;
   createdDate: number;
 }
 
@@ -91,12 +96,27 @@ export const branchService = {
       if (Array.isArray(data)) {
         this.logResponse('getBranches', data);
         return data.map(b => {
-          const idVal = b.branchId || b.id;
-          const dateVal = b.createdDate ? new Date(b.createdDate).getTime() : Date.now();
+          const idVal = b.BranchID || b.branchId || b.id || b.ID || '';
+          const compIdVal = b.CompanyID || b.companyId || '';
+          const nameVal = b.BranchName || b.branchName || '';
+          const mobileVal = b.Mobile || b.mobile || '';
+          const statusVal = b.Status || b.status || 'Active';
+          const addrVal = b.Address || b.address || '';
+          
+          const dateVal = (b.CreatedDate || b.createdDate) ? new Date(b.CreatedDate || b.createdDate).getTime() : Date.now();
           return {
             ...b,
             id: idVal,
-            whatsAppNumber: b.whatsApp || b.whatsAppNumber || '',
+            branchId: idVal,
+            BranchID: idVal,
+            companyId: compIdVal,
+            CompanyID: compIdVal,
+            branchName: nameVal,
+            BranchName: nameVal,
+            mobile: mobileVal,
+            status: statusVal,
+            address: addrVal,
+            whatsAppNumber: b.WhatsApp || b.whatsApp || b.WhatsAppNumber || b.whatsAppNumber || '',
             createdDate: isNaN(dateVal) ? Date.now() : dateVal
           };
         });
