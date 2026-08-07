@@ -1,7 +1,7 @@
 export function normalizeCompany(c: any): any {
   if (!c) return {};
   const idVal = String(c.CompanyID || c.companyId || c.id || c.ID || '');
-  const companyNameVal = String(c.CompanyName || c.companyName || '');
+  const companyNameVal = String(c.CompanyName || c.companyName || c['Company Name'] || c['company Name'] || '');
   const statusVal = String(c.Status || c.status || 'Active');
   const createdVal = (c.CreatedDate || c.createdDate) ? new Date(c.CreatedDate || c.createdDate).getTime() : Date.now();
   const updatedVal = (c.UpdatedDate || c.updatedDate) ? new Date(c.UpdatedDate || c.updatedDate).getTime() : createdVal;

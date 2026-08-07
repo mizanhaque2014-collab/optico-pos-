@@ -1745,7 +1745,24 @@ function SuperAdminContent() {
                   >
                     <option value="">Select Branch Location</option>
                     {(() => {
-                      const filteredBranches = branches.filter(b => String(b.companyId).trim() === String(userForm.CompanyID).trim() || String(b.CompanyID).trim() === String(userForm.CompanyID).trim());
+                      const selectedComp = companies.find(c => (c.companyId || c.id) === userForm.CompanyID);
+                      console.log("Companies:", companies);
+                      console.log("Branches:", branches);
+                      console.log("Selected Company:", selectedComp);
+                      const corruptCompanyId = selectedComp ? `${selectedComp.companyName} (${selectedComp.companyId || selectedComp.id})` : '';
+                      const corruptCompanyId2 = selectedComp ? `${selectedComp.companyName} ()` : '';
+                      
+                      const filteredBranches = branches.filter(b => {
+                        const bCompId = String(b.companyId || b.CompanyID).trim();
+                        const uCompId = String(userForm.CompanyID).trim();
+                        return bCompId === uCompId || 
+                               (selectedComp && (
+                                   bCompId === corruptCompanyId || 
+                                   bCompId === corruptCompanyId2 ||
+                                   bCompId === selectedComp.id || 
+                                   bCompId === selectedComp.companyId
+                               ));
+                      });
                       console.log("Selected Company:", userForm.CompanyID);
                       console.log("Loaded Branches:", branches);
                       console.log("Filtered Branches:", filteredBranches);

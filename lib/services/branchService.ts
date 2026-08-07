@@ -92,7 +92,8 @@ export const branchService = {
   async getBranchesV2(): Promise<Branch[]> {
     this.logRequest('getBranches', null);
     try {
-      const data = await apiCall<any[]>('getBranches');
+      const resData = await apiCall<any>('getBranches');
+      const data = (resData && typeof resData === 'object' && resData.success && Array.isArray(resData.data)) ? resData.data : (Array.isArray(resData) ? resData : []);
       if (Array.isArray(data)) {
         this.logResponse('getBranches', data);
         return data.map(b => {
