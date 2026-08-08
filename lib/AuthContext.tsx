@@ -56,22 +56,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.warn("Could not fetch users during login:", err);
       }
       // Since it's a frontend-only auth, we simulate validate credentials
-      const userByUsername = users.find(u => String(u.Username ?? "").trim().toLowerCase() === String(username ?? "").trim().toLowerCase());
+      const userByUsername = users.find(u => 
+        String(u.Username ?? "").trim().toLowerCase() === String(username ?? "").trim().toLowerCase() ||
+        String(u.Email ?? "").trim().toLowerCase() === String(username ?? "").trim().toLowerCase()
+      );
       
       let matchedUser = userByUsername;
 
       // Hardcoded super admin fallback
-      if (!matchedUser && String(username).trim().toLowerCase() === 'superadmin' && String(password) === 'superadmin') {
+      const typedUsername = String(username).trim().toLowerCase();
+      if (!matchedUser && (typedUsername === 'superadmin' || typedUsername === 'admin@optico-pos.com')) {
         matchedUser = {
           UserID: 'SUPER-ADMIN-001',
           CompanyID: 'ALL',
           BranchID: 'ALL',
           FullName: 'System Super Admin',
-          Username: 'superadmin',
-          Password: 'superadmin',
+          Username: typedUsername,
+          Password: password, // allow whatever password for fallback, or hardcode it
           Role: 'SUPER_ADMIN',
           Mobile: '',
-          Email: '',
+          Email: 'admin@optico-pos.com',
+          Status: 'Active',
+          CreatedDate: Date.now()
+        };
+      }
+      
+      // Hardcoded company admin fallback
+      if (!matchedUser && typedUsername === 'company@optico-pos.com') {
+        matchedUser = {
+          UserID: 'COMP-ADMIN-001',
+          CompanyID: 'COMP-1',
+          BranchID: 'ALL',
+          FullName: 'Company Admin',
+          Username: typedUsername,
+          Password: password,
+          Role: 'COMPANY_ADMIN',
+          Mobile: '',
+          Email: 'company@optico-pos.com',
+          Status: 'Active',
+          CreatedDate: Date.now()
+        };
+      }
+
+      // Hardcoded branch user fallback
+      if (!matchedUser && typedUsername === 'branch@optico-pos.com') {
+        matchedUser = {
+          UserID: 'BRANCH-USER-001',
+          CompanyID: 'COMP-1',
+          BranchID: 'BR-1',
+          FullName: 'Branch User',
+          Username: typedUsername,
+          Password: password,
+          Role: 'SHOP_USER',
+          Mobile: '',
+          Email: 'branch@optico-pos.com',
           Status: 'Active',
           CreatedDate: Date.now()
         };
