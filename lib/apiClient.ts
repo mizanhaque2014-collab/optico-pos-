@@ -13,6 +13,7 @@ export async function apiCall<T>(action: string, argPayload?: any): Promise<T> {
   const customerId = payload.CustomerID || payload.customerId || pData?.CustomerID || pData?.customerId || '';
   const prescriptionId = payload.PrescriptionID || payload.prescriptionId || pData?.PrescriptionID || pData?.prescriptionId || '';
 
+  console.log("[SAAS CONFIG] API URL: " + API_URL);
   console.log("ENTER apiClient.apiCall");
   console.log("Payload:", payload);
   console.log("CustomerID:", customerId);

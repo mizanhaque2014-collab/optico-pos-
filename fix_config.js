@@ -1,13 +1,9 @@
 const fs = require('fs');
 let code = fs.readFileSync('lib/config.ts', 'utf8');
+
 code = code.replace(
-`  url = url.replace(/^["']|["']$/g, ''); // Remove wrapping quotes`,
-`  url = decodeURIComponent(url);
-  url = url.replace(/^["']|["']$/g, ''); // Remove wrapping quotes`
+  "const DEFAULT_API_URL = 'https://script.google.com/macros/s/AKfycbzQR6mfwz6MRbvFKlK2cVsbahM5cX6e1S2ceonuNodFVY9be61dUsY--cdEDWo2L-NQdw/exec';",
+  "const DEFAULT_API_URL = 'https://script.google.com/macros/s/AKfycbwMpyF1V9imrg4yUhnhqaPy6KzKD2ZTzQu918dnnAgSnn49S4PpLFvzRJzbwYO-WM8tNA/exec';"
 );
-code = code.replace(
-`      cleanUrl = cleanUrl.replace(/^["']|["']$/g, '');`,
-`      cleanUrl = decodeURIComponent(cleanUrl);
-      cleanUrl = cleanUrl.replace(/^["']|["']$/g, '');`
-);
+
 fs.writeFileSync('lib/config.ts', code);

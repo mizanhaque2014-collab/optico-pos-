@@ -50,10 +50,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // Frontend calls existing Users API
       let users: any[] = [];
+      // Do NOT hide API errors with empty arrays. We must throw if the backend fails.
       try {
         users = await userService.getUsers();
       } catch (err: any) {
-        console.warn("Could not fetch users during login:", err);
+        console.error("Backend Error on getUsers:", err);
+        throw err; // bubble up the error to show exactly what the backend responded with
       }
       // Since it's a frontend-only auth, we simulate validate credentials
       const userByUsername = users.find(u => 
