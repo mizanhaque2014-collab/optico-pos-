@@ -1,6 +1,9 @@
 "use client";
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { companyService } from '@/lib/services/companyService';
+import { branchService } from '@/lib/services/branchService';
 import { userService, User } from '@/lib/services/userService';
+import { apiCall } from '@/lib/apiClient';
 import { useRouter } from 'next/navigation';
 
 export type Role = 'SUPER_ADMIN' | 'COMPANY_ADMIN' | 'SHOP_USER';
@@ -141,11 +144,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const roleStr = String(matchedUser.Role || '').toUpperCase();
       if (roleStr.includes('SUPER') || roleStr === 'SUPER_ADMIN') {
          assignedRole = 'SUPER_ADMIN';
-      } else if (roleStr.includes('COMPANY') || roleStr === 'ADMIN' || roleStr.includes('ADMIN') && !roleStr.includes('SUPER')) {
+      } else if (roleStr.includes('COMPANY') || roleStr === 'ADMIN' || (roleStr.includes('ADMIN') && !roleStr.includes('SUPER'))) {
          assignedRole = 'COMPANY_ADMIN';
       } else if (roleStr.includes('STAFF') || roleStr.includes('OPERATOR') || roleStr.includes('USER')) {
          assignedRole = 'SHOP_USER';
       }
+
+      // Validate Company and Branch existence as per STEP 4 and STEP 5
+      if (assignedRole !== 'SUPER_ADMIN' && matchedUser.CompanyID && matchedUser.CompanyID !== 'ALL') {
+        try {
+          const companies = await companyService.getCompanies();
+          const validCompany = companies.find((c: any) => c.CompanyID === matchedUser.CompanyID || c.id === matchedUser.CompanyID);
+          if (!validCompany) {
+            throw new Error(`Company '${matchedUser.CompanyID}' not found in database.`);
+          }
+        } catch (err: any) {
+          if (err.message && err.message.includes('not found in database')) throw err;
+          console.warn("Could not validate company due to API error", err);
+        }
+      }
+
+      if (assignedRole === 'SHOP_USER' && matchedUser.BranchID && matchedUser.BranchID !== 'ALL') {
+        try {
+          const branches = await branchService.getBranches();
+          const validBranch = branches.find((b: any) => 
+            (b.BranchID === matchedUser.BranchID || b.id === matchedUser.BranchID) &&
+            (b.CompanyID === matchedUser.CompanyID || b.companyId === matchedUser.CompanyID)
+          );
+          if (!validBranch) {
+            throw new Error(`Branch '${matchedUser.BranchID}' does not belong to Company '${matchedUser.CompanyID}' or does not exist.`);
+          }
+        } catch (err: any) {
+          if (err.message && err.message.includes('does not belong to')) throw err;
+          console.warn("Could not validate branch due to API error", err);
+        }
+      }
+
 
       const newSession: AuthSession = {
         userID: matchedUser.UserID,
@@ -157,6 +191,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loginTime: Date.now(),
         token: 'mock-jwt-token-' + Date.now()
       };
+
+      // Add server-side logging for login action as requested in STEP 17
+      try {
+        
+        apiCall('logActivity', {
+          log: {
+            Action: 'login',
+            Username: matchedUser.Username,
+            UserID: matchedUser.UserID,
+            CompanyID: matchedUser.CompanyID,
+            BranchID: matchedUser.BranchID,
+            Role: assignedRole,
+            Details: 'User logged in successfully'
+          }
+        }).catch(e => console.error("Failed to log activity:", e));
+      } catch (e) {
+        console.error("Failed to import/call apiClient for logging:", e);
+      }
+
 
       setSession(newSession);
 
