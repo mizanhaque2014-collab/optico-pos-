@@ -1,9 +1,0 @@
-const fs = require('fs');
-let code = fs.readFileSync('app/page.tsx', 'utf8');
-
-const OLD_URL = 'https://script.google.com/macros/s/AKfycbwMpyF1V9imrg4yUhnhqaPy6KzKD2ZTzQu918dnnAgSnn49S4PpLFvzRJzbwYO-WM8tNA/exec';
-const NEW_URL = 'https://script.google.com/macros/s/AKfycbyNn9b0CIgLFIjPXJn4MY4dc_4ZqqghLLscQrEvuO_iQSuwY2xiu1i2hQ24tAsbLVyW9g/exec';
-
-code = code.replace(new RegExp(OLD_URL, 'g'), NEW_URL);
-
-fs.writeFileSync('app/page.tsx', code);
