@@ -74,7 +74,7 @@ export default function Home() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const custom = localStorage.getItem('opt_shop_profile');
-      const savedApi = localStorage.getItem('opt_api_url') || 'https://script.google.com/macros/s/AKfycbyNn9b0CIgLFIjPXJn4MY4dc_4ZqqghLLscQrEvuO_iQSuwY2xiu1i2hQ24tAsbLVyW9g/exec';
+      const savedApi = localStorage.getItem('opt_api_url') || 'https://script.google.com/macros/s/AKfycbwMpyF1V9imrg4yUhnhqaPy6KzKD2ZTzQu918dnnAgSnn49S4PpLFvzRJzbwYO-WM8tNA/exec';
       setTempApiUrl(savedApi);
       if (custom) {
         try {
@@ -444,7 +444,7 @@ export default function Home() {
               <button
                 onClick={() => {
                   saveShopProfile(tempShopProfile);
-                  const currentSavedApi = localStorage.getItem('opt_api_url') || 'https://script.google.com/macros/s/AKfycbyNn9b0CIgLFIjPXJn4MY4dc_4ZqqghLLscQrEvuO_iQSuwY2xiu1i2hQ24tAsbLVyW9g/exec';
+                  const currentSavedApi = localStorage.getItem('opt_api_url') || 'https://script.google.com/macros/s/AKfycbwMpyF1V9imrg4yUhnhqaPy6KzKD2ZTzQu918dnnAgSnn49S4PpLFvzRJzbwYO-WM8tNA/exec';
                   if (tempApiUrl.trim() !== currentSavedApi.trim()) {
                     saveApiUrl(tempApiUrl);
                   } else {
