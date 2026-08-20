@@ -1,4 +1,5 @@
 "use client";
+import { clearCache } from '@/lib/store';
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { companyService } from '@/lib/services/companyService';
 import { branchService } from '@/lib/services/branchService';
@@ -16,6 +17,7 @@ export interface AuthSession {
   username: string;
   fullName: string;
   loginTime: number;
+  branchName?: string;
   token?: string;
 }
 
@@ -23,6 +25,7 @@ interface AuthContextType {
   session: AuthSession | null;
   login: (username: string, password?: string, rememberMe?: boolean) => Promise<void>;
   logout: () => void;
+  switchBranch: (branchID: string, branchName: string) => void;
   isLoading: boolean;
   error: string | null;
 }
@@ -151,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // Validate Company and Branch existence as per STEP 4 and STEP 5
-      if (assignedRole !== 'SUPER_ADMIN' && matchedUser.CompanyID && matchedUser.CompanyID !== 'ALL') {
+      if (assignedRole !== 'SUPER_ADMIN' && matchedUser.CompanyID && String(matchedUser.CompanyID).trim() !== '' && matchedUser.CompanyID !== 'ALL') {
         try {
           const companies = await companyService.getCompanies();
           const validCompany = companies.find((c: any) => c.CompanyID === matchedUser.CompanyID || c.id === matchedUser.CompanyID);
@@ -164,7 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      if (assignedRole === 'SHOP_USER' && matchedUser.BranchID && matchedUser.BranchID !== 'ALL') {
+      if (assignedRole === 'SHOP_USER' && matchedUser.BranchID && String(matchedUser.BranchID).trim() !== '' && matchedUser.BranchID !== 'ALL') {
         try {
           const branches = await branchService.getBranches();
           const validBranch = branches.find((b: any) => 
@@ -212,6 +215,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
       setSession(newSession);
+    clearCache();
 
       if (rememberMe) {
         localStorage.setItem('opt_session', JSON.stringify(newSession));
@@ -226,6 +230,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  
+
+  const switchBranch = (branchID: string, branchName: string) => {
+    if (!session) return;
+    const newSession = { ...session, branchID, branchName };
+    setSession(newSession);
+    if (localStorage.getItem('opt_session')) {
+      localStorage.setItem('opt_session', JSON.stringify(newSession));
+    } else if (sessionStorage.getItem('opt_session')) {
+      sessionStorage.setItem('opt_session', JSON.stringify(newSession));
+    }
+  };
+
   const logout = () => {
     setSession(null);
     localStorage.removeItem('opt_session');
@@ -234,7 +251,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ session, login, logout, isLoading, error }}>
+    <AuthContext.Provider value={{ session, login, logout, switchBranch, isLoading, error }}>
       {children}
     </AuthContext.Provider>
   );

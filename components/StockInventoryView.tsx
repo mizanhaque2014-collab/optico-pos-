@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useStore } from '@/lib/store';
+import { useAuth } from '@/lib/AuthContext';
 import { 
   StockItem, 
   StockCategory, 
@@ -23,7 +24,7 @@ interface Props {
   onBack: () => void;
 }
 
-const BRANCHES = ['Main Branch', 'City Center Branch', 'Metro Mall Branch'];
+
 
 const CATEGORY_ICONS: Record<StockCategory, string> = {
   'Frames': '👓',
@@ -37,12 +38,26 @@ const CATEGORY_ICONS: Record<StockCategory, string> = {
 };
 
 export function StockInventoryView({ onBack }: Props) {
+  const { session } = useAuth();
+  const [BRANCHES, setBRANCHES] = React.useState<string[]>([]);
+  React.useEffect(() => {
+    import('@/lib/services/branchService').then(({ branchService }) => {
+      branchService.getBranches().then(branches => {
+         const companyBranches: any[] = branches.filter((b: any) => 
+           (b.CompanyID === session?.companyID || b.companyId === session?.companyID) &&
+           String(b.Status).toUpperCase() === 'ACTIVE'
+         );
+         setBRANCHES(companyBranches.map((b: any) => b.BranchName || b.branchName || b.BranchID || b.id));
+      });
+    });
+  }, [session?.companyID]);
   const store = useStore();
   const [isAdmin, setIsAdmin] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'products' | 'adjustments' | 'transfers' | 'imports'>('dashboard');
   
   // Selection/filter states
-  const [selectedBranch, setSelectedBranch] = useState<string>('Main Branch');
+  const selectedBranch = session?.branchName || 'Default Branch';
+  // No setSelectedBranch anymore, it is managed globally
   const [selectedCategory, setSelectedCategory] = useState<StockCategory | 'All'>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
   
@@ -120,7 +135,7 @@ export function StockInventoryView({ onBack }: Props) {
 
       return matchBranch && matchCategory && matchQuery;
     });
-  }, [stockItems, selectedBranch, selectedCategory, searchQuery]);
+  }, [stockItems, selectedCategory, searchQuery]);
 
   // Statistics summaries
   const stats = useMemo(() => {
@@ -155,7 +170,7 @@ export function StockInventoryView({ onBack }: Props) {
       outOfStockCount,
       categoriesCount
     };
-  }, [stockItems, selectedBranch]);
+  }, [stockItems]);
 
   // Lens Inventory Breakdown
   const lensInventoryBreakdown = useMemo(() => {
@@ -177,7 +192,7 @@ export function StockInventoryView({ onBack }: Props) {
     });
 
     return lookup;
-  }, [stockItems, selectedBranch]);
+  }, [stockItems]);
 
   // Helper function to return availability style and label
   const getAvailability = (quantity: number) => {
@@ -550,7 +565,7 @@ export function StockInventoryView({ onBack }: Props) {
             <label className="text-[9px] text-white/40 block font-bold mb-1 uppercase tracking-wider">Active Location</label>
             <select
               value={selectedBranch}
-              onChange={(e) => setSelectedBranch(e.target.value)}
+              disabled={true}
               className="bg-white/5 text-white text-xs font-bold px-3 py-1.5 rounded-lg border border-white/10 focus:outline-none focus:border-cyan-500 shadow-sm"
             >
               {BRANCHES.map(b => (
@@ -1087,7 +1102,7 @@ export function StockInventoryView({ onBack }: Props) {
                   <label className="text-[9px] font-black uppercase text-white/40 block mb-1">Source Location (From)</label>
                   <select
                     value={selectedBranch}
-                    onChange={(e) => setSelectedBranch(e.target.value)}
+                    disabled={true}
                     className="w-full bg-slate-900 text-white text-xs px-3 py-2 rounded-lg border border-white/10 font-bold focus:outline-none focus:border-cyan-500"
                   >
                     {BRANCHES.map(b => (
@@ -1380,7 +1395,7 @@ export function StockInventoryView({ onBack }: Props) {
                     <label className="text-[9px] font-black uppercase text-white/40 block mb-1">Target Branch Placement</label>
                     <select
                       value={selectedBranch}
-                      onChange={(e) => setSelectedBranch(e.target.value)}
+                      disabled={true}
                       className="w-full bg-slate-900 text-white text-xs px-3 py-2 rounded-lg border border-white/10 font-bold focus:outline-none focus:border-cyan-500"
                     >
                       {BRANCHES.map(b => (

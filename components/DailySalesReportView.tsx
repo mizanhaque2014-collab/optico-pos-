@@ -19,7 +19,7 @@ interface Props {
 }
 
 // Preset list of active branches for high fidelity multi-branch filters
-const AVAILABLE_BRANCHES = ['all', 'Main Branch', 'City Center Branch', 'Metro Mall Branch'];
+
 
 export function DailySalesReportView({ onBack }: Props) {
   const store = useStore();
@@ -298,12 +298,7 @@ export function DailySalesReportView({ onBack }: Props) {
   const filteredInvoices = useMemo(() => {
     return invoices.filter(inv => {
       // 1. Branch filter mapping simulation inside core invoice properties
-      const branchMatch = selectedBranch === 'all' || 
-        (selectedBranch === 'Main Branch' && !inv.id.includes('-mock-5') && !inv.id.includes('-mock-6')) ||
-        (selectedBranch === 'City Center Branch' && inv.id.includes('-mock-5')) ||
-        (selectedBranch === 'Metro Mall Branch' && inv.id.includes('-mock-6'));
-
-      if (!branchMatch) return false;
+      
 
       // 2. Date Range filter
       const invoiceTime = inv.createdAt;
@@ -333,7 +328,7 @@ export function DailySalesReportView({ onBack }: Props) {
 
       return true;
     });
-  }, [invoices, selectedBranch, dateRange, customStartDate, customEndDate, dateBoundaries]);
+  }, [invoices, dateRange, customStartDate, customEndDate, dateBoundaries]);
 
   // Master Stats Calculations corresponding precisely to User's requested layout categories
   const reportStats = useMemo(() => {
@@ -918,42 +913,14 @@ ${shopConfig.shopName} Audit Officer`;
             <ArrowLeft size={18} />
           </button>
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xl">📊</span>
-              <h2 className="text-lg font-black text-white uppercase tracking-tight">Store Daily Sales &amp; Audit Engine</h2>
-            </div>
-            <p className="text-[10px] text-white/50 tracking-wider font-bold uppercase mt-0.5">
-              Secure Multi-branch Optical General Ledger
-            </p>
+            <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+              <span className="text-cyan-400">📊</span> Daily Sales Report
+            </h1>
+            <p className="text-xs text-white/50 tracking-wider">REAL-TIME REVENUE & TRANSACTIONS</p>
           </div>
         </div>
-
-        {/* Dynamic Demo Seeder if 0 rows */}
-        {invoices.length === 0 && (
-          <button
-            onClick={seedMockDataIfNeeded}
-            className="text-xs font-black px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 rounded-lg uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-cyan-500/20"
-          >
-            <RefreshCw size={14} className="animate-spin" />
-            <span>Seed Professional Mock Report Data</span>
-          </button>
-        )}
-
-        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-          {/* Multi Branch Selector options */}
-          <div>
-            <label className="text-[9px] text-white/40 block font-bold mb-1 uppercase tracking-wider">Audit scope</label>
-            <select
-              value={selectedBranch}
-              onChange={(e) => setSelectedBranch(e.target.value)}
-              className="bg-white/5 text-white text-xs font-bold px-3 py-1.5 rounded-lg border border-white/10 focus:outline-none focus:border-cyan-500 shadow-sm"
-            >
-              <option value="all">All Combined Branches</option>
-              {AVAILABLE_BRANCHES.slice(1).map(b => (
-                <option key={b} value={b} className="bg-[#0F172A] text-white">{b}</option>
-              ))}
-            </select>
-          </div>
+        <div className="flex items-center gap-3">
+            
 
           {/* Quick Date Filters Selector */}
           <div>

@@ -4,10 +4,28 @@ export async function apiCall<T>(action: string, argPayload?: any): Promise<T> {
   const url = new URL(API_URL);
   url.searchParams.set('action', action);
   
-  const payload = {
+  const payload: any = {
     action,
     ...(argPayload || {}),
   };
+  // Append session data for backend security
+  try {
+    if (typeof window !== 'undefined') {
+      const sLocal = localStorage.getItem('opt_session');
+      const sSession = sessionStorage.getItem('opt_session');
+      let authSession = null;
+      if (sSession) authSession = JSON.parse(sSession);
+      else if (sLocal) authSession = JSON.parse(sLocal);
+      if (authSession) {
+        payload.__auth = {
+          userID: authSession.userID,
+          companyID: authSession.companyID,
+          branchID: authSession.branchID,
+          role: authSession.role
+        };
+      }
+    }
+  } catch(e) {}
 
   const pData = payload.prescription || payload.eyeTest || payload.eyeTestDetails || payload;
   const customerId = payload.CustomerID || payload.customerId || pData?.CustomerID || pData?.customerId || '';

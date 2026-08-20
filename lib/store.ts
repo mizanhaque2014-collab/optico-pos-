@@ -16,6 +16,15 @@ const memoryCache = {
 
 const listeners = new Set<() => void>();
 
+export const clearCache = () => {
+  memoryCache.customers = null;
+  memoryCache.invoices = null;
+  memoryCache.stockInventory = null;
+  memoryCache.inventory = null;
+  listeners.forEach(l => l());
+};
+
+
 export const useStore = () => {
   const [, setTick] = useState(0);
 

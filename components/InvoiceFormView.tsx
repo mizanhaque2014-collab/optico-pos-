@@ -6,6 +6,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { formatInvoiceNumber } from '@/lib/utils';
 import { Customer, InvoiceType, OrderItem, PaymentDetail, PaymentMode } from '@/lib/types';
 import { useStore } from '@/lib/store';
+import { useAuth } from '@/lib/AuthContext';
 import { CustomerSelect } from './CustomerSelect';
 import { FrameSection } from './FrameSection';
 import { LensSection } from './LensSection';
@@ -27,6 +28,7 @@ interface Props {
 }
 
 export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTest }: Props) {
+  const { session } = useAuth();
   const { saveInvoice, generateInvoiceNumber, saveCustomer, getCustomers, getStockInventory } = useStore();
   const [stableCurrentTime, setStableCurrentTime] = useState<number>(0);
   useEffect(() => {
@@ -270,8 +272,8 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
        if (prescription.source === 'Eye Test Performed In Shop' || prescription.eyeTestDetails) {
           const eyeTestPayload = {
               id: `et-${Date.now()}`,
-              companyId: 'COMP-default',
-              branchId: 'BR-default',
+              companyId: session?.companyID || 'COMP-default',
+              branchId: session?.branchID || 'BR-default',
               customerId: customer.id,
               eyeTestDate: prescription.eyeTestDetails?.eyeTestDate || new Date().toISOString().split('T')[0],
               optometristName: prescription.eyeTestDetails?.optometristName || 'Optometrist',
@@ -329,6 +331,8 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
     const finalBalance = grandTotal - finalAdvance;
 
     const newInvoice = {
+      companyId: session?.companyID || 'COMP-default',
+      branchId: session?.branchID || 'BR-default',
       id: crypto.randomUUID(),
       invoiceNumber: generateInvoiceNumber(),
       type,
