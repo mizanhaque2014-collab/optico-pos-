@@ -11,6 +11,7 @@ import { DeliveryCollectionView } from '@/components/DeliveryCollectionView';
 import { CustomersView } from '@/components/CustomersView';
 import { StockInventoryView } from '@/components/StockInventoryView';
 import { DailySalesReportView } from '@/components/DailySalesReportView';
+import { CompanyReportsView } from '@/components/CompanyReportsView';
 import { WhatsAppMarketingView } from '@/components/WhatsAppMarketingView';
 import { EyeTestFormView } from '@/components/EyeTestFormView';
 import { ArrowLeft, Settings, Building, Save, Globe, LogOut, ShoppingCart, FileText, CheckCircle, Users, Package, BarChart3, MessageSquare, Server, Key, ShieldAlert, CreditCard, Search, LayoutDashboard } from 'lucide-react';
@@ -37,7 +38,7 @@ export default function Home() {
       } else if (path === 'inventory') {
         setCurrentView('stock_inventory');
       } else if (path === 'reports') {
-        setCurrentView('daily_sales_report');
+        setCurrentView('reports');
       } else if (path === 'settings') {
          // handle settings?
       }
@@ -165,7 +166,7 @@ export default function Home() {
     ];
   } else if (role === 'COMPANY_ADMIN') {
     sidebarItems = [
-      { id: 'company_reports', label: 'Company Reports', icon: <BarChart3 size={16} />, action: () => comingSoonAction('Company Reports') },
+      { id: 'reports', label: 'Company Reports', icon: <BarChart3 size={16} />, action: () => navigateTo('reports') },
       commonItems.whatsapp_marketing,
       commonItems.daily_sales_report,
       commonItems.inventory,
@@ -299,6 +300,7 @@ export default function Home() {
           {currentView === 'eye_test' && selectedCustomer && <EyeTestFormView customer={selectedCustomer} onBack={() => navigateTo('customers', selectedCustomer)} onContinueToBilling={(cust, et, billingType) => navigateTo(billingType, cust, et)} />}
           {currentView === 'stock_inventory' && <StockInventoryView onBack={() => navigateTo('dashboard')} />}
           {currentView === 'daily_sales_report' && <DailySalesReportView onBack={() => navigateTo('dashboard')} />}
+          {currentView === 'reports' && <CompanyReportsView onBack={() => navigateTo('dashboard')} />}
           {currentView === 'whatsapp_marketing' && <WhatsAppMarketingView onBack={() => navigateTo('dashboard')} />}
         </main>
       </div>

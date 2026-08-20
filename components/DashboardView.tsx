@@ -53,7 +53,7 @@ export function DashboardView({ onViewChange }: Props) {
     ];
   } else if (role === 'COMPANY_ADMIN') {
     menuItems = [
-      { title: 'Company Reports', subtitle: 'Analytics', icon: <BarChart3 size={48} className="text-pink-400 group-hover:scale-110 transition-transform duration-300" />, color: 'bg-gradient-to-br from-pink-950/80 to-pink-900/40 border-pink-800/50 hover:bg-pink-900/60 hover:border-pink-500/80 shadow-lg shadow-pink-900/20', action: () => comingSoonAction('Company Reports') },
+      { title: 'Company Reports', subtitle: 'Analytics', icon: <BarChart3 size={48} className="text-pink-400 group-hover:scale-110 transition-transform duration-300" />, color: 'bg-gradient-to-br from-pink-950/80 to-pink-900/40 border-pink-800/50 hover:bg-pink-900/60 hover:border-pink-500/80 shadow-lg shadow-pink-900/20', action: () => onViewChange('reports') },
       commonItems.whatsapp_marketing,
       commonItems.daily_sales_report,
       commonItems.inventory,
