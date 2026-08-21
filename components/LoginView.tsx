@@ -84,7 +84,7 @@ export function LoginView() {
                   <span>Google Apps Script Endpoint</span>
                 </div>
                 <p className="text-white/50 text-xs leading-relaxed">
-                  Enter your unique Google Apps Script Web App URL to connect this frontend to your company's dedicated database.
+                  Enter your unique Google Apps Script Web App URL to connect this frontend to your company&apos;s dedicated database.
                 </p>
                 <input
                   type="text"

@@ -169,7 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (assignedRole === 'SHOP_USER' && matchedUser.BranchID && String(matchedUser.BranchID).trim() !== '' && matchedUser.BranchID !== 'ALL') {
         try {
-          const branches = await branchService.getBranches();
+          const branches = await branchService.getBranchesV2();
           const validBranch = branches.find((b: any) => 
             (b.BranchID === matchedUser.BranchID || b.id === matchedUser.BranchID) &&
             (b.CompanyID === matchedUser.CompanyID || b.companyId === matchedUser.CompanyID)

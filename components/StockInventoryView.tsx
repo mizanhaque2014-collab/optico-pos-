@@ -42,7 +42,7 @@ export function StockInventoryView({ onBack }: Props) {
   const [BRANCHES, setBRANCHES] = React.useState<string[]>([]);
   React.useEffect(() => {
     import('@/lib/services/branchService').then(({ branchService }) => {
-      branchService.getBranches().then(branches => {
+      branchService.getBranchesV2().then(branches => {
          const companyBranches: any[] = branches.filter((b: any) => 
            (b.CompanyID === session?.companyID || b.companyId === session?.companyID) &&
            String(b.Status).toUpperCase() === 'ACTIVE'

@@ -26,6 +26,7 @@ export function CompanyReportsView({ onBack }: Props) {
   const [stockItems, setStockItems] = useState<StockItem[]>([]);
   const [branches, setBranches] = useState<any[]>([]);
   const [loadingBranches, setLoadingBranches] = useState(true);
+  const [branchError, setBranchError] = useState(false);
 
   // Filter criteria states
   const [dateRange, setDateRange] = useState<'today' | 'yesterday' | 'week' | 'month' | 'last_month' | 'custom'>('month');
@@ -35,6 +36,7 @@ export function CompanyReportsView({ onBack }: Props) {
 
   useEffect(() => {
     setSelectedBranchId(session?.branchID || 'ALL');
+    console.log("[COMPANY REPORTS] Selected BranchID:", session?.branchID || 'ALL');
   }, [session?.branchID]);
 
   // Load Data
@@ -49,13 +51,31 @@ export function CompanyReportsView({ onBack }: Props) {
     // Load branches
     if (session?.companyID) {
       setLoadingBranches(true);
-      branchService.getBranches().then(all => {
+      branchService.getBranchesV2().then(all => {
+         console.log("[COMPANY REPORTS] Authenticated CompanyID:", session.companyID);
+         console.log("[COMPANY REPORTS] Branch API Response:", all);
+         console.log("[COMPANY REPORTS] Total Branches:", all.length);
          const companyBranches = all.filter((b: any) => 
            (b.CompanyID === session.companyID || b.companyId === session.companyID) &&
            String(b.Status).toUpperCase() === 'ACTIVE'
          );
-         setBranches(companyBranches);
-      }).catch(e => console.error(e)).finally(() => setLoadingBranches(false));
+         
+         // Remove duplicates by BranchID
+         const uniqueBranches = Array.from(new Map(companyBranches.map(b => [b.BranchID || b.id, b])).values());
+         
+         // Sort alphabetically by BranchName
+         uniqueBranches.sort((a: any, b: any) => {
+           const nameA = a.BranchName || a.branchName || '';
+           const nameB = b.BranchName || b.branchName || '';
+           return nameA.localeCompare(nameB);
+         });
+         
+         setBranches(uniqueBranches);
+         console.log("[COMPANY REPORTS] Company Branches:", uniqueBranches.length);
+      }).catch(e => {
+         console.error("[COMPANY REPORTS] Error loading branches:", e);
+         setBranchError(true);
+      }).finally(() => setLoadingBranches(false));
     }
   }, []); // We don't re-run this on session changes, it's just mounting. store will update via listeners.
 
@@ -64,8 +84,30 @@ export function CompanyReportsView({ onBack }: Props) {
   // useStore() calls setTick which causes a re-render. So we can just call loadData in the render?
   // Actually, yes, using the getters directly in the body is reactive.
   const reactiveInvoices = store.getInvoices();
-  const reactiveCustomers = store.getCustomers();
-  const reactiveStock = store.getStockInventory();
+  const reactiveCustomersRaw = store.getCustomers();
+  const reactiveCustomers = useMemo(() => {
+    return reactiveCustomersRaw.filter(c => {
+      const custCompanyId = (c as any).companyId || (c as any).CompanyID || '';
+      if (session?.role !== 'SUPER_ADMIN' && custCompanyId && custCompanyId !== session?.companyID) return false;
+      if (selectedBranchId !== 'ALL') {
+         const custBranchId = (c as any).branchId || (c as any).BranchID || '';
+         if (custBranchId && custBranchId !== selectedBranchId) return false;
+      }
+      return true;
+    });
+  }, [reactiveCustomersRaw, session?.companyID, session?.role, selectedBranchId]);
+  const reactiveStockRaw = store.getStockInventory();
+  const reactiveStock = useMemo(() => {
+    return reactiveStockRaw.filter(s => {
+      const stockCompanyId = (s as any).companyId || (s as any).CompanyID || '';
+      if (session?.role !== 'SUPER_ADMIN' && stockCompanyId && stockCompanyId !== session?.companyID) return false;
+      if (selectedBranchId !== 'ALL') {
+         const stockBranchId = (s as any).branch || (s as any).branchId || (s as any).BranchID || '';
+         if (stockBranchId && stockBranchId !== selectedBranchId) return false;
+      }
+      return true;
+    });
+  }, [reactiveStockRaw, session?.companyID, session?.role, selectedBranchId]);
 
   const handleBranchChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newBranchId = e.target.value;
@@ -99,9 +141,19 @@ export function CompanyReportsView({ onBack }: Props) {
   // Filter Invoices
   const filteredInvoices = useMemo(() => {
     return reactiveInvoices.filter(inv => {
-      // Branch filter (if session.branchID is ALL, backend sends all, we can filter locally just in case)
-      // Note: invoices might not have branchId natively if it's an old mock, but they should.
-      // We will assume backend filters correctly.
+      // Company filter - Ensure invoice belongs to this company
+      const invCompanyId = (inv as any).companyId || (inv as any).CompanyID || '';
+      if (session?.role !== 'SUPER_ADMIN' && invCompanyId && invCompanyId !== session?.companyID) {
+        return false;
+      }
+
+      // Branch filter
+      if (selectedBranchId !== 'ALL') {
+        const invBranchId = (inv as any).branchId || (inv as any).BranchID || '';
+        if (invBranchId !== selectedBranchId) {
+          return false;
+        }
+      }
       
       // Date Filter
       const d = new Date(inv.createdAt || inv.updatedAt || Date.now());
@@ -137,7 +189,7 @@ export function CompanyReportsView({ onBack }: Props) {
       }
       return dateMatch;
     });
-  }, [reactiveInvoices, dateRange, customStartDate, customEndDate, dateBoundaries]);
+  }, [reactiveInvoices, dateRange, customStartDate, customEndDate, dateBoundaries, selectedBranchId, session?.companyID, session?.role]);
 
   // Calculations
   const calc = useMemo(() => {
@@ -259,14 +311,29 @@ export function CompanyReportsView({ onBack }: Props) {
             <select
               value={selectedBranchId}
               onChange={handleBranchChange}
-              disabled={loadingBranches}
+              disabled={loadingBranches || branchError || branches.length === 0}
               className="bg-white/5 text-white text-xs font-bold px-3 py-1.5 rounded-lg border border-white/10 focus:outline-none focus:border-pink-500 shadow-sm"
             >
-              <option value="ALL">All Branches</option>
-              {branches.map(b => (
-                <option key={b.BranchID || b.id} value={b.BranchID || b.id}>{b.BranchName || b.branchName || b.BranchID || b.id}</option>
-              ))}
+              {loadingBranches ? (
+                <option value="ALL">Loading branches...</option>
+              ) : branchError ? (
+                <option value="ALL">Unable to load branches</option>
+              ) : branches.length === 0 ? (
+                <option value="ALL">No active branches found</option>
+              ) : (
+                <>
+                  <option value="ALL">All Branches</option>
+                  {branches.map(b => (
+                    <option key={b.BranchID || b.id} value={b.BranchID || b.id}>{b.BranchName || b.branchName || b.BranchID || b.id}</option>
+                  ))}
+                </>
+              )}
             </select>
+            {branchError && (
+              <div className="text-[9px] text-rose-400 mt-1 uppercase tracking-wider max-w-[200px]">
+                Unable to load company branches. Please check the branch connection and try again.
+              </div>
+            )}
           </div>
 
           {/* Date Filter */}
