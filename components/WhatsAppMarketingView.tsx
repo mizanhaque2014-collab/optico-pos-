@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { shopConfig } from '@/lib/shopConfig';
+import { useAuth } from '@/lib/AuthContext';
 
 interface Props {
   onBack: () => void;
@@ -43,6 +44,7 @@ interface NPSEntry {
 }
 
 export function WhatsAppMarketingView({ onBack }: Props) {
+  const { session } = useAuth();
   const store = useStore();
   const [referenceTime] = useState(() => Date.now());
 
@@ -169,7 +171,19 @@ export function WhatsAppMarketingView({ onBack }: Props) {
     const parsedToday = new Date(referenceTime);
     parsedToday.setHours(0, 0, 0, 0);
 
-    return customers.map(c => {
+    const filteredCustomersSource = customers.filter(c => {
+       if (session?.role !== 'SUPER_ADMIN') {
+         const cComp = (c as any).companyId || (c as any).CompanyID || '';
+         if (cComp && cComp !== session?.companyID) return false;
+       }
+       if (session?.branchID && session?.branchID !== 'ALL') {
+         const cBranch = (c as any).branchId || (c as any).BranchID || '';
+         if (cBranch && cBranch !== session?.branchID) return false;
+       }
+       return true;
+    });
+
+    return filteredCustomersSource.map(c => {
       const custInvoices = invoices.filter(i => i.customerId === c.id);
       const isCancelledFiltered = (inv: Invoice) => inv.status !== 'Cancelled';
       const activeInvs = custInvoices.filter(isCancelledFiltered);
@@ -1089,12 +1103,12 @@ export function WhatsAppMarketingView({ onBack }: Props) {
                     <select
                       value={selectedCustomerForPreview ? selectedCustomerForPreview.id : ''}
                       onChange={(e) => {
-                        const matched = customers.find(c => c.id === e.target.value);
+                        const matched = processedCustomers.map(p => p.customer).find(c => c.id === e.target.value);
                         if (matched) setSelectedCustomerForPreview(matched);
                       }}
                       className="bg-[#0F172A] text-white text-[9px] font-bold p-1 rounded border border-white/10"
                     >
-                      {customers.map(c => (
+                      {processedCustomers.map(p => p.customer).map(c => (
                         <option key={c.id} value={c.id}>{c.name}</option>
                       ))}
                     </select>

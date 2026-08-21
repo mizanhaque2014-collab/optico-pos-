@@ -70,16 +70,19 @@ useEffect(() => {
       <select
         value={session?.branchID || ""}
         onChange={(e) => {
+          const val = e.target.value;
+          if (val === 'ALL') {
+             switchBranch('ALL', 'All Branches');
+             return;
+          }
           const b = branches.find(
-            (br) => br.BranchID === e.target.value || br.id === e.target.value,
+            (br) => br.BranchID === val || br.id === val,
           );
           if (b) switchBranch(b.BranchID || b.id, b.BranchName || b.branchName);
         }}
         className="w-full bg-[#1E293B] border border-white/10 rounded-lg py-2 px-3 text-sm font-bold text-cyan-400 focus:outline-none focus:border-cyan-500 uppercase tracking-wider"
       >
-        <option value="" disabled>
-          SELECT BRANCH
-        </option>
+        <option value="ALL">ALL BRANCHES</option>
         {branches.map((b) => (
           <option key={b.BranchID || b.id} value={b.BranchID || b.id}>
             {b.BranchName || b.branchName || b.BranchID || b.id}

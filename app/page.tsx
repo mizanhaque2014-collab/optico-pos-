@@ -271,6 +271,7 @@ export default function Home() {
             <span className="text-sm tracking-wide">Dashboard Home</span>
           </button>
           
+          <BranchSelector />
           <div className="mt-4 mb-2 px-4 text-[10px] font-black text-white/30 uppercase tracking-widest">
             Modules
           </div>

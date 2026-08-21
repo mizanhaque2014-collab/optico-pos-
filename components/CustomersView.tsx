@@ -7,6 +7,7 @@ import { useStore } from '@/lib/store';
 import { Users, Search, ArrowLeft } from 'lucide-react';
 import { Customer } from '@/lib/types';
 import { CustomerProfileView } from './CustomerProfileView';
+import { useAuth } from '@/lib/AuthContext';
 
 interface Props {
   onBack: () => void;
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export function CustomersView({ onBack, onNavigateTo }: Props) {
+  const { session } = useAuth();
   const { getCustomers } = useStore();
   const [search, setSearch] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);

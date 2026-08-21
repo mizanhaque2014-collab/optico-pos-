@@ -56,7 +56,8 @@ export function StockInventoryView({ onBack }: Props) {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'products' | 'adjustments' | 'transfers' | 'imports'>('dashboard');
   
   // Selection/filter states
-  const selectedBranch = session?.branchName || 'Default Branch';
+  const selectedBranchId = session?.branchID || 'ALL';
+  const selectedBranchName = session?.branchName || 'All Branches';
   // No setSelectedBranch anymore, it is managed globally
   const [selectedCategory, setSelectedCategory] = useState<StockCategory | 'All'>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -122,7 +123,7 @@ export function StockInventoryView({ onBack }: Props) {
   // Filtered Stock Items for active branch, category, and search query
   const filteredStock = useMemo(() => {
     return stockItems.filter(item => {
-      const matchBranch = !selectedBranch || item.branch === selectedBranch;
+      const matchBranch = selectedBranchId === 'ALL' || (item as any).branchId === selectedBranchId || (item as any).BranchID === selectedBranchId || item.branch === selectedBranchName;
       const matchCategory = selectedCategory === 'All' || item.category === selectedCategory;
       
       const q = searchQuery.toLowerCase();
@@ -135,11 +136,11 @@ export function StockInventoryView({ onBack }: Props) {
 
       return matchBranch && matchCategory && matchQuery;
     });
-  }, [stockItems, selectedCategory, searchQuery]);
+  }, [stockItems, selectedCategory, searchQuery, selectedBranchId, selectedBranchName]);
 
   // Statistics summaries
   const stats = useMemo(() => {
-    const branchStock = stockItems.filter(i => !selectedBranch || i.branch === selectedBranch);
+    const branchStock = stockItems.filter(i => selectedBranchId === 'ALL' || (i as any).branchId === selectedBranchId || (i as any).BranchID === selectedBranchId || i.branch === selectedBranchName);
     
     // Total Unique Products
     const uniqueProducts = branchStock.length;
@@ -174,7 +175,7 @@ export function StockInventoryView({ onBack }: Props) {
 
   // Lens Inventory Breakdown
   const lensInventoryBreakdown = useMemo(() => {
-    const branchStock = stockItems.filter(i => (!selectedBranch || i.branch === selectedBranch) && i.category === 'Optical Lenses');
+    const branchStock = stockItems.filter(i => (selectedBranchId === 'ALL' || (i as any).branchId === selectedBranchId || (i as any).BranchID === selectedBranchId || i.branch === selectedBranchName) && i.category === 'Optical Lenses');
     const lookup: Record<string, number> = {
       'Single Vision': 0,
       'Bifocal': 0,
@@ -225,7 +226,7 @@ export function StockInventoryView({ onBack }: Props) {
       supplierName: newProduct.supplierName || 'Self',
       purchaseDate: newProduct.purchaseDate,
       remarks: newProduct.remarks,
-      branch: selectedBranch,
+      branch: selectedBranchName,
       createdAt: Date.now()
     };
 
@@ -339,7 +340,7 @@ export function StockInventoryView({ onBack }: Props) {
           supplierName,
           purchaseDate: new Date().toISOString().split('T')[0],
           remarks,
-          branch: selectedBranch,
+          branch: selectedBranchName,
           createdAt: Date.now()
         });
         importedCount++;
@@ -416,7 +417,7 @@ export function StockInventoryView({ onBack }: Props) {
       return;
     }
 
-    if (selectedBranch === transferToBranch) {
+    if (selectedBranchName === transferToBranch) {
       alert('Source and destination branches must stay distinct.');
       return;
     }
@@ -425,7 +426,7 @@ export function StockInventoryView({ onBack }: Props) {
     if (!product) return;
 
     if (product.quantity < transferQty) {
-      alert(`Cannot transfer ${transferQty} items! Only ${product.quantity} units available at ${selectedBranch}.`);
+      alert(`Cannot transfer ${transferQty} items! Only ${product.quantity} units available at ${selectedBranchName}.`);
       return;
     }
 
@@ -437,7 +438,7 @@ export function StockInventoryView({ onBack }: Props) {
       barcode: product.barcode,
       category: product.category,
       quantity: transferQty,
-      fromBranch: selectedBranch,
+      fromBranch: selectedBranchName,
       toBranch: transferToBranch,
       reason: transferReason || 'Inventory re-balance',
       date: Date.now(),
@@ -461,10 +462,10 @@ export function StockInventoryView({ onBack }: Props) {
     let rows: string[][] = [];
     let filename = `optical-stock-report-${Date.now()}.csv`;
 
-    const branchItems = stockItems.filter(i => !selectedBranch || i.branch === selectedBranch);
+    const branchItems = stockItems.filter(i => selectedBranchId === 'ALL' || (i as any).branchId === selectedBranchId || (i as any).BranchID === selectedBranchId || i.branch === selectedBranchName);
 
     if (reportType === 'current') {
-      filename = `stock-current-${selectedBranch.replace(/ /g, '_')}.csv`;
+      filename = `stock-current-${selectedBranchName.replace(/ /g, '_')}.csv`;
       headers = ['Category', 'Brand', 'Model Number', 'Barcode', 'Purchase Price', 'Selling Price', 'Quantity', 'Valuation (Purchase)', 'Supplier', 'Remarks', 'Branch'];
       rows = branchItems.map(i => [
         i.category,
@@ -480,13 +481,13 @@ export function StockInventoryView({ onBack }: Props) {
         i.branch
       ]);
     } else if (reportType === 'low') {
-      filename = `low-stock-report-${selectedBranch.replace(/ /g, '_')}.csv`;
+      filename = `low-stock-report-${selectedBranchName.replace(/ /g, '_')}.csv`;
       headers = ['Category', 'Brand', 'Model Number', 'Barcode', 'Quantity', 'Selling Price', 'Branch'];
       rows = branchItems
         .filter(i => i.quantity > 0 && i.quantity <= 3)
         .map(i => [i.category, i.brand, i.modelNumber, i.barcode, i.quantity.toString(), i.sellingPrice.toString(), i.branch]);
     } else if (reportType === 'out') {
-      filename = `out-of-stock-report-${selectedBranch.replace(/ /g, '_')}.csv`;
+      filename = `out-of-stock-report-${selectedBranchName.replace(/ /g, '_')}.csv`;
       headers = ['Category', 'Brand', 'Model Number', 'Barcode', 'Branch'];
       rows = branchItems
         .filter(i => i.quantity === 0)
@@ -564,7 +565,7 @@ export function StockInventoryView({ onBack }: Props) {
           <div>
             <label className="text-[9px] text-white/40 block font-bold mb-1 uppercase tracking-wider">Active Location</label>
             <select
-              value={selectedBranch}
+              value={selectedBranchName}
               disabled={true}
               className="bg-white/5 text-white text-xs font-bold px-3 py-1.5 rounded-lg border border-white/10 focus:outline-none focus:border-cyan-500 shadow-sm"
             >
@@ -831,7 +832,7 @@ export function StockInventoryView({ onBack }: Props) {
                     <tr>
                       <td colSpan={10} className="px-4 py-12 text-center text-white/40">
                         <Package size={32} className="mx-auto text-white/10 mb-2" />
-                        No matching stock found at {selectedBranch}. Choose any filter or simulated barcodes to begin.
+                        No matching stock found at {selectedBranchName}. Choose any filter or simulated barcodes to begin.
                       </td>
                     </tr>
                   ) : (
@@ -1101,7 +1102,7 @@ export function StockInventoryView({ onBack }: Props) {
                 <div>
                   <label className="text-[9px] font-black uppercase text-white/40 block mb-1">Source Location (From)</label>
                   <select
-                    value={selectedBranch}
+                    value={selectedBranchName}
                     disabled={true}
                     className="w-full bg-slate-900 text-white text-xs px-3 py-2 rounded-lg border border-white/10 font-bold focus:outline-none focus:border-cyan-500"
                   >
@@ -1120,7 +1121,7 @@ export function StockInventoryView({ onBack }: Props) {
                     required
                   >
                     <option value="">-- Choose available items --</option>
-                    {stockItems.filter(s => s.branch === selectedBranch && s.quantity > 0).map(s => (
+                    {stockItems.filter(s => s.branch === selectedBranchName && s.quantity > 0).map(s => (
                       <option key={s.id} value={s.id}>
                         {s.brand} {s.modelNumber} ({s.category}) • Stock: {s.quantity}
                       </option>
@@ -1136,7 +1137,7 @@ export function StockInventoryView({ onBack }: Props) {
                       onChange={(e) => setTransferToBranch(e.target.value)}
                       className="w-full bg-slate-900 text-white text-xs px-3 py-2 rounded-lg border border-white/10 font-bold focus:outline-none focus:border-cyan-500"
                     >
-                      {BRANCHES.filter(b => b !== selectedBranch).map(b => (
+                      {BRANCHES.filter(b => b !== selectedBranchName).map(b => (
                         <option key={b} value={b}>{b}</option>
                       ))}
                     </select>
@@ -1394,7 +1395,7 @@ export function StockInventoryView({ onBack }: Props) {
                   <div>
                     <label className="text-[9px] font-black uppercase text-white/40 block mb-1">Target Branch Placement</label>
                     <select
-                      value={selectedBranch}
+                      value={selectedBranchName}
                       disabled={true}
                       className="w-full bg-slate-900 text-white text-xs px-3 py-2 rounded-lg border border-white/10 font-bold focus:outline-none focus:border-cyan-500"
                     >

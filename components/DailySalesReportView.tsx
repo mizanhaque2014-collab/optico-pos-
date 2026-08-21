@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { shopConfig } from '@/lib/shopConfig';
+import { useAuth } from '@/lib/AuthContext';
 
 interface Props {
   onBack: () => void;
@@ -22,6 +23,7 @@ interface Props {
 
 
 export function DailySalesReportView({ onBack }: Props) {
+  const { session } = useAuth();
   const store = useStore();
   const [referenceTime] = useState(() => Date.now());
 
@@ -33,7 +35,7 @@ export function DailySalesReportView({ onBack }: Props) {
   const [didSeed, setDidSeed] = useState(false);
 
   // Filter criteria states
-  const [selectedBranch, setSelectedBranch] = useState<string>('all');
+  const selectedBranch = session?.branchName || 'All Active Branches';
   const [dateRange, setDateRange] = useState<'today' | 'yesterday' | 'week' | 'month' | 'year' | 'custom'>('month');
   const [customStartDate, setCustomStartDate] = useState<string>('');
   const [customEndDate, setCustomEndDate] = useState<string>('');
@@ -297,9 +299,17 @@ export function DailySalesReportView({ onBack }: Props) {
   // Filter local invoices based on Branch and Active Date Filter Range
   const filteredInvoices = useMemo(() => {
     return invoices.filter(inv => {
-      // 1. Branch filter mapping simulation inside core invoice properties
+      // Company Admin Filter
+      if (session?.role !== 'SUPER_ADMIN') {
+         const invCompanyId = (inv as any).companyId || (inv as any).CompanyID || '';
+         if (invCompanyId && invCompanyId !== session?.companyID) return false;
+      }
+      // 1. Branch filter
+      if (session?.branchID && session?.branchID !== 'ALL') {
+         const invBranchId = (inv as any).branchId || (inv as any).BranchID || '';
+         if (invBranchId !== session?.branchID) return false;
+      }
       
-
       // 2. Date Range filter
       const invoiceTime = inv.createdAt;
       if (dateRange === 'today') {
