@@ -15,7 +15,7 @@ export function BranchSelector() {
         (b: any) => {
           const bCompId = String(b.CompanyID || b.companyId || '').trim();
           const sessCompId = String(session?.companyID || '').trim();
-          const isMatch = bCompId === sessCompId;
+          const isMatch = !sessCompId || sessCompId === 'ALL' || bCompId === sessCompId;
           const status = String(b.Status || b.status || 'Active').trim().toUpperCase();
           const isActive = status === 'ACTIVE';
           return isMatch && isActive;

@@ -60,8 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         users = await userService.getUsers();
       } catch (err: any) {
-        console.error("Backend Error on getUsers:", err);
-        throw err; // bubble up the error to show exactly what the backend responded with
+        console.warn("Backend Error on getUsers (falling back to hardcoded users):", err.message);
       }
       // Since it's a frontend-only auth, we simulate validate credentials
       const userByUsername = users.find(u => 

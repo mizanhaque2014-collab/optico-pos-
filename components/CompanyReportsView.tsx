@@ -56,7 +56,7 @@ export function CompanyReportsView({ onBack }: Props) {
          console.log("[COMPANY REPORTS] Branch API Response:", all);
          console.log("[COMPANY REPORTS] Total Branches:", all.length);
          const companyBranches = all.filter((b: any) => 
-           String(b.CompanyID || b.companyId || '').trim() === String(session?.companyID || '').trim() &&
+           (!String(session?.companyID || '').trim() || String(session?.companyID || '').trim() === 'ALL' || String(b.CompanyID || b.companyId || '').trim() === String(session?.companyID || '').trim()) &&
            String(b.Status || b.status || 'Active').trim().toUpperCase() === 'ACTIVE'
          );
          
@@ -88,7 +88,8 @@ export function CompanyReportsView({ onBack }: Props) {
   const reactiveCustomers = useMemo(() => {
     return reactiveCustomersRaw.filter(c => {
       const custCompanyId = (c as any).companyId || (c as any).CompanyID || '';
-      if (session?.role !== 'SUPER_ADMIN' && custCompanyId && custCompanyId !== session?.companyID) return false;
+      const sessCompId = String(session?.companyID || '').trim();
+      if (session?.role !== 'SUPER_ADMIN' && sessCompId && sessCompId !== 'ALL' && custCompanyId !== sessCompId) return false;
       if (selectedBranchId !== 'ALL') {
          const custBranchId = (c as any).branchId || (c as any).BranchID || '';
          if (custBranchId && custBranchId !== selectedBranchId) return false;
@@ -100,7 +101,8 @@ export function CompanyReportsView({ onBack }: Props) {
   const reactiveStock = useMemo(() => {
     return reactiveStockRaw.filter(s => {
       const stockCompanyId = (s as any).companyId || (s as any).CompanyID || '';
-      if (session?.role !== 'SUPER_ADMIN' && stockCompanyId && stockCompanyId !== session?.companyID) return false;
+      const sessCompId = String(session?.companyID || '').trim();
+      if (session?.role !== 'SUPER_ADMIN' && sessCompId && sessCompId !== 'ALL' && stockCompanyId !== sessCompId) return false;
       if (selectedBranchId !== 'ALL') {
          const stockBranchId = (s as any).branch || (s as any).branchId || (s as any).BranchID || '';
          if (stockBranchId && stockBranchId !== selectedBranchId) return false;

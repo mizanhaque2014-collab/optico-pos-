@@ -44,7 +44,7 @@ export function StockInventoryView({ onBack }: Props) {
     import('@/lib/services/branchService').then(({ branchService }) => {
       branchService.getBranchesV2().then(branches => {
          const companyBranches: any[] = branches.filter((b: any) => 
-           String(b.CompanyID || b.companyId || '').trim() === String(session?.companyID || '').trim() &&
+           (!String(session?.companyID || '').trim() || String(session?.companyID || '').trim() === 'ALL' || String(b.CompanyID || b.companyId || '').trim() === String(session?.companyID || '').trim()) &&
            String(b.Status || b.status || 'Active').trim().toUpperCase() === 'ACTIVE'
          );
          setBRANCHES(companyBranches.map((b: any) => b.BranchName || b.branchName || b.BranchID || b.id));
