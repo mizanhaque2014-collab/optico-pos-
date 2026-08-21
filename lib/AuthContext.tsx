@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Hardcoded super admin fallback
       const typedUsername = String(username).trim().toLowerCase();
-      if (!matchedUser && (typedUsername === 'superadmin' || typedUsername === 'admin@optico-pos.com')) {
+      if (!matchedUser && (typedUsername === 'superadmin' || typedUsername === 'admin@optico-pos.com' || typedUsername === 'admin')) {
         matchedUser = {
           UserID: 'SUPER-ADMIN-001',
           CompanyID: 'ALL',
@@ -90,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       
       // Hardcoded company admin fallback
-      if (!matchedUser && typedUsername === 'company@optico-pos.com') {
+      if (!matchedUser && (typedUsername === 'company@optico-pos.com' || typedUsername === 'company')) {
         matchedUser = {
           UserID: 'COMP-ADMIN-001',
           CompanyID: 'COMP-1',
@@ -107,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // Hardcoded branch user fallback
-      if (!matchedUser && typedUsername === 'branch@optico-pos.com') {
+      if (!matchedUser && (typedUsername === 'branch@optico-pos.com' || typedUsername === 'branch')) {
         matchedUser = {
           UserID: 'BRANCH-USER-001',
           CompanyID: 'COMP-1',
