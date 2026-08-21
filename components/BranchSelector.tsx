@@ -12,10 +12,14 @@ export function BranchSelector() {
     try {
       const allBranches = await branchService.getBranchesV2();
       const companyBranches: any[] = allBranches.filter(
-        (b: any) =>
-          (b.CompanyID === session?.companyID ||
-            b.companyId === session?.companyID) &&
-          String(b.Status).toUpperCase() === "ACTIVE",
+        (b: any) => {
+          const bCompId = String(b.CompanyID || b.companyId || '').trim();
+          const sessCompId = String(session?.companyID || '').trim();
+          const isMatch = bCompId === sessCompId;
+          const status = String(b.Status || b.status || 'Active').trim().toUpperCase();
+          const isActive = status === 'ACTIVE';
+          return isMatch && isActive;
+        }
       );
       setBranches(companyBranches);
 

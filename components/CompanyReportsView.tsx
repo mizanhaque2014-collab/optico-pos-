@@ -56,8 +56,8 @@ export function CompanyReportsView({ onBack }: Props) {
          console.log("[COMPANY REPORTS] Branch API Response:", all);
          console.log("[COMPANY REPORTS] Total Branches:", all.length);
          const companyBranches = all.filter((b: any) => 
-           (b.CompanyID === session.companyID || b.companyId === session.companyID) &&
-           String(b.Status).toUpperCase() === 'ACTIVE'
+           String(b.CompanyID || b.companyId || '').trim() === String(session?.companyID || '').trim() &&
+           String(b.Status || b.status || 'Active').trim().toUpperCase() === 'ACTIVE'
          );
          
          // Remove duplicates by BranchID
