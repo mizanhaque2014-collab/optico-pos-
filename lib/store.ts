@@ -65,6 +65,11 @@ export const useStore = () => {
     return memoryCache.invoices;
   };
 
+  
+  const getDailySalesReport = async (companyId: string, branchId: string, startDate: string, endDate: string) => {
+    return await invoiceService.getDailySalesReport(companyId, branchId, startDate, endDate);
+  };
+
   const saveInvoice = async (invoice: Invoice): Promise<void> => {
     await invoiceService.saveInvoice(invoice);
     memoryCache.invoices = await invoiceService.getInvoices();
@@ -142,6 +147,7 @@ export const useStore = () => {
     getCustomers,
     saveCustomer,
     getInvoices,
+    getDailySalesReport,
     saveInvoice,
     getStockInventory,
     saveStockItem,

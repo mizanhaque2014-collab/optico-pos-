@@ -113,6 +113,7 @@ function doPost(e) {
       case 'getInvoiceById': result = getInvoiceById(payload.invoiceId || payload.id); break;
       case 'getInvoicesByCustomer': result = getInvoicesByCustomer(payload.customerId); break;
       case 'searchInvoices': result = searchInvoices(payload.keyword || payload.search); break;
+      case 'getDailySalesReport': result = getDailySalesReport(payload.companyId, payload.branchId, payload.startDate, payload.endDate); break;
       
       // PAYMENTS
       case 'savePayment': result = savePayment(payload.payment || payload); break;
@@ -725,3 +726,40 @@ function deleteRecord(sheetName, idField, id) {
 // WHATSAPP.GS
 // ==========================================
 // WhatsApp API integrations
+
+function getDailySalesReport(companyId, branchId, startDate, endDate) {
+  var allInvoices = getInvoices();
+  var filteredInvoices = [];
+  var start = startDate ? new Date(startDate).getTime() : 0;
+  var end = endDate ? new Date(endDate).getTime() : Number.MAX_SAFE_INTEGER;
+  
+  for (var i = 0; i < allInvoices.length; i++) {
+    var inv = allInvoices[i];
+    
+    // Company Filter
+    if (companyId && companyId !== 'ALL') {
+      var invComp = inv.CompanyID || inv.companyId;
+      if (invComp && String(invComp).trim() !== String(companyId).trim()) continue;
+    }
+    
+    // Branch Filter
+    if (branchId && branchId !== 'ALL') {
+      var invBranch = inv.BranchID || inv.branchId;
+      if (invBranch && String(invBranch).trim() !== String(branchId).trim()) continue;
+    }
+    
+    // Date Filter (using CreatedDate or InvoiceDate)
+    var dStr = inv.CreatedDate || inv.InvoiceDate || inv.CreatedAt;
+    var dTime = dStr ? new Date(dStr).getTime() : 0;
+    
+    if (dTime >= start && dTime <= end) {
+      filteredInvoices.push(inv);
+    }
+  }
+  
+  // To strictly follow the "calculate the report from existing sheets" we can return both.
+  // The frontend calculates everything properly if we just return the invoices.
+  return {
+    invoices: filteredInvoices
+  };
+}

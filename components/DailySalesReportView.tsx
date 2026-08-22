@@ -253,20 +253,7 @@ export function DailySalesReportView({ onBack }: Props) {
     setTimeout(() => setShowNotification(null), 4000);
   };
 
-  const loadData = () => {
-    if (typeof window !== 'undefined') {
-      const existingInvoices = store.getInvoices();
-      const existingCust = store.getCustomers();
-      setInvoices(existingInvoices);
-      setCustomers(existingCust);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
+  
   // Compute date bound filters
   const dateBoundaries = useMemo(() => {
     const todayStart = new Date();
@@ -295,6 +282,44 @@ export function DailySalesReportView({ onBack }: Props) {
       year: { start: thisYearStart.getTime(), end: todayEnd.getTime() }
     };
   }, []);
+
+
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchDsrData = async () => {
+      setIsLoading(true);
+      let start = 0;
+      let end = Number.MAX_SAFE_INTEGER;
+      
+      if (dateRange === 'custom') {
+        start = customStartDate ? new Date(customStartDate).getTime() : 0;
+        end = customEndDate ? new Date(customEndDate).getTime() : Number.MAX_SAFE_INTEGER;
+      } else if (dateBoundaries[dateRange]) {
+        start = dateBoundaries[dateRange].start;
+        end = dateBoundaries[dateRange].end;
+      }
+      
+      const compId = session?.companyID || 'ALL';
+      const brId = session?.branchID || 'ALL';
+      
+      try {
+        if (store.getDailySalesReport) {
+          const fetchedInvoices = await store.getDailySalesReport(compId, brId, new Date(start).toISOString(), new Date(end).toISOString());
+          setInvoices(fetchedInvoices);
+        } else {
+          setInvoices(store.getInvoices());
+        }
+      } catch(e) {
+        setInvoices(store.getInvoices());
+      }
+      
+      setCustomers(store.getCustomers());
+      setIsLoading(false);
+    };
+
+    fetchDsrData();
+  }, [dateRange, customStartDate, customEndDate, session?.companyID, session?.branchID, dateBoundaries]);
 
   // Filter local invoices based on Branch and Active Date Filter Range
   const filteredInvoices = useMemo(() => {
