@@ -114,6 +114,8 @@ function doPost(e) {
       case 'getInvoicesByCustomer': result = getInvoicesByCustomer(payload.customerId); break;
       case 'searchInvoices': result = searchInvoices(payload.keyword || payload.search); break;
       case 'getDailySalesReport': result = getDailySalesReport(payload.companyId, payload.branchId, payload.startDate, payload.endDate); break;
+      case 'saveDSRRecord': result = saveDSRRecord(payload.dsr || payload); break;
+      case 'getDSRRecords': result = getDSRRecords(); break;
       
       // PAYMENTS
       case 'savePayment': result = savePayment(payload.payment || payload); break;
@@ -200,7 +202,8 @@ var CONFIG = {
     INVOICES: "Invoices",
     SALES_ORDER_ITEMS: "SalesOrderItems",
     PAYMENTS: "Payments",
-    ACTIVITY_LOGS: "ActivityLogs"
+    ACTIVITY_LOGS: "ActivityLogs",
+    DSR: "DSR"
   }
 };// ==========================================
 // CUSTOMERS.GS
@@ -762,4 +765,29 @@ function getDailySalesReport(companyId, branchId, startDate, endDate) {
   return {
     invoices: filteredInvoices
   };
+}
+
+
+// ==========================================
+// DSR.GS - Daily Sales Report Persistence
+// ==========================================
+var DSR_HEADERS = ["DSR_ID", "ReportDate", "CompanyID", "BranchID", "DirectSales", "SalesOrders", "DeliveryCollections", "TotalBusiness", "CashCollected", "UpiCollected", "CardCollected", "PendingOrdersCount", "PendingOrdersValue", "PendingPaymentsCount", "PendingPaymentsValue", "GeneratedAt"];
+
+function saveDSRRecord(dsr) {
+  if (!CONFIG.SHEETS.DSR) CONFIG.SHEETS.DSR = "DSR";
+  getSheetByNameOrCreate(CONFIG.SHEETS.DSR, DSR_HEADERS);
+  
+  if (!dsr.DSR_ID) {
+    var d = dsr.ReportDate || new Date().toISOString().split('T')[0];
+    var b = dsr.BranchID || "ALL";
+    dsr.DSR_ID = "DSR-" + d + "-" + b;
+  }
+  
+  return saveRecord(CONFIG.SHEETS.DSR, "DSR_ID", dsr, "DSR");
+}
+
+function getDSRRecords() {
+  if (!CONFIG.SHEETS.DSR) CONFIG.SHEETS.DSR = "DSR";
+  getSheetByNameOrCreate(CONFIG.SHEETS.DSR, DSR_HEADERS);
+  return getAllRecords(CONFIG.SHEETS.DSR);
 }

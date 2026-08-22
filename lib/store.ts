@@ -66,6 +66,11 @@ export const useStore = () => {
   };
 
   
+  
+  const saveDSRRecord = async (dsrData: any) => {
+    return await invoiceService.saveDSRRecord(dsrData);
+  };
+
   const getDailySalesReport = async (companyId: string, branchId: string, startDate: string, endDate: string) => {
     return await invoiceService.getDailySalesReport(companyId, branchId, startDate, endDate);
   };
@@ -148,6 +153,7 @@ export const useStore = () => {
     saveCustomer,
     getInvoices,
     getDailySalesReport,
+    saveDSRRecord,
     saveInvoice,
     getStockInventory,
     saveStockItem,

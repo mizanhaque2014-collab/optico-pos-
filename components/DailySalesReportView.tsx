@@ -765,6 +765,43 @@ ${shopConfig.shopName} Audit Officer`;
   };
 
   // Dynamic Professional PDF Print compilation popup
+  
+  const [isSyncing, setIsSyncing] = useState(false);
+  const handleSyncToSheet = async () => {
+    if (!store.saveDSRRecord) return;
+    setIsSyncing(true);
+    try {
+      const dsrData = {
+        ReportDate: new Date().toISOString().split('T')[0],
+        CompanyID: session?.companyID || 'ALL',
+        BranchID: session?.branchID || 'ALL',
+        DirectSales: reportStats.directSalesAmount,
+        SalesOrders: reportStats.salesOrdersAmount,
+        DeliveryCollections: reportStats.deliveryCollectionAmount,
+        TotalBusiness: reportStats.totalBusinessAmount,
+        CashCollected: reportStats.cashCollected,
+        UpiCollected: reportStats.upiCollected,
+        CardCollected: reportStats.cardCollected,
+        PendingOrdersCount: reportStats.pendingOrdersCount,
+        PendingOrdersValue: reportStats.pendingOrdersValue,
+        PendingPaymentsCount: reportStats.pendingPaymentsCount,
+        PendingPaymentsValue: reportStats.pendingPaymentsValue,
+        GeneratedAt: new Date().toISOString()
+      };
+      
+      const success = await store.saveDSRRecord(dsrData);
+      if (success) {
+        alert("Success: End-of-Day DSR synced to Google Sheets 'DSR' tab!");
+      } else {
+        alert("Failed to sync DSR to Google Sheets. Check backend deployment.");
+      }
+    } catch(e) {
+      alert("Error syncing DSR to Google Sheets.");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const handlePrintPDFReport = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
@@ -1097,8 +1134,17 @@ ${shopConfig.shopName} Audit Officer`;
         </span>
 
         <div className="flex flex-wrap gap-2.5">
-          <button
-            onClick={handlePrintPDFReport}
+          
+            <button 
+              onClick={handleSyncToSheet}
+              disabled={isSyncing}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 rounded-lg text-xs font-bold hover:bg-emerald-500/30 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} />
+              {isSyncing ? 'Syncing...' : 'Sync to Sheet'}
+            </button>
+            <button 
+              onClick={handlePrintPDFReport}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-slate-900 border border-white/15 text-xs font-black text-white uppercase tracking-wider hover:border-cyan-500 hover:text-cyan-400 transition-colors"
           >
             <Printer size={13} />

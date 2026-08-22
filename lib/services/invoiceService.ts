@@ -89,6 +89,17 @@ export const invoiceService = {
   },
 
   
+  
+  async saveDSRRecord(dsrData: any): Promise<boolean> {
+    try {
+      await apiCall<any>('saveDSRRecord', { dsr: dsrData });
+      return true;
+    } catch (e) {
+      console.warn('saveDSRRecord failed:', e);
+      return false;
+    }
+  },
+
   async getDailySalesReport(companyId: string, branchId: string, startDate: string, endDate: string): Promise<Invoice[]> {
     try {
       const data = await apiCall<any>('getDailySalesReport', { companyId, branchId, startDate, endDate });
