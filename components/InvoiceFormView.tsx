@@ -31,6 +31,7 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
   const { session } = useAuth();
   const { saveInvoice, generateInvoiceNumber, saveCustomer, getCustomers, getStockInventory } = useStore();
   const [stableCurrentTime, setStableCurrentTime] = useState<number>(0);
+  const [isLoadingCustomerData, setIsLoadingCustomerData] = useState<boolean>(false);
   useEffect(() => {
     setStableCurrentTime(Date.now());
   }, []);
@@ -129,6 +130,7 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
 
     // Otherwise, load from API/history
     const fetchLatestPrescription = async () => {
+      setIsLoadingCustomerData(true);
       try {
         const history = await prescriptionService.loadPrescriptionHistory(customer.id);
         if (history && history.length > 0) {
@@ -150,6 +152,8 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
       } catch (e) {
         console.warn("Failed to load customer prescription on select:", e);
         setPrescription(null);
+      } finally {
+        setIsLoadingCustomerData(false);
       }
     };
     
@@ -364,6 +368,17 @@ export function InvoiceFormView({ type, onBack, initialCustomer, preloadedEyeTes
       setShowConfirmation(false);
     }
   };
+
+  if (isLoadingCustomerData) {
+    return (
+      <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#0F172A]/95 backdrop-blur-md">
+         <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-cyan-400 mb-6 shadow-[0_0_15px_rgba(34,211,238,0.5)]"></div>
+         <p className="text-sm font-black uppercase tracking-widest text-cyan-400 animate-pulse">
+           Please wait, loading customer data...
+         </p>
+      </div>
+    );
+  }
 
   if (savedInvoice) {
     return (
