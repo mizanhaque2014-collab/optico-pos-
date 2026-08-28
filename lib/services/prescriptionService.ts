@@ -124,8 +124,8 @@ async function savePrescriptionImpl(
     prescription = {
       PrescriptionID: legacyP.id,
       CustomerID: customerId,
-      CompanyID: legacyP.companyId || legacyP.CompanyID || currentCompanyId || 'COMP-default',
-      BranchID: legacyP.branchId || legacyP.BranchID || currentBranchId || 'BR-default',
+      CompanyID: (!legacyP.companyId || String(legacyP.companyId).trim() === '') ? (!legacyP.CompanyID || String(legacyP.CompanyID).trim() === '' ? (currentCompanyId || 'COMP-default') : legacyP.CompanyID) : legacyP.companyId,
+      BranchID: (!legacyP.branchId || String(legacyP.branchId).trim() === '') ? (!legacyP.BranchID || String(legacyP.BranchID).trim() === '' ? (currentBranchId || 'BR-default') : legacyP.BranchID) : legacyP.branchId,
       DoctorName: legacyP.optometristName || legacyP.doctorName || legacyP.eyeTestDetails?.optometristName || '',
       ExamDate: legacyP.eyeTestDate || legacyP.prescriptionDate || legacyP.eyeTestDetails?.eyeTestDate || new Date().toISOString().split('T')[0],
       Complaint: legacyP.complaint || '',

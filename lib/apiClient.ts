@@ -19,8 +19,8 @@ export async function apiCall<T>(action: string, argPayload?: any): Promise<T> {
       if (authSession) {
         payload.__auth = {
           userID: authSession.userID,
-          companyID: authSession.companyID,
-          branchID: authSession.branchID,
+          companyID: (!authSession.companyID || String(authSession.companyID).trim() === '') ? 'COMP-default' : authSession.companyID,
+          branchID: (!authSession.branchID || String(authSession.branchID).trim() === '') ? 'BR-default' : authSession.branchID,
           role: authSession.role
         };
       }
