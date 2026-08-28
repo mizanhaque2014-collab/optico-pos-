@@ -153,12 +153,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       let normalizedCompanyId = matchedUser.CompanyID;
-      if (!normalizedCompanyId || String(normalizedCompanyId).trim() === '') {
+      if (!normalizedCompanyId || String(normalizedCompanyId).trim() === '' || String(normalizedCompanyId).toLowerCase() === 'comp-default') {
         normalizedCompanyId = 'COMP-default';
       }
 
       let normalizedBranchId = matchedUser.BranchID;
-      if (!normalizedBranchId || String(normalizedBranchId).trim() === '') {
+      if (!normalizedBranchId || String(normalizedBranchId).trim() === '' || String(normalizedBranchId).toLowerCase() === 'br-default') {
         normalizedBranchId = 'BR-default';
       }
 
@@ -166,7 +166,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       matchedUser.BranchID = normalizedBranchId;
 
       // Validate Company and Branch existence as per STEP 4 and STEP 5
-      if (assignedRole !== 'SUPER_ADMIN' && matchedUser.CompanyID && String(matchedUser.CompanyID).trim() !== '' && matchedUser.CompanyID !== 'ALL') {
+      if (assignedRole !== 'SUPER_ADMIN' && matchedUser.CompanyID && String(matchedUser.CompanyID).trim() !== '' && matchedUser.CompanyID !== 'ALL' && String(matchedUser.CompanyID).toLowerCase() !== 'comp-default') {
         try {
           const companies = await companyService.getCompanies();
           const validCompany = companies.find((c: any) => c.CompanyID === matchedUser.CompanyID || c.id === matchedUser.CompanyID);
@@ -179,7 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      if (assignedRole === 'SHOP_USER' && matchedUser.BranchID && String(matchedUser.BranchID).trim() !== '' && matchedUser.BranchID !== 'ALL') {
+      if (assignedRole === 'SHOP_USER' && matchedUser.BranchID && String(matchedUser.BranchID).trim() !== '' && matchedUser.BranchID !== 'ALL' && String(matchedUser.BranchID).toLowerCase() !== 'br-default') {
         try {
           const branches = await branchService.getBranchesV2();
           const validBranch = branches.find((b: any) => 
