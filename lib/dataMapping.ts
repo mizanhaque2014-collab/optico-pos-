@@ -146,7 +146,12 @@ export function normalizeInvoice(inv: any): Invoice {
     if (!val) return Date.now();
     const n = Number(val);
     if (!isNaN(n)) return n;
-    const d = new Date(val).getTime();
+    
+    let strVal = String(val);
+    if (strVal.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      strVal += "T00:00:00";
+    }
+    const d = new Date(strVal).getTime();
     return isNaN(d) ? Date.now() : d;
   };
 
