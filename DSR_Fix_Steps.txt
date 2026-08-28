@@ -1,0 +1,17 @@
+# Step 1: Apps Script (Backend) Fix
+We have rewritten the Google Apps Script to securely auto-generate missing headers for EVERY essential sheet, ensuring `appendRow` never fails with the empty row error again. We also verified that `getDailySalesReport` is 100% properly mapped.
+
+Here is what we need to do.
+
+## Please Follow These Exact Steps:
+1. Open your Google Apps Script editor (`Code.gs`).
+2. Delete everything currently in there.
+3. Paste the entire updated `Code.gs` script.
+4. Click the **Save** icon (💾).
+5. **CRITICAL STEP:** Click the blue **Deploy** button -> **Manage Deployments**.
+6. Click the Pencil (Edit) icon.
+7. Change the Version dropdown to **"New version"**.
+8. Click **Deploy**.
+
+*If you do not choose "New version", the old script will continue to run, and the DSR will still fail.*
+

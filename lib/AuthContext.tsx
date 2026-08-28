@@ -152,6 +152,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
          assignedRole = 'SHOP_USER';
       }
 
+      let normalizedCompanyId = matchedUser.CompanyID;
+      if (!normalizedCompanyId || String(normalizedCompanyId).trim() === '') {
+        normalizedCompanyId = 'COMP-default';
+      }
+
+      let normalizedBranchId = matchedUser.BranchID;
+      if (!normalizedBranchId || String(normalizedBranchId).trim() === '') {
+        normalizedBranchId = 'BR-default';
+      }
+
+      matchedUser.CompanyID = normalizedCompanyId;
+      matchedUser.BranchID = normalizedBranchId;
+
       // Validate Company and Branch existence as per STEP 4 and STEP 5
       if (assignedRole !== 'SUPER_ADMIN' && matchedUser.CompanyID && String(matchedUser.CompanyID).trim() !== '' && matchedUser.CompanyID !== 'ALL') {
         try {
