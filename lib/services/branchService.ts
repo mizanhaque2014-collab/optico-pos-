@@ -96,13 +96,15 @@ export const branchService = {
       const data = (resData && typeof resData === 'object' && resData.success && Array.isArray(resData.data)) ? resData.data : (Array.isArray(resData) ? resData : []);
       if (Array.isArray(data)) {
         this.logResponse('getBranches', data);
-        return data.map(b => {
+        return data
+          .filter(b => (b.BranchID || b.branchId || b.id || b.ID))
+          .map(b => {
           const idVal = b.BranchID || b.branchId || b.id || b.ID || '';
           const compIdVal = b.CompanyID || b.companyId || '';
           const nameVal = b.BranchName || b.branchName || '';
           const mobileVal = b.Mobile || b.mobile || '';
           const statusVal = b.Status || b.status || 'Active';
-          const addrVal = b.Address || b.address || '';
+          const addrVal = b.Address || b.address || b.Location || b.location || '';
           
           const dateVal = (b.CreatedDate || b.createdDate) ? new Date(b.CreatedDate || b.createdDate).getTime() : Date.now();
           return {

@@ -19,6 +19,7 @@ export function CustomersView({ onBack, onNavigateTo }: Props) {
   const { getCustomers } = useStore();
   const [search, setSearch] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [isLoadingCustomer, setIsLoadingCustomer] = useState(false);
   
   const customers = getCustomers();
 
@@ -44,6 +45,14 @@ export function CustomersView({ onBack, onNavigateTo }: Props) {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      {isLoadingCustomer && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#0F172A]/95 backdrop-blur-md">
+           <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-cyan-400 mb-6 shadow-[0_0_15px_rgba(34,211,238,0.5)]"></div>
+           <p className="text-sm font-black uppercase tracking-widest text-cyan-400 animate-pulse">
+             Please wait, loading customer data...
+           </p>
+        </div>
+      )}
       <div className="bg-[#0F172A] p-6 rounded-2xl border border-white/5 shadow-2xl">
         <h2 className="text-sm font-black text-white/60 mb-6 flex items-center gap-2 uppercase tracking-widest border-b border-white/5 pb-4">
           <Users className="text-orange-400" size={18} /> Customer Database
@@ -67,7 +76,16 @@ export function CustomersView({ onBack, onNavigateTo }: Props) {
             filtered.map(c => (
                <button 
                  key={c.id}
-                 onClick={() => setSelectedCustomer(c)} 
+                 onClick={() => {
+                  if (isLoadingCustomer) return;
+                  setIsLoadingCustomer(true);
+                  // Simulate brief delay so the loader renders before the heavy CustomerProfileView mounting
+                  setTimeout(() => {
+                    setSelectedCustomer(c);
+                    setIsLoadingCustomer(false);
+                  }, 50);
+                }}
+                disabled={isLoadingCustomer} 
                  className="w-full text-left bg-[#1E293B] border border-white/5 p-5 rounded-xl flex items-center justify-between hover:bg-[#1E293B]/80 hover:border-orange-500/30 transition-colors shadow-sm"
                >
                 <div>

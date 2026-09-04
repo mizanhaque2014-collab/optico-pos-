@@ -17,6 +17,7 @@ export function CustomerSelect({ selectedCustomer, onSelect }: Props) {
   const [isAdding, setIsAdding] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [search, setSearch] = useState('');
+  const [isSelecting, setIsSelecting] = useState(false);
   
   // Customer form state (used for both Add and Edit)
   const [name, setName] = useState('');
@@ -172,6 +173,7 @@ export function CustomerSelect({ selectedCustomer, onSelect }: Props) {
             className="w-full bg-[#1E293B] border border-white/10 rounded-lg pl-10 pr-4 py-2 font-bold text-white focus:outline-none focus:border-cyan-500"
             value={search}
             onChange={e => setSearch(e.target.value)}
+            disabled={isSelecting}
           />
         </div>
         
@@ -180,7 +182,16 @@ export function CustomerSelect({ selectedCustomer, onSelect }: Props) {
             {filteredCustomers.map(c => (
               <button 
                 key={c.id} 
-                onClick={() => onSelect(c)}
+                onClick={async () => {
+                  if (isSelecting) return;
+                  setIsSelecting(true);
+                  try {
+                    await onSelect(c);
+                  } finally {
+                    setIsSelecting(false);
+                  }
+                }}
+                disabled={isSelecting}
                 className="w-full text-left p-3 hover:bg-white/5 border-b border-white/10 last:border-0 flex justify-between items-center"
               >
                 <div>

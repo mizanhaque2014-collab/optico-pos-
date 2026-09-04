@@ -37,12 +37,22 @@ export const paymentService = {
 
   async loadPaymentHistory(customerId?: string): Promise<PaymentRecord[]> {
     try {
-      const data = await apiCall<PaymentRecord[]>('getPayments', { customerId });
+      const data = await apiCall<any[]>('getPayments', { customerId });
       if (Array.isArray(data)) {
+        const mapped = data.map(p => ({
+          id: p.PaymentID || p.id,
+          invoiceId: p.InvoiceID || p.invoiceId,
+          invoiceNumber: p.InvoiceNumber || p.invoiceNumber || 'N/A',
+          customerId: p.CustomerID || p.customerId,
+          amount: parseFloat(p.Amount || p.amount || 0),
+          date: p.PaymentDate || p.CreatedAt || p.createdAt || p.date,
+          mode: p.PaymentMode || p.mode || 'Cash',
+          remarks: p.Remarks || p.remarks
+        }));
         if (typeof window !== 'undefined') {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped));
         }
-        return data;
+        return mapped;
       }
     } catch (e) {
       console.warn('getPayments API failed, executing fallback:', e);

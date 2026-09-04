@@ -25,6 +25,8 @@ export function normalizeCustomer(c: any): Customer {
   if (!c) return {} as Customer;
   return {
     id: String(c.id || c.CustomerID || c.customerID || c.CustomerId || c.customerid || c.customerId || ''),
+    companyId: String(c.companyId || c.CompanyID || ''),
+    branchId: String(c.branchId || c.BranchID || ''),
     name: String(c.name || c.Name || c.CustomerName || c.customerName || ''),
     mobile: String(c.mobile || c.Mobile || c.mobilenumber || c.mobileNumber || ''),
     dob: c.dob || c.DOB || c.dateofbirth || c.dateOfBirth || '',
@@ -39,6 +41,8 @@ export function normalizePrescription(p: any): any {
   if (!p) return {} as Prescription;
   return {
     id: p.id || p.PrescriptionID || p.prescriptionId || '',
+    companyId: String(p.companyId || p.CompanyID || ''),
+    branchId: String(p.branchId || p.BranchID || ''),
     source: p.source || p.Source || 'Eye Test Performed In Shop',
     
     // Flat properties for compatibility with EyeTestRecord/UI Forms
@@ -143,20 +147,22 @@ export function normalizeInvoice(inv: any): Invoice {
   const invoiceNumber = String(inv.InvoiceNumber || inv.invoiceNumber || inv.InvoiceID || inv.id || inv.InvoiceNo || '');
   
   const resolveDate = (val: any) => {
-    if (!val) return Date.now();
+    if (!val) return 0; // Return epoch for missing dates instead of Date.now() to prevent false reporting
     const n = Number(val);
-    if (!isNaN(n)) return n;
+    if (!isNaN(n) && n > 0) return n;
     
     let strVal = String(val);
     if (strVal.match(/^\d{4}-\d{2}-\d{2}$/)) {
       strVal += "T00:00:00";
     }
     const d = new Date(strVal).getTime();
-    return isNaN(d) ? Date.now() : d;
+    return isNaN(d) ? 0 : d;
   };
 
   return {
     id: String(inv.InvoiceID || inv.id || inv.Id || inv.ID || ''),
+    companyId: String(inv.companyId || inv.CompanyID || ''),
+    branchId: String(inv.branchId || inv.BranchID || ''),
     invoiceNumber: invoiceNumber,
     type: inv.InvoiceType || inv.type || inv.Type || inv.invoiceType || 'Direct Sale',
     customerId: String(inv.CustomerID || inv.customerId || inv.CustomerId || ''),
@@ -178,7 +184,7 @@ export function normalizeInvoice(inv: any): Invoice {
     advanceAmount: Number(inv.Advance || inv.advanceAmount || inv.advance || 0),
     balanceAmount: Number(inv.Balance || inv.balanceAmount || inv.balance || 0),
     status: inv.Status || inv.status || 'Delivered',
-    createdAt: resolveDate(inv.CreatedDate || inv.createdAt || inv.CreatedAt),
+    createdAt: resolveDate(inv.CreatedDate || inv.InvoiceDate || inv.createdAt || inv.CreatedAt),
     updatedAt: resolveDate(inv.UpdatedAt || inv.updatedAt)
   };
 }
@@ -187,6 +193,8 @@ export function normalizeStockItem(item: any): any {
   if (!item) return {};
   return {
     id: String(item.id || item.InventoryID || item.inventoryId || item.inventoryid || item.StockID || item.stockId || 's-rec-' + (item.barcode || item.Barcode || '') + '-' + (item.modelNumber || item.Model || 'unkn')),
+    companyId: String(item.companyId || item.CompanyID || ''),
+    branchId: String(item.branchId || item.BranchID || item.branch || item.Branch || ''),
     category: String(item.category || item.Category || 'Other Products'),
     brand: String(item.brand || item.Brand || ''),
     modelNumber: String(item.modelNumber || item.ModelNumber || item.model || item.Model || ''),

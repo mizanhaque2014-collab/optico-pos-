@@ -37,6 +37,8 @@ export type DoctorPrescriptionDetails = {
 
 export type Prescription = {
   id: string;
+  companyId?: string;
+  branchId?: string;
   source: PrescriptionSource;
   rightEye?: EyePower;
   leftEye?: EyePower;
@@ -53,6 +55,8 @@ export type CustomerStatus = 'Eye Test Only' | 'Prescription Only' | 'Buyer' | '
 
 export type Customer = {
   id: string;
+  companyId?: string;
+  branchId?: string;
   name: string;
   mobile: string;
   dob?: string;
@@ -120,6 +124,8 @@ export type InvoiceType = 'Direct Sale' | 'Sales Order';
 
 export type Invoice = {
   id: string;
+  companyId?: string;
+  branchId?: string;
   invoiceNumber: string;
   type: InvoiceType;
   customerId: string;
@@ -172,6 +178,8 @@ export type LensType =
 
 export type StockItem = {
   id: string;
+  companyId?: string;
+  branchId?: string;
   category: StockCategory;
   brand: string;
   modelNumber: string;

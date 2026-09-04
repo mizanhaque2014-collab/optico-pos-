@@ -12,6 +12,7 @@ import { CustomersView } from '@/components/CustomersView';
 import { StockInventoryView } from '@/components/StockInventoryView';
 import { DailySalesReportView } from '@/components/DailySalesReportView';
 import { CompanyReportsView } from '@/components/CompanyReportsView';
+import { PaymentsView } from '@/components/PaymentsView';
 import { WhatsAppMarketingView } from '@/components/WhatsAppMarketingView';
 import { EyeTestFormView } from '@/components/EyeTestFormView';
 import { ArrowLeft, Settings, Building, Save, Globe, LogOut, ShoppingCart, FileText, CheckCircle, Users, Package, BarChart3, MessageSquare, Server, Key, ShieldAlert, CreditCard, Search, LayoutDashboard } from 'lucide-react';
@@ -140,7 +141,7 @@ export default function Home() {
     direct_sale: { id: 'direct_sale', label: 'Direct Sale', icon: <ShoppingCart size={16} />, action: () => navigateTo('direct_sale') },
     sales_order: { id: 'sales_order', label: 'Sales Order', icon: <FileText size={16} />, action: () => navigateTo('sales_order') },
     delivery_collection: { id: 'delivery_collection', label: 'Delivery Collection', icon: <CheckCircle size={16} />, action: () => navigateTo('delivery_collection') },
-    payments: { id: 'payments', label: 'Payments', icon: <CreditCard size={16} />, action: () => comingSoonAction('Payments') },
+    payments: { id: 'payments', label: 'Payments', icon: <CreditCard size={16} />, action: () => navigateTo('payments') },
     daily_sales_report: { id: 'daily_sales_report', label: 'Daily Sales Report', icon: <BarChart3 size={16} />, action: () => navigateTo('daily_sales_report') },
     whatsapp_marketing: { id: 'whatsapp_marketing', label: 'WhatsApp Marketing', icon: <MessageSquare size={16} />, action: () => navigateTo('whatsapp_marketing') },
   };
@@ -307,6 +308,7 @@ export default function Home() {
           {currentView === 'daily_sales_report' && <DailySalesReportView onBack={() => navigateTo('dashboard')} />}
           {currentView === 'reports' && <CompanyReportsView onBack={() => navigateTo('dashboard')} />}
           {currentView === 'whatsapp_marketing' && <WhatsAppMarketingView onBack={() => navigateTo('dashboard')} />}
+          {currentView === 'payments' && <PaymentsView />}
         </main>
       </div>
 
