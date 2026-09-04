@@ -29,7 +29,7 @@ export function CompanyReportsView({ onBack }: Props) {
   const [branchError, setBranchError] = useState(false);
 
   // Filter criteria states
-  const [dateRange, setDateRange] = useState<'today' | 'yesterday' | 'week' | 'month' | 'last_month' | 'custom'>('month');
+  const [dateRange, setDateRange] = useState<'today' | 'yesterday' | 'week' | 'month' | 'last_month' | 'year' | 'custom'>('year');
   const [customStartDate, setCustomStartDate] = useState<string>('');
   const [customEndDate, setCustomEndDate] = useState<string>('');
   const [selectedBranchId, setSelectedBranchId] = useState<string>(session?.branchID || 'ALL');
@@ -136,8 +136,8 @@ export function CompanyReportsView({ onBack }: Props) {
     const lastMonthStart = new Date(todayStart.getFullYear(), todayStart.getMonth() - 1, 1);
     const lastMonthEnd = new Date(todayStart.getFullYear(), todayStart.getMonth(), 0);
     lastMonthEnd.setHours(23, 59, 59, 999);
-
-    return { todayStart, todayEnd, yesterdayStart, yesterdayEnd, thisWeekStart, thisMonthStart, lastMonthStart, lastMonthEnd };
+    const thisYearStart = new Date(todayStart.getFullYear(), 0, 1);
+    return { todayStart, todayEnd, yesterdayStart, yesterdayEnd, thisWeekStart, thisMonthStart, lastMonthStart, lastMonthEnd, thisYearStart };
   }, []);
 
   // Filter Invoices
@@ -175,6 +175,9 @@ export function CompanyReportsView({ onBack }: Props) {
           break;
         case 'last_month':
           dateMatch = d >= dateBoundaries.lastMonthStart && d <= dateBoundaries.lastMonthEnd;
+          break;
+        case 'year':
+          dateMatch = d >= dateBoundaries.thisYearStart && d <= dateBoundaries.todayEnd;
           break;
         case 'custom':
           if (customStartDate) {
@@ -351,6 +354,7 @@ export function CompanyReportsView({ onBack }: Props) {
               <option value="week">This Week</option>
               <option value="month">This Month</option>
               <option value="last_month">Last Month</option>
+              <option value="year">This Year</option>
               <option value="custom">Custom Date Range</option>
             </select>
           </div>

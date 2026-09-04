@@ -29,7 +29,7 @@ export default function Home() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const path = window.location.pathname.replace('/', '');
+      const path = window.location.hash ? window.location.hash.replace('#', '').replace('/', '') : window.location.pathname.replace('/', '');
       if (['dashboard', 'sales_order', 'direct_sale', 'delivery_collection', 'customers', 'stock_inventory', 'daily_sales_report', 'whatsapp_marketing', 'eye_test', 'companies', 'users', 'branches', 'payments', 'reports', 'settings', 'license'].includes(path)) {
         setCurrentView(path as ViewState);
       } else if (path === 'prescriptions') {
@@ -48,17 +48,19 @@ export default function Home() {
 
   // Sync route when view changes
   useEffect(() => {
-    if (typeof window !== 'undefined' && currentView !== 'dashboard') {
-      // Don't pushState if it's already there to avoid infinite loop
-      if (window.location.pathname !== '/' + currentView) {
-        window.history.pushState(null, '', '/' + currentView);
-      }
-    } else if (typeof window !== 'undefined' && currentView === 'dashboard') {
-      if (window.location.pathname !== '/' && window.location.pathname !== '/dashboard') {
-        window.history.pushState(null, '', '/');
-      }
+    if (typeof window !== 'undefined') {
+      window.location.hash = currentView === 'dashboard' ? '' : currentView;
     }
   }, [currentView]);
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash.replace('#', '');
+      if (hash && hash !== 'dashboard') {
+        // setCurrentView is called below but we need it here, so just rely on the existing currentView init logic if possible
+      }
+    }
+  }, []);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [preloadedEyeTest, setPreloadedEyeTest] = useState<any>(null);
   const [showSettingsModal, setShowSettingsModal] = useState<boolean>(false);

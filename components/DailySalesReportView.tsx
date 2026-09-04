@@ -36,7 +36,7 @@ export function DailySalesReportView({ onBack }: Props) {
 
   // Filter criteria states
   const selectedBranch = session?.branchName || 'All Active Branches';
-  const [dateRange, setDateRange] = useState<'today' | 'yesterday' | 'week' | 'month' | 'year' | 'custom'>('month');
+  const [dateRange, setDateRange] = useState<'today' | 'yesterday' | 'week' | 'month' | 'year' | 'custom'>('year');
   const [customStartDate, setCustomStartDate] = useState<string>('');
   const [customEndDate, setCustomEndDate] = useState<string>('');
   
