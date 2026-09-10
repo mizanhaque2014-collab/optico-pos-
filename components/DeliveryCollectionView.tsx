@@ -1,8 +1,18 @@
 "use client";
+import React, { useState, useEffect, useMemo } from 'react';
+import { useAuth } from '@/lib/AuthContext';
+import { companyService } from '@/lib/services/companyService';
+import { branchService } from '@/lib/services/branchService';
 
-'use client';
 
-import { useState, useMemo } from 'react';
+
+
+
+
+
+
+
+
 import { useStore } from '@/lib/store';
 import { Invoice, PaymentMode, PaymentDetail } from '@/lib/types';
 import { Search, CheckCircle, ArrowLeft, Receipt, Phone, MapPin, Award, Check } from 'lucide-react';
@@ -17,11 +27,64 @@ interface Props {
   onBack: () => void;
 }
 
-export function DeliveryCollectionView({ onBack }: Props) {
-  const { getInvoices, saveInvoice, getCustomers } = useStore();
+export function DeliveryCollectionView({
+ onBack }: Props) {
+  const { session } = useAuth();
+
+  const { getInvoices, refreshInvoices, saveInvoice, getCustomers } = useStore();
   const [search, setSearch] = useState('');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [completedInvoice, setCompletedInvoice] = useState<Invoice | null>(null);
+
+  const [customShopName, setCustomShopName] = useState('');
+
+  useEffect(() => {
+    refreshInvoices();
+  }, []);
+
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadShopName() {
+      try {
+        const invAny = completedInvoice as any;
+        if (!invAny) return;
+        const cId = invAny?.companyId || invAny?.CompanyID || session?.companyID;
+        const bId = invAny?.branchId || invAny?.BranchID || session?.branchID;
+        
+        let loadedCompanyName = '';
+        let loadedBranchName = '';
+
+        if (cId && cId !== 'ALL' && cId !== 'COMP-default') {
+          try {
+             const companies = await companyService.getCompanies();
+             const comp = companies.find(c => (c as any).CompanyID === cId || c.companyId === cId || c.id === cId);
+             if (comp) {
+               loadedCompanyName = (comp as any).CompanyName || comp.companyName || '';
+             }
+          } catch(e) {}
+        }
+        if (bId && bId !== 'ALL' && bId !== 'BR-default') {
+          try {
+             const branches = await branchService.getBranchesV2();
+             const br = branches.find(b => (b as any).BranchID === bId || b.branchId === bId || b.id === bId);
+             if (br) {
+               loadedBranchName = (br as any).BranchName || br.branchName || '';
+             }
+          } catch(e) {}
+        }
+        
+        if (isMounted) {
+           const finalShopName = loadedBranchName || loadedCompanyName || 'Shop Name Not Configured';
+           setCustomShopName(finalShopName.toLowerCase().includes('optico pos') ? 'Shop Name Not Configured' : finalShopName);
+        }
+      } catch (err) {
+         if (isMounted) setCustomShopName('Shop Name Not Configured');
+      }
+    }
+    loadShopName();
+    return () => { isMounted = false; };
+  }, [completedInvoice, session?.companyID, session?.branchID]);
 
   // States for payment collection box
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('Cash');
@@ -50,8 +113,23 @@ export function DeliveryCollectionView({ onBack }: Props) {
   const customers = getCustomers();
   
   const pendingOrders = useMemo(() => {
-    return invoices.filter(i => i.type === 'Sales Order' && i.status !== 'Delivered' && i.status !== 'Cancelled');
-  }, [invoices]);
+    return invoices.filter(i => {
+      const t = String(i.type || (i as any).InvoiceType || (i as any).invoiceType || '').trim().toLowerCase();
+      const s = String(i.status || (i as any).Status || '').trim().toLowerCase();
+      
+      const isSalesOrder = t === 'sales order' || t === 'salesorder';
+      const isDelivered = s === 'delivered';
+      const isCancelled = s === 'cancelled';
+      
+      const cId = (i as any).companyId || (i as any).CompanyID || '';
+      const bId = (i as any).branchId || (i as any).BranchID || '';
+      
+      const companyMatch = !session?.companyID || session.companyID === 'ALL' || session.companyID === 'COMP-default' || String(cId).trim() === '' || String(cId).trim() === 'COMP-default' || cId === session.companyID;
+      const branchMatch = !session?.branchID || session.branchID === 'ALL' || session.branchID === 'BR-default' || String(bId).trim() === '' || String(bId).trim() === 'BR-default' || bId === session.branchID;
+
+      return isSalesOrder && !isDelivered && !isCancelled && companyMatch && branchMatch;
+    });
+  }, [invoices, session]);
 
   const filteredOrders = useMemo(() => {
     if (!String(search ?? "").trim()) return pendingOrders;
@@ -214,7 +292,7 @@ export function DeliveryCollectionView({ onBack }: Props) {
             </button>
             <button 
               onClick={() => {
-                const text = generateWhatsAppInvoiceText(completedInvoice, resolvedCustomer || { name: 'Customer' }, resolvedPrescription, completedInvoice.items || []);
+                const text = generateWhatsAppInvoiceText(completedInvoice, resolvedCustomer || { name: 'Customer' }, resolvedPrescription, completedInvoice.items || [], customShopName);
                 const encoded = encodeURIComponent(text);
                 window.open(`https://api.whatsapp.com/send?phone=${resolvedCustomer?.mobile}&text=${encoded}`, '_blank');
               }}

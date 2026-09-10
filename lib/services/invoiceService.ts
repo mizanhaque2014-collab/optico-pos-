@@ -131,8 +131,8 @@ export const invoiceService = {
     });
   },
 
-  async getInvoices(): Promise<Invoice[]> {
-    if (typeof window !== 'undefined') {
+  async getInvoices(forceFetch: boolean = false): Promise<Invoice[]> {
+    if (typeof window !== 'undefined' && !forceFetch) {
       const stored = localStorage.getItem('opt_invoices');
       if (stored) {
          try {
@@ -155,6 +155,10 @@ export const invoiceService = {
       }
     } catch (e) {
       console.warn('getInvoices API failed, loading from local cache:', e);
+      if (forceFetch && typeof window !== 'undefined') {
+        const stored = localStorage.getItem('opt_invoices');
+        if (stored) return JSON.parse(stored).map(normalizeInvoice);
+      }
     }
     return [];
   },

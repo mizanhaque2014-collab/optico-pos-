@@ -1,3 +1,12 @@
+"use client";
+import React, { useState, useEffect, useMemo } from 'react';
+import { useAuth } from '@/lib/AuthContext';
+import { companyService } from '@/lib/services/companyService';
+import { branchService } from '@/lib/services/branchService';
+
+
+
+
 import { Invoice, Prescription, Customer } from '@/lib/types';
 import { formatInvoiceNumber } from '@/lib/utils';
 import { generateWhatsAppInvoiceText } from '@/lib/whatsappUtils';
@@ -14,7 +23,54 @@ interface Props {
   onContinueBilling?: (inv: Invoice) => void;
 }
 
-export function SalesOrderDetailCard({ inv, customer, prescription, onViewPrescription, onPrintA5, onEditOrder, onContinueBilling }: Props) {
+export function SalesOrderDetailCard({
+ inv, customer, prescription, onViewPrescription, onPrintA5, onEditOrder, onContinueBilling }: Props) {
+  const { session } = useAuth();
+  const [customShopName, setCustomShopName] = useState('');
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadShopName() {
+      try {
+        const invAny = inv as any;
+        if (!invAny) return;
+        const cId = invAny?.companyId || invAny?.CompanyID || session?.companyID;
+        const bId = invAny?.branchId || invAny?.BranchID || session?.branchID;
+        
+        let loadedCompanyName = '';
+        let loadedBranchName = '';
+
+        if (cId && cId !== 'ALL' && cId !== 'COMP-default') {
+          try {
+             const companies = await companyService.getCompanies();
+             const comp = companies.find(c => (c as any).CompanyID === cId || c.companyId === cId || c.id === cId);
+             if (comp) {
+               loadedCompanyName = (comp as any).CompanyName || comp.companyName || '';
+             }
+          } catch(e) {}
+        }
+        if (bId && bId !== 'ALL' && bId !== 'BR-default') {
+          try {
+             const branches = await branchService.getBranchesV2();
+             const br = branches.find(b => (b as any).BranchID === bId || b.branchId === bId || b.id === bId);
+             if (br) {
+               loadedBranchName = (br as any).BranchName || br.branchName || '';
+             }
+          } catch(e) {}
+        }
+        
+        if (isMounted) {
+           const finalShopName = loadedBranchName || loadedCompanyName || 'Shop Name Not Configured';
+           setCustomShopName(finalShopName.toLowerCase().includes('optico pos') ? 'Shop Name Not Configured' : finalShopName);
+        }
+      } catch (err) {
+         if (isMounted) setCustomShopName('Shop Name Not Configured');
+      }
+    }
+    loadShopName();
+    return () => { isMounted = false; };
+  }, [inv, session?.companyID, session?.branchID]);
+
   const parsedItems = Array.isArray(inv.items) ? inv.items : (typeof inv.items === 'string' ? JSON.parse(inv.items) : []);
 
   const isSunglass = (item: any) => {
@@ -58,7 +114,7 @@ export function SalesOrderDetailCard({ inv, customer, prescription, onViewPrescr
 
   const handleShareWhatsApp = () => {
     if (!customer) return;
-    const text = generateWhatsAppInvoiceText(inv, customer, prescription, parsedItems);
+    const text = generateWhatsAppInvoiceText(inv, customer, prescription, parsedItems, customShopName);
     const encoded = encodeURIComponent(text);
     window.open(`https://api.whatsapp.com/send?phone=${customer.mobile}&text=${encoded}`, '_blank');
   };

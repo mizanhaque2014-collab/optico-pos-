@@ -6,10 +6,11 @@ export function generateWhatsAppInvoiceText(
   inv: Invoice, 
   customer: any, 
   prescription: Prescription | null | undefined, 
-  parsedItems: OrderItem[]
+  parsedItems: OrderItem[],
+  customShopName?: string
 ) {
-  let text = `*INVOICE:* ${formatInvoiceNumber(inv.invoiceNumber)}\n*Shop:* ${shopConfig.shopName}\n*Customer:* ${customer.name}\n`;
-
+  let text = `*INVOICE:* ${formatInvoiceNumber(inv.invoiceNumber)}\n*Shop:* ${customShopName || shopConfig.shopName}\n*Customer:* ${customer.name}\n`;
+  
   // Prescription Details
   if (prescription) {
     text += `\n*PRESCRIPTION:*\n`;
@@ -60,7 +61,7 @@ export function generateWhatsAppInvoiceText(
   if (inv.deliveryDate) {
     text += `\n*Delivery Date:* ${new Date(inv.deliveryDate).toLocaleString('en-IN')}\n`;
   }
-
+  
   text += `\nThank you for your business!`;
   
   return text;

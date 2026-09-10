@@ -8,9 +8,6 @@ import { useStore } from '@/lib/store';
 import { formatInvoiceNumber } from '@/lib/utils';
 import { shopConfig } from '@/lib/shopConfig';
 import { generateWhatsAppInvoiceText } from '@/lib/whatsappUtils';
-import { branchService } from '@/lib/services/branchService';
-import { companyService } from '@/lib/services/companyService';
-import { useAuth } from '@/lib/AuthContext';
 import { Receipt, Phone, MapPin, Award, FileText, Send, Printer, Download, CreditCard, CheckCircle } from 'lucide-react';
 
 interface OpticalInvoiceA5Props {
@@ -30,87 +27,6 @@ export function OpticalInvoiceA5({
   onClose,
   isPrintPreviewOnly = false,
 }: OpticalInvoiceA5Props) {
-  const { session } = useAuth();
-  const [shopInfo, setShopInfo] = useState<{shopName: string, addressLine1: string, addressLine2: string, mobile: string, whatsapp: string, gstin: string, logo: string}>({
-    shopName: 'Loading...',
-    addressLine1: 'Loading...',
-    addressLine2: '',
-    mobile: '...',
-    whatsapp: '...',
-    gstin: '',
-    logo: shopConfig.logo || ''
-  });
-
-  useEffect(() => {
-    let isMounted = true;
-    async function loadShopData() {
-      try {
-        // Handle variations in field names
-        const invAny = invoice as any;
-        const cId = invAny?.companyId || invAny?.CompanyID || session?.companyID;
-        const bId = invAny?.branchId || invAny?.BranchID || session?.branchID;
-        
-        let loadedCompanyName = '';
-        let loadedGst = '';
-        let loadedBranchName = '';
-        let loadedAddress = '';
-        let loadedMobile = '';
-        let loadedWhatsapp = '';
-
-        if (cId && cId !== 'ALL' && cId !== 'COMP-default') {
-          try {
-             const companies = await companyService.getCompanies();
-             const comp = companies.find(c => (c as any).CompanyID === cId || c.companyId === cId || c.id === cId);
-             if (comp) {
-               loadedCompanyName = (comp as any).CompanyName || comp.companyName || '';
-               loadedGst = (comp as any).GSTNumber || comp.gstNumber || '';
-             }
-          } catch(e) {}
-        }
-
-        if (bId && bId !== 'ALL' && bId !== 'BR-default') {
-          try {
-             const branches = await branchService.getBranchesV2();
-             const br = branches.find(b => (b as any).BranchID === bId || b.branchId === bId || b.id === bId);
-             if (br) {
-               loadedBranchName = (br as any).BranchName || br.branchName || '';
-               loadedAddress = (br as any).Location || (br as any).location || br.address || (br as any).Address || '';
-               loadedMobile = (br as any).Mobile || br.mobile || '';
-               loadedWhatsapp = (br as any).WhatsApp || br.whatsAppNumber || (br as any).whatsApp || '';
-             }
-          } catch(e) {}
-        }
-        
-        if (isMounted) {
-           const finalShopName = loadedBranchName || loadedCompanyName || 'Shop Name Not Configured';
-           setShopInfo({
-             shopName: finalShopName.toLowerCase().includes('optico pos') ? 'Shop Name Not Configured' : finalShopName,
-             addressLine1: loadedAddress || 'Address Not Configured',
-             addressLine2: '',
-             mobile: loadedMobile || 'N/A',
-             whatsapp: loadedWhatsapp || loadedMobile || '',
-             gstin: loadedGst || '',
-             logo: shopConfig.logo || ''
-           });
-        }
-      } catch (err) {
-         if (isMounted) {
-           setShopInfo({
-             shopName: 'Shop Name Not Configured',
-             addressLine1: 'Address Not Configured',
-             addressLine2: '',
-             mobile: 'N/A',
-             whatsapp: '',
-             gstin: '',
-             logo: shopConfig.logo || ''
-           });
-         }
-      }
-    }
-    loadShopData();
-    return () => { isMounted = false; };
-  }, [invoice, session?.companyID, session?.branchID]);
-
   const store = useStore();
   const customers = store.getCustomers();
 
@@ -219,7 +135,7 @@ export function OpticalInvoiceA5({
 
   const handleShareWhatsApp = () => {
     if (!invoice || !clientCustomer) return;
-    const text = generateWhatsAppInvoiceText(invoice, clientCustomer, clientPrescription, invoiceItems, shopInfo.shopName);
+    const text = generateWhatsAppInvoiceText(invoice, clientCustomer, clientPrescription, invoiceItems);
     const encoded = encodeURIComponent(text);
     window.open(`https://api.whatsapp.com/send?phone=${clientCustomer.mobile}&text=${encoded}`, '_blank');
   };
@@ -325,9 +241,9 @@ export function OpticalInvoiceA5({
           <div className="border-b border-dashed border-slate-300 pb-1.5">
             <div className="flex justify-between items-start gap-2">
               <div className="flex items-start gap-1.5">
-                {shopInfo.logo ? (
+                {shopConfig.logo ? (
                   <div className="w-8 h-8 rounded-md flex items-center justify-center overflow-hidden shrink-0 mt-0.5">
-                    <img src={shopInfo.logo} alt="Shop Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+                    <img src={shopConfig.logo} alt="Shop Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
                   </div>
                 ) : (
                   <div className="p-1 bg-slate-900 text-white rounded-md flex items-center justify-center mt-0.5 shrink-0">
@@ -338,12 +254,12 @@ export function OpticalInvoiceA5({
                   </div>
                 )}
                 <div>
-                  <h1 className="text-sm font-black uppercase text-slate-900 tracking-wider">{shopInfo.shopName}</h1>
+                  <h1 className="text-sm font-black uppercase text-slate-900 tracking-wider">{shopConfig.shopName}</h1>
                   <p className="text-[8px] text-slate-500 font-medium flex items-center gap-1">
-                    <MapPin size={10} className="text-slate-400" /> {shopInfo.addressLine1}, {shopInfo.addressLine2}
+                    <MapPin size={10} className="text-slate-400" /> {shopConfig.addressLine1}, {shopConfig.addressLine2}
                   </p>
                   <p className="text-[8px] text-slate-500 font-medium flex items-center gap-1">
-                    <Phone size={10} className="text-slate-400" /> +91 {shopInfo.mobile} {shopInfo.whatsapp ? `| WA: +91 ${shopInfo.whatsapp}` : ''} {shopInfo.gstin ? `| GSTIN: ${shopInfo.gstin}` : ''}
+                    <Phone size={10} className="text-slate-400" /> +91 {shopConfig.mobile} {shopConfig.whatsapp ? `| WA: +91 ${shopConfig.whatsapp}` : ''} {shopConfig.gstin ? `| GSTIN: ${shopConfig.gstin}` : ''}
                   </p>
                 </div>
               </div>
@@ -643,7 +559,7 @@ export function OpticalInvoiceA5({
               {/* Signature Line */}
               <div className="w-24 border-t border-slate-350 pt-2 text-center">
                 <p className="font-extrabold uppercase text-slate-900 tracking-wider text-[6.5px]">Authorized Signature</p>
-                <p className="text-[5px] text-slate-400">{shopInfo.shopName}</p>
+                <p className="text-[5px] text-slate-400">{shopConfig.shopName}</p>
               </div>
             </div>
           </div>

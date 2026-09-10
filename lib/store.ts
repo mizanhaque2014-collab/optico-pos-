@@ -54,6 +54,15 @@ export const useStore = () => {
     return saved;
   };
 
+
+  const refreshInvoices = async () => {
+    try {
+      const data = await invoiceService.getInvoices(true);
+      memoryCache.invoices = data;
+      notify();
+    } catch(e) {}
+  };
+
   const getInvoices = (): Invoice[] => {
     if (!memoryCache.invoices) {
       memoryCache.invoices = [];
@@ -77,8 +86,16 @@ export const useStore = () => {
 
   const saveInvoice = async (invoice: Invoice): Promise<void> => {
     await invoiceService.saveInvoice(invoice);
-    memoryCache.invoices = await invoiceService.getInvoices();
+    if (memoryCache.invoices) {
+      const idx = memoryCache.invoices.findIndex(i => i.id === invoice.id);
+      if (idx !== -1) {
+        memoryCache.invoices[idx] = invoice;
+      } else {
+        memoryCache.invoices.unshift(invoice);
+      }
+    }
     notify();
+    refreshInvoices();
   };
 
   const getStockInventory = (): StockItem[] => {
@@ -152,6 +169,7 @@ export const useStore = () => {
     getCustomers,
     saveCustomer,
     getInvoices,
+    refreshInvoices,
     getDailySalesReport,
     saveDSRRecord,
     saveInvoice,
