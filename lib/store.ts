@@ -49,8 +49,24 @@ export const useStore = () => {
 
   const saveCustomer = async (customer: Customer): Promise<Customer> => {
     const saved = await customerService.saveCustomer(customer);
-    memoryCache.customers = await customerService.getCustomers();
+    if (memoryCache.customers) {
+      const idx = memoryCache.customers.findIndex(c => c.id === saved.id);
+      if (idx !== -1) {
+        memoryCache.customers[idx] = saved;
+      } else {
+        memoryCache.customers.unshift(saved);
+      }
+    } else {
+      memoryCache.customers = [saved];
+    }
     notify();
+    // Refresh full customer list in background without blocking the caller
+    customerService.getCustomers().then(data => {
+      if (Array.isArray(data)) {
+        memoryCache.customers = data;
+        notify();
+      }
+    }).catch(() => {});
     return saved;
   };
 

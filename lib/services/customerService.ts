@@ -8,6 +8,8 @@ const STORAGE_KEY = 'opt_customers';
 
 export const sanitizeCustomer = normalizeCustomer;
 
+const inFlightCustomerSaves = new Map<string, Promise<Customer>>();
+
 export const customerService = {
   // New Endpoint: Create customer
   async createCustomer(customer: Omit<Customer, 'id' | 'createdAt'> & { id?: string; createdAt?: number }): Promise<Customer> {
@@ -105,24 +107,49 @@ export const customerService = {
     return found;
   },
 
-  // Existing saveCustomer method updated to use new endpoints
+  // Existing saveCustomer method updated to use new endpoints with in-flight deduplication
   async saveCustomer(customer: Customer): Promise<Customer> {
-    console.log("CUSTOMER SAVE START", customer);
-    try {
-      if (!customer.id || customer.id.includes('local') || customer.id.includes('temp')) {
-        return await this.createCustomer(customer);
-      } else {
-        return await this.updateCustomer(customer);
+    const rawName = (customer.name || '').trim().toLowerCase();
+    const rawMobile = (customer.mobile || '').trim();
+    const dedupKey = (customer.id && !customer.id.includes('local') && !customer.id.includes('temp'))
+      ? `id:${customer.id}`
+      : `nm:${rawName}_${rawMobile}`;
+
+    if (dedupKey && inFlightCustomerSaves.has(dedupKey)) {
+      console.log("Customer save already in flight for:", dedupKey, "- reusing in-flight promise");
+      return inFlightCustomerSaves.get(dedupKey)!;
+    }
+
+    const savePromise = (async () => {
+      console.log("CUSTOMER SAVE START", customer);
+      try {
+        if (!customer.id || customer.id.includes('local') || customer.id.includes('temp')) {
+          return await this.createCustomer(customer);
+        } else {
+          return await this.updateCustomer(customer);
+        }
+      } catch (e) {
+        console.warn('customerService.saveCustomer api failed, storing locally:', e);
+        const localCustomer: Customer = sanitizeCustomer({
+          ...customer,
+          id: customer.id || `CUST-local-${Date.now()}`,
+          createdAt: customer.createdAt || Date.now()
+        });
+        this.updateLocalCache(localCustomer);
+        return localCustomer;
       }
-    } catch (e) {
-      console.warn('customerService.saveCustomer api failed, storing locally:', e);
-      const localCustomer: Customer = sanitizeCustomer({
-        ...customer,
-        id: customer.id || `CUST-local-${Date.now()}`,
-        createdAt: customer.createdAt || Date.now()
-      });
-      this.updateLocalCache(localCustomer);
-      return localCustomer;
+    })();
+
+    if (dedupKey) {
+      inFlightCustomerSaves.set(dedupKey, savePromise);
+    }
+
+    try {
+      return await savePromise;
+    } finally {
+      if (dedupKey) {
+        inFlightCustomerSaves.delete(dedupKey);
+      }
     }
   },
 

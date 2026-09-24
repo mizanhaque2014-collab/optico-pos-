@@ -1,11 +1,9 @@
 "use client";
 
-'use client';
-
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Customer } from '@/lib/types';
 import { useStore } from '@/lib/store';
-import { Search, UserPlus } from 'lucide-react';
+import { Search, UserPlus, Loader2 } from 'lucide-react';
 
 interface Props {
   selectedCustomer: Customer | null;
@@ -18,6 +16,8 @@ export function CustomerSelect({ selectedCustomer, onSelect }: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const [search, setSearch] = useState('');
   const [isSelecting, setIsSelecting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const isSavingRef = useRef(false);
   
   // Customer form state (used for both Add and Edit)
   const [name, setName] = useState('');
@@ -37,30 +37,50 @@ export function CustomerSelect({ selectedCustomer, onSelect }: Props) {
   }, [search, customers]);
 
   const handleSaveCustomer = async () => {
-    if (!name || !mobile) {
+    // 1. Synchronous check to immediately prevent multiple clicks
+    if (isSavingRef.current || isSaving) {
+      return;
+    }
+
+    const trimmedName = name.trim();
+    const trimmedMobile = mobile.trim();
+
+    if (!trimmedName || !trimmedMobile) {
       alert("Name and Mobile are required");
       return;
     }
+
+    // Immediately lock synchronously
+    isSavingRef.current = true;
+    setIsSaving(true);
     
     // Explicitly set ID to blank if we are adding a brand-new customer
     // This triggers createCustomer() instead of updateCustomer()
     const customerPayload: Customer = {
       id: isEditing && selectedCustomer ? selectedCustomer.id : '', 
-      name,
-      mobile,
+      name: trimmedName,
+      mobile: trimmedMobile,
       dob,
-      address,
+      address: address.trim(),
       createdAt: isEditing && selectedCustomer ? selectedCustomer.createdAt : Date.now()
     };
 
     try {
       const saved = await saveCustomer(customerPayload);
+      // Select the customer only once upon completion
       onSelect(saved);
       setIsAdding(false);
       setIsEditing(false);
       setSearch('');
+      setName('');
+      setMobile('');
+      setDob('');
+      setAddress('');
     } catch (err: any) {
-      alert("Failed to save customer: " + err.message);
+      alert("Failed to save customer: " + (err?.message || 'Unknown error'));
+    } finally {
+      isSavingRef.current = false;
+      setIsSaving(false);
     }
   };
 
@@ -119,40 +139,54 @@ export function CustomerSelect({ selectedCustomer, onSelect }: Props) {
         <div className="grid grid-cols-2 gap-4 mb-4">
           <input 
             type="text" placeholder="Full Name *" 
-            className="bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white font-bold placeholder:text-white/30 focus:border-cyan-500 focus:outline-none"
+            className="bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white font-bold placeholder:text-white/30 focus:border-cyan-500 focus:outline-none disabled:opacity-50"
             value={name} onChange={e => setName(e.target.value)}
+            disabled={isSaving}
           />
           <input 
             type="text" placeholder="Mobile Number *" 
-            className="bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white font-bold placeholder:text-white/30 focus:border-cyan-500 focus:outline-none"
+            className="bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white font-bold placeholder:text-white/30 focus:border-cyan-500 focus:outline-none disabled:opacity-50"
             value={mobile} onChange={e => setMobile(e.target.value)}
+            disabled={isSaving}
           />
           <input 
             type="date" placeholder="DOB" 
-            className="bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white font-bold focus:border-cyan-500 focus:outline-none"
+            className="bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white font-bold focus:border-cyan-500 focus:outline-none disabled:opacity-50"
             value={dob} onChange={e => setDob(e.target.value)}
+            disabled={isSaving}
           />
           <input 
             type="text" placeholder="Address" 
-            className="bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white font-bold placeholder:text-white/30 focus:border-cyan-500 focus:outline-none"
+            className="bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white font-bold placeholder:text-white/30 focus:border-cyan-500 focus:outline-none disabled:opacity-50"
             value={address} onChange={e => setAddress(e.target.value)}
+            disabled={isSaving}
           />
         </div>
         <div className="flex gap-2">
           <button 
             type="button"
             onClick={handleSaveCustomer} 
-            className="bg-[#10B981] hover:bg-[#059669] text-white px-4 py-2 rounded-lg font-black uppercase text-xs transition-colors"
+            disabled={isSaving}
+            className={`bg-[#10B981] ${isSaving ? 'opacity-70 cursor-not-allowed pointer-events-none' : 'hover:bg-[#059669]'} text-white px-4 py-2 rounded-lg font-black uppercase text-xs transition-colors flex items-center justify-center gap-2`}
           >
-            {isEditing ? 'Update Customer' : 'Save & Select'}
+            {isSaving ? (
+              <>
+                <Loader2 className="animate-spin" size={14} />
+                <span>{isEditing ? 'Updating Customer...' : 'Saving & Selecting...'}</span>
+              </>
+            ) : (
+              <span>{isEditing ? 'Update Customer' : 'Save & Select'}</span>
+            )}
           </button>
           <button 
             type="button"
+            disabled={isSaving}
             onClick={() => {
+              if (isSaving) return;
               setIsAdding(false);
               setIsEditing(false);
             }} 
-            className="bg-[#020617] hover:bg-white/5 border border-white/10 text-white/60 px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-colors"
+            className={`border border-white/10 px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-colors ${isSaving ? 'bg-[#020617] text-white/30 opacity-40 cursor-not-allowed pointer-events-none' : 'bg-[#020617] hover:bg-white/5 text-white/60'}`}
           >
             Cancel
           </button>
