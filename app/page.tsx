@@ -16,6 +16,7 @@ import { PaymentsView } from '@/components/PaymentsView';
 import { WhatsAppMarketingView } from '@/components/WhatsAppMarketingView';
 import { EyeTestFormView } from '@/components/EyeTestFormView';
 import { ArrowLeft, Settings, Building, Save, Globe, LogOut, ShoppingCart, FileText, CheckCircle, Users, Package, BarChart3, MessageSquare, Server, Key, ShieldAlert, CreditCard, Search, LayoutDashboard } from 'lucide-react';
+import { PWAInstallButton } from '@/components/PWAInstallButton';
 import { runApiDiagnostics } from '@/lib/apiTest';
 import { saveShopProfile } from '@/lib/shopConfig';
 import { saveApiUrl } from '@/lib/config';
@@ -211,45 +212,58 @@ export default function Home() {
   return (
     <ProtectedRoute>
     <div className="min-h-screen bg-[#020617] text-white font-sans selection:bg-cyan-500/30 flex flex-col overflow-hidden">
-      <header className="flex items-center justify-between px-6 py-3 bg-[#0F172A] border-b border-white/10 shrink-0">
-        <div className="flex items-center gap-4">
+      <header className="flex items-center justify-between px-3 sm:px-6 py-3 bg-[#0F172A] border-b border-white/10 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-4">
           {currentView !== 'dashboard' && (
             <button
               onClick={() => navigateTo('dashboard')}
-              className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/60"
+              className="p-1.5 sm:p-2 hover:bg-white/10 rounded-full transition-colors text-white/60"
             >
-              <ArrowLeft size={24} />
+              <ArrowLeft size={20} className="sm:w-6 sm:h-6" />
             </button>
           )}
-          <div className="text-2xl">👓</div>
-          <h1 className="text-xl font-bold tracking-tight text-cyan-400">
-            OPTICAL POS <span className="text-xs font-normal text-white/50 ml-2">v2.0 • Main Branch</span>
+          <div className="text-xl sm:text-2xl">👓</div>
+          <h1 className="text-base sm:text-xl font-bold tracking-tight text-cyan-400">
+            OPTICAL POS <span className="hidden md:inline text-xs font-normal text-white/50 ml-2">v2.0 • Main Branch</span>
           </h1>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Search Button */}
+          <button
+            onClick={() => navigateTo('customers')}
+            className="px-2.5 sm:px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-white/10 rounded-lg text-[11px] font-semibold text-white/90 transition-all flex items-center gap-1.5 active:scale-95"
+            title="Search Customer Database & Invoices"
+          >
+            <Search size={14} className="text-cyan-400" />
+            <span className="hidden sm:inline">Search</span>
+          </button>
+
+          {/* Install App Button beside Search */}
+          <PWAInstallButton />
+
           <button
             onClick={() => setShowSettingsModal(true)}
-            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-white/10 rounded-lg text-[11px] font-semibold text-white/90 transition-all flex items-center gap-1.5 active:scale-95"
+            className="px-2.5 sm:px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-white/10 rounded-lg text-[11px] font-semibold text-white/90 transition-all flex items-center gap-1.5 active:scale-95"
             title="Configure Shop Profile & API Settings"
           >
             <Settings size={14} className="text-cyan-400" />
-            Shop Settings
+            <span className="hidden md:inline">Shop Settings</span>
           </button>
           <button
             onClick={() => {
               console.clear();
               runApiDiagnostics();
             }}
-            className="px-3 py-1.5 bg-cyan-950/60 hover:bg-cyan-900 border border-cyan-800/80 rounded-lg text-[11px] font-semibold text-cyan-300 transition-all flex items-center gap-1.5 active:scale-95"
+            className="hidden sm:flex px-3 py-1.5 bg-cyan-950/60 hover:bg-cyan-900 border border-cyan-800/80 rounded-lg text-[11px] font-semibold text-cyan-300 transition-all items-center gap-1.5 active:scale-95"
             title="Rerun Google Apps Script API Connection Tests"
           >
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
             </span>
-            Test Connection
+            <span className="hidden lg:inline">Test Connection</span>
           </button>
-          <div className="text-[10px] font-bold text-white/40 flex items-center gap-2 tracking-widest uppercase">
+          <div className="hidden xl:flex text-[10px] font-bold text-white/40 items-center gap-2 tracking-widest uppercase">
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span>OPERATOR: {session?.role?.replace('_', ' ') || 'USER'}</span>
           </div>

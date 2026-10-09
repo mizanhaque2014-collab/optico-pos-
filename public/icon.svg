@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A" />
+      <stop offset="50%" stop-color="#1E293B" />
+      <stop offset="100%" stop-color="#0A0F1D" />
+    </linearGradient>
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="50%" stop-color="#06B6D4" />
+      <stop offset="100%" stop-color="#0D9488" />
+    </linearGradient>
+    <linearGradient id="lensGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#06B6D4" stop-opacity="0.05" />
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#06B6D4" />
+      <stop offset="100%" stop-color="#10B981" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="10" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background rounded rect -->
+  <rect width="512" height="512" rx="108" fill="url(#bgGrad)" />
+  <rect width="504" height="504" x="4" y="4" rx="104" fill="none" stroke="#38BDF8" stroke-width="3" stroke-opacity="0.3" />
+
+  <!-- Subtle grid pattern in background -->
+  <circle cx="256" cy="220" r="190" fill="none" stroke="#06B6D4" stroke-opacity="0.08" stroke-width="2" stroke-dasharray="6 6" />
+  <circle cx="256" cy="220" r="140" fill="none" stroke="#06B6D4" stroke-opacity="0.06" stroke-width="1.5" />
+
+  <!-- Spectacles Glow Shadow -->
+  <g filter="url(#glow)" opacity="0.4">
+    <!-- Left Lens Rim -->
+    <rect x="74" y="146" width="140" height="132" rx="42" fill="none" stroke="#06B6D4" stroke-width="20" />
+    <!-- Right Lens Rim -->
+    <rect x="298" y="146" width="140" height="132" rx="42" fill="none" stroke="#06B6D4" stroke-width="20" />
+    <!-- Bridge -->
+    <path d="M 214 196 Q 256 174 298 196" fill="none" stroke="#06B6D4" stroke-width="18" stroke-linecap="round" />
+  </g>
+
+  <!-- Spectacles Primary Structure -->
+  <!-- Left Lens -->
+  <rect x="74" y="146" width="140" height="132" rx="42" fill="url(#lensGrad)" stroke="url(#cyanGrad)" stroke-width="18" />
+  <!-- Left Lens Reflection & Crosshair -->
+  <path d="M 104 176 L 126 176 M 104 176 L 104 198" fill="none" stroke="#38BDF8" stroke-width="3.5" stroke-linecap="round" opacity="0.8" />
+  <circle cx="144" cy="212" r="28" fill="none" stroke="#38BDF8" stroke-width="2" stroke-opacity="0.4" stroke-dasharray="4 4" />
+  <circle cx="144" cy="212" r="3" fill="#38BDF8" opacity="0.7" />
+
+  <!-- Right Lens -->
+  <rect x="298" y="146" width="140" height="132" rx="42" fill="url(#lensGrad)" stroke="url(#cyanGrad)" stroke-width="18" />
+  <!-- Right Lens Reflection & Crosshair -->
+  <path d="M 328 176 L 350 176 M 328 176 L 328 198" fill="none" stroke="#38BDF8" stroke-width="3.5" stroke-linecap="round" opacity="0.8" />
+  <circle cx="368" cy="212" r="28" fill="none" stroke="#38BDF8" stroke-width="2" stroke-opacity="0.4" stroke-dasharray="4 4" />
+  <circle cx="368" cy="212" r="3" fill="#38BDF8" opacity="0.7" />
+
+  <!-- Bridge -->
+  <path d="M 214 196 Q 256 172 298 196" fill="none" stroke="url(#cyanGrad)" stroke-width="18" stroke-linecap="round" />
+
+  <!-- Outer Temples -->
+  <path d="M 74 196 L 44 192" fill="none" stroke="url(#cyanGrad)" stroke-width="14" stroke-linecap="round" />
+  <path d="M 438 196 L 468 192" fill="none" stroke="url(#cyanGrad)" stroke-width="14" stroke-linecap="round" />
+
+  <!-- Text: OPTICO -->
+  <text x="256" y="360" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="44" font-weight="900" letter-spacing="8" fill="#F8FAFC" text-anchor="middle">
+    OPTICO
+  </text>
+
+  <!-- POS Badge -->
+  <g transform="translate(196, 386)">
+    <rect width="120" height="34" rx="10" fill="url(#accentGrad)" />
+    <text x="60" y="23" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="18" font-weight="900" letter-spacing="4" fill="#0F172A" text-anchor="middle">
+      POS
+    </text>
+  </g>
+</svg>

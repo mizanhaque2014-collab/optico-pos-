@@ -5,6 +5,7 @@ import { useState, Suspense, useEffect, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useAuth } from '@/lib/AuthContext';
+import { PWAInstallButton } from '@/components/PWAInstallButton';
 import {
   Building,
   Store,
@@ -724,17 +725,20 @@ function SuperAdminContent() {
 
             {/* Filter Search Field */}
             {['companies', 'branches', 'users'].includes(activeTab) && (
-              <div className="relative w-full md:w-80">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-white/40 pointer-events-none">
-                  <Search size={16} />
-                </span>
-                <input
-                  type="text"
-                  placeholder={`Filter list records...`}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-slate-950/60 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-xs text-white placeholder-white/40 focus:outline-none focus:border-cyan-500 transition-colors"
-                />
+              <div className="flex items-center gap-3 w-full md:w-auto">
+                <div className="relative w-full md:w-80">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-white/40 pointer-events-none">
+                    <Search size={16} />
+                  </span>
+                  <input
+                    type="text"
+                    placeholder={`Filter list records...`}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-slate-950/60 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-xs text-white placeholder-white/40 focus:outline-none focus:border-cyan-500 transition-colors"
+                  />
+                </div>
+                <PWAInstallButton />
               </div>
             )}
 

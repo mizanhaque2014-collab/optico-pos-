@@ -12,17 +12,16 @@ export default function Icon() {
     (
       <div
         style={{
-          fontSize: 90,
-          background: '#0f172a',
+          fontSize: 96,
+          background: '#0F172A',
           width: '100%',
           height: '100%',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: 'white',
         }}
       >
-        L
+        👓
       </div>
     ),
     {
